@@ -3,7 +3,7 @@ function []= etCompCalibTest(screen_width,screen_height,win,ScreenSize,subj,num_
 % stimpath='/net/store/nbp/users/sitimm/nbp_intothewild/Documentation/pupil_calibration_marker_cutout';
 %stimpath='/home/experiment/experiments/ET_Comp/experiment/pupil_calibration_marker_cutout';
 
-stimpath='/net/store/nbp/users/iibs/ETComp/experiment/pupil_calibration_marker_cutout';
+stimpath='stimuli/pupil_calibration_marker_cutout';
 eyetracking=false;
 
 percent=0.6;
@@ -143,7 +143,7 @@ Screen('FillRect', win, [background_color background_color background_color]);
 
 % add marker pos in the middle of the screen
 display_pos = [display_pos,[mid_x;mid_y]];                            
-save(['/home/experiment/Desktop/experiments/ET_Comp/data/display_pos_' num2str(subj) '_' num2str(block) '.mat'],'display_pos');
+save(['data/display_pos_' num2str(subj) '_' num2str(block) '.mat'],'display_pos');
 
 fprintf('\n Test finished.')
 

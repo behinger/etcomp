@@ -3,7 +3,7 @@ function []= etCompCalibTest(screen_width,screen_height,win,ScreenSize,subj,num_
 % stimpath='/net/store/nbp/users/sitimm/nbp_intothewild/Documentation/pupil_calibration_marker_cutout';
 %stimpath='/home/experiment/experiments/ET_Comp/experiment/pupil_calibration_marker_cutout';
 
-stimpath='/net/store/nbp/users/iibs/ETComp/experiment/stimuli/pupil_calibration_marker_cutout';
+stimpath='/stimuli/pupil_calibration_marker_cutout';
 eyetracking=false;
 
 percent=0.9;
@@ -131,7 +131,8 @@ Screen('FillRect', win, [background_color background_color background_color]);
 lastflip = Screen('Flip', win);
 
 %draw the first dot at the middle of the screen
-Screen('DrawTexture',win, stim, [0,0,size(marker,2),size(marker,1)],[mid_x-halfsize,mid_y-halfsize,mid_x+halfsize,mid_y+halfsize]);
+draw_target(screen_width/2, screen_height/2,20,'fixcross', win);
+%Screen('DrawTexture',win, stim, [0,0,size(marker,2),size(marker,1)],[mid_x-halfsize,mid_y-halfsize,mid_x+halfsize,mid_y+halfsize]);
 %show the first marker
 time =  flip_screen(screen_width,screen_height,win, lastflip);
 %[time]=Screen('Flip', win);  %get the time of the current flip (when dot was shown)
@@ -209,7 +210,7 @@ time =  flip_screen(screen_width,screen_height,win, lastflip);
 
 % add marker pos in the middle of the screen
 display_pos = [display_pos,[mid_x;mid_y]];
-save(['/net/store/nbp/users/iibs/ETComp/data/display_pos_' num2str(subj) '_' num2str(block) '_' num2str(num_dots) '.mat'],'display_pos');
+save(['data/display_pos_' num2str(subj) '_' num2str(block) '_' num2str(num_dots) '.mat'],'display_pos');
 
 %save(['/home/experiment/Desktop/experiments/ET_Comp/data/display_pos_' num2str(subj) '_' num2str(block) '_' num2str(num_dots) '.mat'],'display_pos');
 

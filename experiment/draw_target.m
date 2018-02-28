@@ -11,7 +11,7 @@ if strcmp(which_target, 'fixcross') == 1
     dist = 60; % viewing distance (cm)
 
     colorOval = [0 0 0]; % color of the two circles [R G B]
-    colorCross = [255 255 255]; % color of the Cross [R G B]
+    colorCross = [255 255 255]; % color of the Cross [R G B] change
 
     d1 = 0.6; % diameter of outer circle (degrees)
     d2 = 0.2; % diameter of inner circle (degrees)
