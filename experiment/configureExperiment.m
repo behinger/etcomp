@@ -7,10 +7,11 @@ addpath(genpath(zmqpath))
 %addpath(genpath(resultpath)) %results path
 
 % load randomizations
-load([resultpath 'stimuli_randomization' '.mat']);
-cfg.image_randomization = rand.img;
-cfg.small_grid_randomization = rand.small;
-cfg.large_grid_randomization = rand.large;
+cfg= load([resultpath 'stimuli_randomization' '.mat']);
+%cfg.image_randomization = rand.img;
+%cfg.small_before_randomization = rand.smallBefore;
+%cfg.small_after_randomization = rand.smallAfter;
+%cfg.large_grid_randomization = rand.large;
 
 
 
@@ -36,11 +37,12 @@ cfg.screen_height = winRect(4);
 % define constant stimulus variables
 cfg.fixcross_time = 2;
 cfg.image_time = 2;
-cfg.image_size = 0.8;  % TODO make screen dependent
+cfg.image_width = 1500*0.8;
+cfg.image_height = 1200*0.8% TODO make screen dependent
 cfg.small_grid_coord = gridCoordinates(cfg.screen_width, cfg.screen_height, 13);
 cfg.large_grid_coord = gridCoordinates(cfg.screen_width, cfg.screen_height, 49);
 %settings
 
 % attach keyboard
 [keyboardIndices, productNames, allInfos] = GetKeyboardIndices();
-keyboardIndex=keyboardIndices(strcmp(productNames,'DELL Dell USB Entry Keyboard'));
+cfg.keyboardIndex=keyboardIndices(strcmp(productNames,'DELL Dell USB Entry Keyboard'));

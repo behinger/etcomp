@@ -1,4 +1,5 @@
 function [slice] = select_randomization(rand,subject,block)
+rand
 % Example call:
 % slice.(fn{1}) = rand.(fn{1}){select};
 select = rand.block == block & rand.subject == subject;

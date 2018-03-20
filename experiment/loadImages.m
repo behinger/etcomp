@@ -16,10 +16,9 @@ for id = 1:numberImages                           % ascending id
         
     % make and preload texture
     index(id)   = Screen('MakeTexture', win, IMG);
-    [resident] = Screen('PreloadTextures', win, index(id));
+    [resident] = Screen('PreloadTextures', win, index(id,1));
         
     
 end
-
 
 

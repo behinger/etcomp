@@ -2,8 +2,9 @@ function [reply ] = sendETNotifications(msg, requester)
 
 zmq_request('send_request', requester, msg);
 reply = zmq_request('receive_reply', requester, 1000);
+
 if isnan(reply)
-    warning('could not receive message from pupillabs, please connect')
+    warning('Could not receive message from pupillabs, please connect')
 end
 
 % %%% python code for notifications
