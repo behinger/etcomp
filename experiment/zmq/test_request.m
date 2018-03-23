@@ -9,9 +9,10 @@ requester = zmq_request('add_requester', 'tcp://localhost:50020');
 
 disp('Requesters connected');
 
-%requester = int32(requester);
+requester = int32(requester);
 
-request_msg = 'R';
+request_msg = 1;
+
 
 disp('Send request...');
 zmq_request('send_request', requester, request_msg);

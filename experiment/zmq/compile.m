@@ -15,6 +15,6 @@ if strcmp (computer (), 'PCWIN')
 else
     % Under GNU/Linux:
     mex zmq_subscriber.c utils.c multi_connector.c -lczmq -lzmq
-    mex zmq_request.c utils.c multi_connector.c -lzmq
+    mex zmq_request.c utils.c multi_connector.c -lzmq 
     -O CFLAGS="\$CFLAGS -std=c99" -I"/net/home/student/i/iibs/build_custom/include" -L"/net/home/student/i/iibs/build_custom/lib/" -l"/net/home/student/i/iibs/build_custom/lib/zmq" 
 end

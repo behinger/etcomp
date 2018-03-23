@@ -157,12 +157,12 @@ for count = 1:3
     % show stimulus for certain time
 end
 %% Roll Head Motion
-rotation_angle = [0 45 -45]
+degree = 8
 for count = 1:3
 
     
     displayPos =[cfg.screen_width/2-cfg.image_yaw_width/2,cfg.screen_height/2-cfg.image_yaw_height/2,cfg.screen_width/2+cfg.image_yaw_width/2,cfg.screen_height/2+cfg.image_yaw_height/2];
-    Screen('DrawTexture',cfg.win,cfg.images_roll(1), [0,0,cfg.image_yaw_width,cfg.image_yaw_height],[displayPos],rotation_angle(count));
+    Screen('DrawTexture',cfg.win,cfg.images_yaw(1), [0,0,cfg.image_yaw_width,cfg.image_yaw_height],[displayPos]);
     draw_target(cfg.screen_width/2, cfg.screen_height/2,20,'fixcross', cfg.win);
 
     LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win,0);
