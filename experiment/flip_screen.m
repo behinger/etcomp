@@ -13,6 +13,6 @@ for  i = 1:8
     target = sprintf('surface%s',num2str(i));
     x = coordinates(i,1);
     y = coordinates(i,2);
-    draw_target(x,y,markersize,target, win);
+    expDrawTarget(x,y,markersize,target, win);
 end
 [last_flip] = Screen('Flip', win, time);

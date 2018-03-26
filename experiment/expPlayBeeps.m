@@ -1,4 +1,4 @@
-function [] = playBeeps(blink_number,block,requester,eyetracking)
+function [] = expPlayBeeps(blink_number,block,requester,eyetracking)
 %%
 nrchannels = 2;
 freq = 48000;

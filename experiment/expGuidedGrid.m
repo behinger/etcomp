@@ -1,4 +1,4 @@
-function []= guidedGrid(coords,screen_width,screen_height,win,randomization, block,requester,eyetracking)
+function []= expGuidedGrid(coords,screen_width,screen_height,win,randomization, block,requester,eyetracking)
 display_pos = coords(randomization,:)';
 
 
@@ -13,7 +13,7 @@ lastflip = Screen('Flip', win);
 
 
 %draw the first dot at the middle of the screen
-draw_target(screen_width/2, screen_height/2,20,'fixcross', win);
+expDrawTarget(screen_width/2, screen_height/2,20,'fixcross', win);
 %show the first marker
 time =  flip_screen(screen_width,screen_height,win, lastflip);
 
@@ -28,7 +28,7 @@ total_elements = size(display_pos,2);
 for count=1:total_elements
     
     %draw the marker
-    draw_target(display_pos(1,count), display_pos(2,count),20,'fixcross', win);
+    expDrawTarget(display_pos(1,count), display_pos(2,count),20,'fixcross', win);
     %show the window with the current marker
     time =  flip_screen(screen_width,screen_height,win, lastflip);
     sendETNotifications(eyetracking,requester,sprintf('GRID element %d posx %d posy %d total %d block %d',count,display_pos(1,count),display_pos(2,count),total_elements,block))
@@ -43,7 +43,7 @@ for count=1:total_elements
 end
 
 %show extra last dot in middle of screen
-draw_target(screen_width/2, screen_height/2,20,'fixcross', win);
+expDrawTarget(screen_width/2, screen_height/2,20,'fixcross', win);
 
 %[time]=Screen('Flip', win);
 time =  flip_screen(screen_width,screen_height,win, lastflip);
@@ -59,7 +59,7 @@ Screen('FillRect', win, [background_color background_color background_color]);
 %actually show the screen with the white background
 time =  flip_screen(screen_width,screen_height,win, lastflip);
 
-fprintf('\n Grid Test finished.')
+fprintf('\n Grid Test finished.') 
 end
 
 function grid_buttonpress(targetKey,time,requester,eyetracking)

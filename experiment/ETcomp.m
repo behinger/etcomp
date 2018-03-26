@@ -11,7 +11,7 @@ if debug
 end
 % set up path environment
 
-cfg = configureExperiment();
+cfg = expConfigure();
 
 expName = input('\n \n WELCOME EXPERIMENTER! \n\n What is your name? \n >','s');
 subject_id = input('\n subjectid: ');
@@ -27,8 +27,9 @@ InitializePsychSound(1);
 eyetracking=false;
 calibrate_eyelink = false;
 calibrate_pupil = false;
-requester = 0;
-   if eyetracking == 1
+requester = false;
+if eyetracking == 1
+    
     %EyelinkInit()
     %el = EyelinkInitDefaults(cfg.win);% win -> PTB window
     Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
@@ -65,6 +66,7 @@ end
 % for block = 1:6
 block = 1;
 rand_block = select_randomization(cfg.rand, subject_id, block);
+cfg.freeviewing.randomization = rand_block.freeviewing;
 % at the beginning of each block : calibrate ADD pupil labs
 if calibrate_eyelink
     fprintf('\n\nEYETRACKING CALIBRATION...')
@@ -82,104 +84,33 @@ end
 [LastFlip] = Screen('Flip', cfg.win);
 
 %% large grid
-
-guidedGrid(cfg.large_grid_coord,cfg.screen_width,cfg.screen_height,cfg.win,rand_block.large, block,requester,eyetracking)
-WaitSecs(0.1);                                                         
+expGuidedGrid(cfg.large_grid_coord,cfg.screen_width,cfg.screen_height,cfg.win,rand_block.large, block,requester,eyetracking)
 
 %% Smooth pursuit
 %moving_dot(cfg.win,
 %cfg.small_grid_randomization,cfg.screen_width,cfg.screen_height);
 %% free viewing
-% define size of image
+expShowImages('freeviewing',cfg.freeviewing, cfg.screen_width, cfg.screen_height, cfg.win, requester, block, eyetracking)
 
-% % display random images
-for count = 1:3
-    
-    draw_target(cfg.screen_width/2, cfg.screen_height/2,20,'fixcross', cfg.win);
-    LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win,0);
-    
-    displayPos =[cfg.screen_width/2-cfg.image_width/2,cfg.screen_height/2-cfg.image_height/2,cfg.screen_width/2+cfg.image_width/2,cfg.screen_height/2+cfg.image_height/2];
-    Screen('DrawTexture',cfg.win,cfg.images(rand_block.freeviewing(count)), [0,0,cfg.image_width,cfg.image_height],[displayPos]);
-    
-    LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win, LastFlip + cfg.image_fixcross_time + rand(1)*0.2 - 0.1); % cfg.image_fixcross_time = 0.5s 
-    sendETNotifications(eyetracking,requester,sprintf('FREEVIEW fixcross'))
-
-    
-    LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win, LastFlip + cfg.image_time); % cfg.image_time = 6s 
-    sendETNotifications(eyetracking,requester,sprintf('FREEVIEW trial %d id %d block %d',count,rand_block.freeviewing(count),block))
-    
-    %   pause(2)
-    % show stimulus for certain time
-end
 %% Microsaccades
-draw_target(cfg.screen_width/2, cfg.screen_height/2,20,'fixcross', cfg.win);
-LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win, LastFlip);
-sendETNotifications(eyetracking,requester,sprintf('MICROSACC start block %d',block))
-
-%pause(2) % what about screen correction time?
-LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win, LastFlip);
-sendETNotifications(eyetracking,requester,sprintf('MICROSACC stop block %d',block))
-
+expMicrosaccades(cfg.win, cfg.screen_width, cfg.screen_height, cfg.fixcross_time, eyetracking, requester, block)
 %% Blinks (beep)
-playBeeps(cfg.blink_number,block,requester,eyetracking)
+expPlayBeeps(cfg.blink_number,block,requester,eyetracking)
 
 %% Pupil Dilation
+expPupilDilation(cfg.win,cfg.screen_width,cfg.screen_height,rand_block.pupildilation, eyetracking, requester, block)
 
-for color_id = 1:25
-    Screen('FillRect', cfg.win, [rand_block.pupildilation(color_id) rand_block.pupildilation(color_id) rand_block.pupildilation(color_id)]);
-    draw_target(cfg.screen_width/2, cfg.screen_height/2,20,'fixcross', cfg.win);
-    LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win, LastFlip + 2);
-    
-    sendETNotifications(eyetracking,requester,sprintf('DILATION lum %d block %d',color_id,block))
-    
-end
 %% Small Grid Before
-guidedGrid(cfg.small_grid_coord,cfg.screen_width,cfg.screen_height,cfg.win,subject_id,rand_block.smallBefore, block,requester,eyetracking);
-
-% /net/store/nbp/projects/FaceViewEEG/stimset/stimset_uncontrolled
+expGuidedGrid(cfg.small_grid_coord,cfg.screen_width,cfg.screen_height,cfg.win,rand_block.smallBefore, block,requester,eyetracking);
 
 %% Yaw Head Motion
-for count = 1:3
+expShowImages('yaw',cfg.yaw, cfg.screen_width, cfg.screen_height, cfg.win, requester, block, eyetracking)
 
-    
-    displayPos =[cfg.screen_width/2-cfg.image_yaw_width/2,cfg.screen_height/2-cfg.image_yaw_height/2,cfg.screen_width/2+cfg.image_yaw_width/2,cfg.screen_height/2+cfg.image_yaw_height/2];
-    Screen('DrawTexture',cfg.win,cfg.images_yaw(count), [0,0,cfg.image_yaw_width,cfg.image_yaw_height],[displayPos]);
-    draw_target(cfg.screen_width/2, cfg.screen_height/2,20,'fixcross', cfg.win);
-
-    LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win,0);
-
-    LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win, LastFlip + cfg.image_time_faces); % cfg.image_fixcross_time = 0.5s 
-    %sendETNotifications(eyetracking,requester,sprintf('FREEVIEW fixcross'))
-
-    %sendETNotifications(eyetracking,requester,sprintf('FREEVIEW trial %d id %d block %d',count,rand_block.freeviewing(count),block))
-    
-    %   pause(2)
-    % show stimulus for certain time
-end
 %% Roll Head Motion
-rotation_angle = [0 45 -45]
-for count = 1:3
+expShowImages('roll',cfg.roll, cfg.screen_width, cfg.screen_height, cfg.win, requester, block, eyetracking)
 
-    
-    displayPos =[cfg.screen_width/2-cfg.image_yaw_width/2,cfg.screen_height/2-cfg.image_yaw_height/2,cfg.screen_width/2+cfg.image_yaw_width/2,cfg.screen_height/2+cfg.image_yaw_height/2];
-    Screen('DrawTexture',cfg.win,cfg.images_roll(1), [0,0,cfg.image_yaw_width,cfg.image_yaw_height],[displayPos],rotation_angle(count));
-    draw_target(cfg.screen_width/2, cfg.screen_height/2,20,'fixcross', cfg.win);
-
-    LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win,0);
-
-    LastFlip = flip_screen(cfg.screen_width,cfg.screen_height,cfg.win, LastFlip + cfg.image_time_faces); % cfg.image_fixcross_time = 0.5s 
-    %sendETNotifications(eyetracking,requester,sprintf('FREEVIEW fixcross'))
-
-    %sendETNotifications(eyetracking,requester,sprintf('FREEVIEW trial %d id %d block %d',count,rand_block.freeviewing(count),block))
-    
-    %   pause(2)
-    % show stimulus for certain time
-end
 %% Small Grid After
-guidedGrid(cfg.small_grid_coord,cfg.screen_width,cfg.screen_height,cfg.win,subject_id,rand.smallAfter, block,requester,eyetracking);
-
-%end
-
+expGuidedGrid(cfg.small_grid_coord,cfg.screen_width,cfg.screen_height,cfg.win,rand_block.smallAfter, block,requester,eyetracking);
 
 %%
 if eyetracking  % send experiment end trigger
@@ -192,8 +123,6 @@ KbQueueRelease(cfg.keyboardIndex);
 Screen('Close') %cleans up all textures
 DrawFormattedText(cfg.win, 'The experiment is complete! Thank you very much for your participation!', 'center', 'center',0, 60);
 Screen('Flip', cfg.win)
-
-
 
 % save eyetracking data
 if eyetracking==1 && calibrate_eyelink
