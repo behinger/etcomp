@@ -8,7 +8,7 @@ load([resultpath 'stimuli_randomization' '.mat']);
 cfg.image_randomization = rand.img;
 cfg.small_grid_randomization = rand.small;
 cfg.large_grid_randomization = rand.large;
-
+cfg.surface_marker_size = 30;
 %settings
 
 % screen settings

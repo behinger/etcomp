@@ -9,7 +9,7 @@ for count = 1:3
     % for freeviewing show fix_cross before and after
     if strcmp(type,'freeviewing')
         %draw fix cross
-        expDrawTarget(screen_width/2, screen_height/2,20,'fixcross', win);
+        expDrawTarget(screen_width/2, screen_height/2,128,20,'fixcross', win);
         LastFlip = flip_screen(screen_width,screen_height,win,0);
         
         %draw picture
@@ -23,7 +23,7 @@ for count = 1:3
         %with a fix cross
     elseif strcmp(type,'yaw')
         Screen('DrawTexture',win,cfg.images(count), [0,0,cfg.image_width,cfg.image_height],[displayPos]);
-        expDrawTarget(screen_width/2, screen_height/2,20,'fixcross', win);
+        expDrawTarget(screen_width/2, screen_height/2,128,20,'fixcross', win);
         LastFlip = flip_screen(screen_width,screen_height,win,0);
         LastFlip = flip_screen(screen_width,screen_height,win, LastFlip + cfg.image_time);
         sendETNotifications(eyetracking,requester,sprintf('Yaw trial %d block %d',count,block))
@@ -31,7 +31,7 @@ for count = 1:3
         % rotate the picture for the roll condition
     elseif strcmp(type,'roll')
         Screen('DrawTexture',win,cfg.images, [0,0,cfg.image_width,cfg.image_height],[displayPos],rotation_angle(count));
-        expDrawTarget(screen_width/2, screen_height/2,20,'fixcross', win);
+        expDrawTarget(screen_width/2, screen_height/2,128,20,'fixcross', win);
         LastFlip = flip_screen(screen_width,screen_height,win,0);
         LastFlip = flip_screen(screen_width,screen_height,win, LastFlip + cfg.image_time);
         sendETNotifications(eyetracking,requester,sprintf('Roll trial %d block %d',count,block))

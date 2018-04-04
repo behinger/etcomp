@@ -45,10 +45,12 @@ cfg.yaw.image_time = 6;
 cfg.roll.image_width = 570;
 cfg.roll.image_height = 594;
 cfg.roll.image_time = 6;
+cfg.surface_marker_size = 30;
+
 
 % define grid coordinates
-cfg.small_grid_coord = gridCoordinates(cfg.screen_width, cfg.screen_height, 13);
-cfg.large_grid_coord = gridCoordinates(cfg.screen_width, cfg.screen_height, 49);
+cfg.small_grid_coord = gridCoordinates(cfg.screen_width, cfg.screen_height,cfg.surface_marker_size , 13);
+cfg.large_grid_coord = gridCoordinates(cfg.screen_width, cfg.screen_height,cfg.surface_marker_size , 49);
 
 % attach keyboard
 [keyboardIndices, productNames, allInfos] = GetKeyboardIndices();

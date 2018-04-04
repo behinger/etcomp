@@ -1,4 +1,4 @@
-function [] = expDrawTarget(x,y,targetsize,which_target, win)
+function [] = expDrawTarget(x,y,backgroundcolor,targetsize,which_target, win)
 if strcmp(which_target, 'fixcross') == 1
     %     fixCrossDimPix=targetsize/2;
     %     xCoords = [-fixCrossDimPix fixCrossDimPix 0 0];
@@ -10,7 +10,7 @@ if strcmp(which_target, 'fixcross') == 1
     width = 45; % horizontal dimension of display (cm)
     dist = 60; % viewing distance (cm)
     
-    colorOval = [128 128 128]; % color of the two circles [R G B]
+    colorOval = [backgroundcolor backgroundcolor backgroundcolor]; % color of the two circles [R G B]
     colorCross = [255 255 255]; % color of the Cross [R G B] change
     
     d1 = 0.6; % diameter of outer circle (degrees)

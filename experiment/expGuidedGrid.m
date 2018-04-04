@@ -13,7 +13,7 @@ lastflip = Screen('Flip', win);
 
 
 %draw the first dot at the middle of the screen
-expDrawTarget(screen_width/2, screen_height/2,20,'fixcross', win);
+expDrawTarget(screen_width/2, screen_height/2,background_color,20,'fixcross', win);
 %show the first marker
 time =  flip_screen(screen_width,screen_height,win, lastflip);
 
@@ -28,22 +28,22 @@ total_elements = size(display_pos,2);
 for count=1:total_elements
     
     %draw the marker
-    expDrawTarget(display_pos(1,count), display_pos(2,count),20,'fixcross', win);
+    expDrawTarget(display_pos(1,count), display_pos(2,count),background_color,20,'fixcross', win);
     %show the window with the current marker
-    time =  flip_screen(screen_width,screen_height,win, lastflip);
-    sendETNotifications(eyetracking,requester,sprintf('GRID element %d posx %d posy %d total %d block %d',count,display_pos(1,count),display_pos(2,count),total_elements,block))
+    %time =  flip_screen(screen_width,screen_height,win, lastflip);
+   % sendETNotifications(eyetracking,requester,sprintf('GRID element %d posx %d posy %d total %d block %d',count,display_pos(1,count),display_pos(2,count),total_elements,block))
 
     
-    grid_buttonpress(targetKey,time,requester,eyetracking);
+    %grid_buttonpress(targetKey,time,requester,eyetracking);
     
-    sendETNotifications(eyetracking,requester,sprintf('GRID buttonpress'))
+    %sendETNotifications(eyetracking,requester,sprintf('GRID buttonpress'))
     
     
     
 end
 
 %show extra last dot in middle of screen
-expDrawTarget(screen_width/2, screen_height/2,20,'fixcross', win);
+expDrawTarget(screen_width/2, screen_height/2,background_color,20,'fixcross', win);
 
 %[time]=Screen('Flip', win);
 time =  flip_screen(screen_width,screen_height,win, lastflip);

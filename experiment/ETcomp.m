@@ -78,7 +78,7 @@ end
 if calibrate_pupil
     fprintf('\n\nEYETRACKING CALIBRATION...')
     
-    sendETNotifications('notify',requester)
+    sendETNotifications('notify',requester) 
     fprintf('DONE\n\n')
 end
 [LastFlip] = Screen('Flip', cfg.win);
@@ -87,8 +87,7 @@ end
 expGuidedGrid(cfg.large_grid_coord,cfg.screen_width,cfg.screen_height,cfg.win,rand_block.large, block,requester,eyetracking)
 
 %% Smooth pursuit
-%moving_dot(cfg.win,
-%cfg.small_grid_randomization,cfg.screen_width,cfg.screen_height);
+moving_dot(cfg.win,rand_block.smallAfter,cfg.screen_width,cfg.screen_height);
 %% free viewing
 expShowImages('freeviewing',cfg.freeviewing, cfg.screen_width, cfg.screen_height, cfg.win, requester, block, eyetracking)
 

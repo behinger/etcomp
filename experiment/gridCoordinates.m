@@ -1,9 +1,14 @@
-function [dots]= gridCoordinates(screen_width, screen_height, num_dots) 
+function [dots]= gridCoordinates(screen_width, screen_height,surface_marker_size, num_dots) 
 percent=0.9;
-lost=(1-percent)/2;
+markersize = 1.48 * surface_marker_size;
+
+lost_x= markersize/screen_width
+lost_y= markersize /screen_height
+
+%lost = 90/screen_width: % markersize out
 %pixel of spot in middle of screen
-mid_x=screen_width/2;
-mid_y=screen_height/2;
+mid_x=screen_width/2
+mid_y=screen_height/2
 
 %get the smaller of both screen dimensions and use this because then the
 %distance between the marker and the screen border is the same on the x and
@@ -19,10 +24,10 @@ smaller=min(screen_width,screen_height);
 halfsize=20;
 
 if num_dots == 49
-    screen_width_right=screen_width-screen_width*lost;
-    screen_width_left=screen_width*lost;
-    screen_height_down=screen_height-screen_height*lost;
-    screen_height_up=screen_height*lost;
+    screen_width_right=screen_width-screen_width*lost_x;
+    screen_width_left=screen_width*lost_x;
+    screen_height_down=screen_height-screen_height*lost_y;
+    screen_height_up=screen_height*lost_y;
     %per row and column we show as many dots as the square of the whole dot
     %number
     dots_per_row=sqrt(num_dots);
@@ -39,8 +44,8 @@ elseif num_dots == 13
 
 
     %pixels between outer spots and screen border
-    out_x=smaller*lost;
-    out_y=smaller*lost;
+    out_x=screen_width*lost_x+halfsize;
+    out_y=screen_height*lost_y+halfsize;
 
     %pixel between inner spots and screen border
     in_x=out_x+((mid_x-out_x)/2);
