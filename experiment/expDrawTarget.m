@@ -1,5 +1,8 @@
 function [] = expDrawTarget(x,y,backgroundcolor,targetsize,which_target, win)
 if strcmp(which_target, 'fixcross') == 1
+    if isempty(backgroundcolor)
+        backgroundcolor = 128;
+    end
     %     fixCrossDimPix=targetsize/2;
     %     xCoords = [-fixCrossDimPix fixCrossDimPix 0 0];
     %     yCoords = [0 0 -fixCrossDimPix fixCrossDimPix];
@@ -10,8 +13,8 @@ if strcmp(which_target, 'fixcross') == 1
     width = 45; % horizontal dimension of display (cm)
     dist = 60; % viewing distance (cm)
     
-    colorOval = [backgroundcolor backgroundcolor backgroundcolor]; % color of the two circles [R G B]
-    colorCross = [255 255 255]; % color of the Cross [R G B] change
+    colorOval = [255 255 255]; % color of the two circles [R G B]
+    colorCross = [backgroundcolor backgroundcolor backgroundcolor]; % color of the Cross [R G B] change
     
     d1 = 0.6; % diameter of outer circle (degrees)
     d2 = 0.2; % diameter of inner circle (degrees)
@@ -25,12 +28,12 @@ if strcmp(which_target, 'fixcross') == 1
     
     
 elseif contains(which_target, 'surface') == 1
-    stimpath = sprintf('/stimuli/%s',which_target);
-    marker= imread([stimpath '.png']);
-    stim = Screen('MakeTexture', win, marker);
-    halfsize=targetsize/2;
-    Screen('DrawTexture',win, stim, [0,0,size(marker,2),size(marker,1)],[x-halfsize,y-halfsize,x+halfsize,y+halfsize]);
-    
+%     stimpath = sprintf('/stimuli/%s',which_target);
+%     marker= imread([stimpath '.png']);
+%     stim = Screen('MakeTexture', win, marker);
+%     halfsize=targetsize/2;
+%     Screen('DrawTexture',win, stim, [0,0,size(marker,2),size(marker,1)],[x-halfsize,y-halfsize,x+halfsize,y+halfsize]);
+    display('expDrawTarget XXX')
     
     
     

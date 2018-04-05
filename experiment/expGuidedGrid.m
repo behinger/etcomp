@@ -30,13 +30,13 @@ for count=1:total_elements
     %draw the marker
     expDrawTarget(display_pos(1,count), display_pos(2,count),background_color,20,'fixcross', win);
     %show the window with the current marker
-    %time =  flip_screen(screen_width,screen_height,win, lastflip);
-   % sendETNotifications(eyetracking,requester,sprintf('GRID element %d posx %d posy %d total %d block %d',count,display_pos(1,count),display_pos(2,count),total_elements,block))
-
+    time =  flip_screen(screen_width,screen_height,win, lastflip);
+    sendETNotifications(eyetracking,requester,sprintf('GRID element %d posx %d posy %d total %d block %d',count,display_pos(1,count),display_pos(2,count),total_elements,block))
     
-    %grid_buttonpress(targetKey,time,requester,eyetracking);
     
-    %sendETNotifications(eyetracking,requester,sprintf('GRID buttonpress'))
+    grid_buttonpress(targetKey,time,requester,eyetracking);
+    
+    sendETNotifications(eyetracking,requester,sprintf('GRID buttonpress'))
     
     
     
@@ -59,7 +59,7 @@ Screen('FillRect', win, [background_color background_color background_color]);
 %actually show the screen with the white background
 time =  flip_screen(screen_width,screen_height,win, lastflip);
 
-fprintf('\n Grid Test finished.') 
+fprintf('\n Grid Test finished.')
 end
 
 function grid_buttonpress(targetKey,time,requester,eyetracking)

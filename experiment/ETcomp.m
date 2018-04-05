@@ -78,7 +78,7 @@ end
 if calibrate_pupil
     fprintf('\n\nEYETRACKING CALIBRATION...')
     
-    sendETNotifications('notify',requester) 
+    sendETNotifications('notify',requester)
     fprintf('DONE\n\n')
 end
 [LastFlip] = Screen('Flip', cfg.win);
@@ -87,12 +87,13 @@ end
 expGuidedGrid(cfg.large_grid_coord,cfg.screen_width,cfg.screen_height,cfg.win,rand_block.large, block,requester,eyetracking)
 
 %% Smooth pursuit
-moving_dot(cfg.win,rand_block.smallAfter,cfg.screen_width,cfg.screen_height);
+expSmoothPursuit(cfg.win, cfg.screen_width, cfg.screen_height)
 %% free viewing
 expShowImages('freeviewing',cfg.freeviewing, cfg.screen_width, cfg.screen_height, cfg.win, requester, block, eyetracking)
 
 %% Microsaccades
 expMicrosaccades(cfg.win, cfg.screen_width, cfg.screen_height, cfg.fixcross_time, eyetracking, requester, block)
+
 %% Blinks (beep)
 expPlayBeeps(cfg.blink_number,block,requester,eyetracking)
 
@@ -116,7 +117,7 @@ if eyetracking  % send experiment end trigger
     send_trigger(255,eyetracking)
 end
 
-
+               
 ShowCursor;
 KbQueueRelease(cfg.keyboardIndex);
 Screen('Close') %cleans up all textures

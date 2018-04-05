@@ -45,7 +45,7 @@ cfg.yaw.image_time = 6;
 cfg.roll.image_width = 570;
 cfg.roll.image_height = 594;
 cfg.roll.image_time = 6;
-cfg.surface_marker_size = 30;
+cfg.surface_marker_size = 50; % change also in flip Screen
 
 
 % define grid coordinates
