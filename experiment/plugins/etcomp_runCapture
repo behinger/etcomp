@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# update this file
+cp ~/experiments/etcomp/experiment/plugins/etcomp_runCapture ~/etcomp_runCapture
+
+chmod +x ~/etcomp_runCapture
+# copy the latest remote script
+cp ~/experiments/etcomp/experiment/plugins/nbp_pupil_remote.py ~/pupil_capture_settings/plugins/nbp_pupil_remote.py
+
+# copy the eyetracker settings
+python3 ~/experiments/etcomp/experiment/plugins/nbp_pupilSettings.py
+
+echo 'config loaded successfully'
+# run pupil_capture
+#./~/experiments/etcomp/lib/pupil_1.6.13/pupil_capture
+/home/experiment/experiments/etcomp/lib/pupil_1.6.13/pupil_capture
