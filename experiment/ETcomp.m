@@ -24,7 +24,7 @@ InitializePsychSound(1);
 
 %% Eyetracking setup
 %setup eyetracker
-eyetracking=false;
+eyetracking=1;
 calibrate_eyelink = false;
 calibrate_pupil = false;
 requester = false;
@@ -36,10 +36,15 @@ if eyetracking == 1
     while Pupil_started ~= 1
         Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
     end
+    try
     zmq_request('init');
-    requester = zmq_request('add_requester', 'tcp://localhost:50020');
+    catch e
+        fprintf(e.message)
+        error('error starting zmq. Maybe forgot to start matlab using LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 matlab, or maybe did not install zeromq?')
+    end
+    requester = zmq_request('add_requester', 'tcp://100.1.0.3:45697');
     requester = int32(requester);
-    reply = sendETNotifications('Connect Pupil', requester);
+    reply = sendETNotifications(eyetracking,requester,'Connect Pupil');
     sendETNotifications('R',requester)
     
     if ~isnan(reply)

@@ -1,7 +1,7 @@
 function [reply ] = sendETNotifications(eyetracking,requester,msg)
 % Function to send messages to both eyetrackers at the same time. requires
 % cosymatlab - zmq. and the eyelink libraries
-assert(ischar(msg))
+assert(ischar(msg),'message is not a string')
 
 if eyetracking
     % send to eyelink
