@@ -32,16 +32,16 @@ if eyetracking == 1
     
     % Eyelink
     el = setup_eyelink(cfg.screen,cfg.small_grid_coord);
-      %open log file
+    %open log file
     Eyelink('OpenFile', sprintf('etc_s%03u.EDF',subject_id));          %CHANGE file name ?
     sessionInfo = sprintf('%s %s','SUBJECTINDEX',num2str(subject_id));
     Eyelink('message','METAEX %s',sessionInfo);
     
     % Pupillabs
-%     Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
-%     while Pupil_started ~= 1
-%         Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
-%     end
+    %     Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
+    %     while Pupil_started ~= 1
+    %         Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
+    %     end
     try
         zmq_request('init');
     catch e
@@ -53,17 +53,17 @@ if eyetracking == 1
     
     % Setup Eyelink
     Eyelink('StartSetup')
-
+    
     
     % Start recording
     reply =sendETNotifications(eyetracking,requester,sprintf('R etc_s%03u',subject_id));
     
-
+    
     
     if ~isnan(reply)
         fprintf('Pupil Labs Connected');
     end
-
+    
     sendETNotifications(eyetracking,requester,'Connect Pupil');
 end
 
@@ -73,66 +73,64 @@ end
 tic
 for block = 1
     
+    rand_block = select_randomization(cfg.rand, subject_id, block);
     
+    % at the beginning of each block : calibrate ADD pupil labs
+    if calibrate_eyelink
+        fprintf('\n\nEYETRACKING CALIBRATION...')
+        
+        % start pupil calibration
+        sendETNotifications(eyetracking,requester,'C');
+        
+        % start eyelink calibration
+        local_EyelinkDoTrackerSetup(el)
+        
+        % stop pupil calibration
+        sendETNotifications(eyetracking,requester,'c');
+        
+        fprintf('DONE\n\n')
+    end
     
-%block = 1;
-rand_block = select_randomization(cfg.rand, subject_id, block);
-cfg.freeviewing.randomization = rand_block.freeviewing;
-% at the beginning of each block : calibrate ADD pupil labs
-if calibrate_eyelink
-    fprintf('\n\nEYETRACKING CALIBRATION...')
+    [LastFlip] = Screen('Flip', cfg.screen.win);
     
-    % start pupil calibration
-    sendETNotifications(eyetracking,requester,'C');
+    %% large grid
+    expGuidedGrid(cfg.large_grid_coord,cfg.screen,rand_block.large, block,requester,eyetracking)
     
-    % start eyelink calibration
-    local_EyelinkDoTrackerSetup(el)
+    %% Smooth pursuit
+    expSmoothPursuit(cfg.screen,rand_block.smoothpursuit_speed,rand_block.smoothpursuit_angle, requester,eyetracking,block)
     
-    % stop pupil calibration
-    sendETNotifications(eyetracking,requester,'c');
-
-    fprintf('DONE\n\n')
+    %% free viewing
+    cfg.freeviewing.randomization = rand_block.freeviewing;
+    expShowImages('FREEVIEW',cfg.freeviewing, cfg.screen, requester, block, eyetracking)
+    
+    %% Microsaccades
+    expMicrosaccades(cfg.screen, cfg.fixcross_time, eyetracking, requester, block)
+    
+    %% Blinks (beep)
+    expPlayBeeps(cfg.screen,cfg.blink_number,block,requester,eyetracking)
+    
+    %% Pupil Dilation
+    expPupilDilation(cfg.screen,rand_block.pupildilation, eyetracking, requester, block)
+    
+    %% Small Grid Before
+    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking);
+    
+    %% Yaw Head Motion
+    expShowImages('YAW',cfg.yaw, cfg.screen, requester, block, eyetracking)
+    
+    %% Roll Head Motion
+    expShowImages('ROLL',cfg.roll, cfg.screen, requester, block, eyetracking)
+    
+    %% Small Grid After
+    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
+    
+    %%
+    toc
 end
 
-[LastFlip] = Screen('Flip', cfg.screen.win);
+sendETNotifications(eyetracking,requester,'Finished Experiment');
 
-%% large grid
-expGuidedGrid(cfg.large_grid_coord,cfg.screen,rand_block.large, block,requester,eyetracking)
-
-%% Smooth pursuit
-expSmoothPursuit(cfg.screen,rand_block.smoothpursuit_speed,rand_block.smoothpursuit_angle, requester,eyetracking,block)
-
-%% free viewing
-expShowImages('FREEVIEW',cfg.freeviewing, cfg.screen, requester, block, eyetracking)
-
-%% Microsaccades
-expMicrosaccades(cfg.screen, cfg.fixcross_time, eyetracking, requester, block)
-
-%% Blinks (beep)
-expPlayBeeps(cfg.screen,cfg.blink_number,block,requester,eyetracking)
-
-%% Pupil Dilation
-expPupilDilation(cfg.screen,rand_block.pupildilation, eyetracking, requester, block)
-
-%% Small Grid Before
-expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking);
-
-%% Yaw Head Motion
-expShowImages('YAW',cfg.yaw, cfg.screen, requester, block, eyetracking)
-
-%% Roll Head Motion
-expShowImages('ROLL',cfg.roll, cfg.screen, requester, block, eyetracking)
-
-%% Small Grid After
-expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
-
-%%
-toc
-end
-if eyetracking  % send experiment end trigger
-    send_trigger(255,eyetracking)
-end
-
+sendETNotifications(eyetracking,requester,'r'); % stop pupillabs recording
 
 Eyelink('StopRecording')
 
@@ -144,7 +142,7 @@ Screen('Flip', cfg.screen.win)
 
 % save eyetracking data
 if eyetracking==1 && calibrate_eyelink
-    fulledffile = sprintf('etc_s%03u.EDF',subject_id);
+    fulledffile = sprintf('data/etc_s%03u.EDF',subject_id);
     sendETNotifications('r',requester)
     zmq_request('close');
     Eyelink('CloseFile');
