@@ -1,15 +1,15 @@
-function [] = expSmoothPursuit(win, screen_width, screen_height,eyetracking)
+function [] = expSmoothPursuit(screen,velocities,directions,requester,eyetracking,block)
 jumpsize = 0.2; % in s, the length of the smooth pursuit ramp
 
-xCenter = screen_width/2;
-yCenter = screen_height/2;
+xCenter = screen.screen_width/2;
+yCenter = screen.screen_height/2;
 
-dir_degrees = linspace(0,360,24) % with 15 degrees
-directions = dir_degrees(randperm(24));% randomly shuffled directions, in randomization though???
+dir_degrees = linspace(0,360,24); % with 15 degrees
+%directions = dir_degrees(randperm(24));% randomly shuffled directions, in randomization though???
 
-velocities = [16,18,20,22,24] % deg/s velocity
+%velocities = [16,18,20,22,24] % deg/s velocity
 velocities_px = degToPix(velocities,60); % XXX
-ifi = Screen('GetFlipInterval', win);
+ifi = Screen('GetFlipInterval', screen.win);
 
 
 pd=makedist('Exponential','mu',500);
@@ -27,10 +27,11 @@ trunc_dist=truncate(pd,200,5000); % fixcross times
 % 
 % 
 % [endx,endy] = pol2cart(deg2rad(dir),degToPix(15,60))
+sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT start, block %d', block))
 
-for count= 1:10%size(pos,1)-1
+for count= 1:length(directions)%size(pos,1)-1
     v = velocities_px(count);
-    dir = directions(count);
+    dir = -directions(count); % not sure why but now right is 0, top 90, left 180, down 270
     jumpsize = 0.2 * v;
     [dx,dy] = pol2cart(deg2rad(180 + dir),jumpsize);
     xstart = xCenter+dx;
@@ -53,38 +54,40 @@ for count= 1:10%size(pos,1)-1
     % we want to start in the middle
     newPos = [xstart ystart];
     
-    expDrawTarget(xCenter, yCenter,128,20,'fixcross', win);
-    LastFlip =  flip_screen(screen_width,screen_height,win);
-    KbWait()
+    drawTarget(xCenter, yCenter,screen,20,'fixcross');
+    LastFlip =  flip_screen(screen);
+    KbStrokeWait(); 
     
     % start the trial
-    expDrawTarget(xCenter, yCenter,128,20,'fixcross', win);
-    LastFlip =  flip_screen(screen_width,screen_height,win);
+    drawTarget(xCenter, yCenter,screen,20,'fixcross');
+    LastFlip =  flip_screen(screen);
     
-    LastFlip = flip_screen(screen_width,screen_height,win, LastFlip + duration); % image_fixcross_time = 0.5s
-    sendETNotifications(eyetracking,requester,sprintf('FREEVIEW fixcross'))
+    LastFlip = flip_screen(screen, LastFlip + duration); % image_fixcross_time = 0.5s
+    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialstart,  velocity %d, angle %d, trial %d, block %d,',velocities(count),directions(count),count ,block))
     
     
-    tic
     time = 0;%GetSecs;
-    while ~KbCheck && ((time+ifi) < 15/velocities(count))
+    while ((time+ifi) < 15/velocities(count))
 
         newPos = round(newPos + stepsize);
 %         newPos = [100-halfsize+gridPos,mid_y-halfsize,100+halfsize+gridPos,mid_y+halfsize]
 %         stimRect = [0,0,size(marker,2),size(marker,1)];
         % TODO offset um halfsize
         
-        expDrawTarget(newPos(1),newPos(2),[],1,'fixcross',win)
-%         Screen('DrawTexture',win, stim, stimRect,);
-        toc
-        LastFlip = flip_screen(screen_width,screen_height,win, LastFlip + (1 - 0.5) * ifi); % image_fixcross_time = 0.5s
-        toc
+        drawTarget(newPos(1),newPos(2),screen,1,'fixcross');
+%         Screen('DrawTexture',screen.win, stim, stimRect,);
+        
+        LastFlip = flip_screen(screen, LastFlip + (1 - 0.5) * ifi); % image_fixcross_time = 0.5s
+        
 
          % Increment the time
         time = time + ifi;
 
     end
-    WaitSecs(0.5)
+    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialend,  trial %d, block %d,',count ,block))
+    WaitSecs(0.5); 
     
 end
+sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT stop, block %d', block))
+
 

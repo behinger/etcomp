@@ -12,28 +12,28 @@ whichScreen    = max(Screen('Screens'));
 mp = get(0, 'MonitorPositions'); %using  multiple screens
 ScreenSize = mp(whichScreen+1,:);
 ScreenSize(2) = 1;
-cfg.background_color = 128;
+cfg.screen.background_color = 128;
 screen_width = ScreenSize(3);
 screen_height = ScreenSize(4);
-[cfg.win, winRect] = Screen('OpenWindow',whichScreen,cfg.background_color,[0,0,screen_width,screen_height]);
-[cfg.freeviewing.images cfg.yaw.images, cfg.roll.images] = loadImages(cfg.win);
+[cfg.screen.win, winRect] = Screen('OpenWindow',whichScreen,cfg.screen.background_color,[0,0,screen_width,screen_height]);
+[cfg.freeviewing.images cfg.yaw.images, cfg.roll.images,cfg.screen.surface_marker] = loadImages(cfg.screen.win);
 
 % initial screen filling
-Screen('FillRect', cfg.win, [cfg.background_color cfg.background_color cfg.background_color]);
-cfg.screen_width = winRect(3);
-cfg.screen_height = winRect(4);
+Screen('FillRect', cfg.screen.win, [cfg.screen.background_color cfg.screen.background_color cfg.screen.background_color]);
+cfg.screen.screen_width = winRect(3);
+cfg.screen.screen_height = winRect(4);
 
 
 % define constant stimulus variables
 % microsaccades
-cfg.fixcross_time = 2;
+cfg.fixcross_time = 20;
 
 %  Number of blinks
 cfg.blink_number = 7;
 % freeviewing
 cfg.freeviewing.image_width = 1500*0.8;
-cfg.freeviewing.image_height = 1200*0.8% TODO make screen dependent
-cfg.freeviewing.fixcross_time = 0.5;
+cfg.freeviewing.image_height = 1200*0.8;% TODO make screen dependent
+cfg.freeviewing.fixcross_time = 0.8;
 cfg.freeviewing.image_time = 6;
 
 % yaw
@@ -45,12 +45,12 @@ cfg.yaw.image_time = 6;
 cfg.roll.image_width = 570;
 cfg.roll.image_height = 594;
 cfg.roll.image_time = 6;
-cfg.surface_marker_size = 50; % change also in flip Screen
+cfg.screen.surface_marker_size = 50; % change also in flip Screen
 
 
 % define grid coordinates
-cfg.small_grid_coord = gridCoordinates(cfg.screen_width, cfg.screen_height,cfg.surface_marker_size , 13);
-cfg.large_grid_coord = gridCoordinates(cfg.screen_width, cfg.screen_height,cfg.surface_marker_size , 49);
+cfg.small_grid_coord = gridCoordinates(screen_width, screen_height,cfg.screen.surface_marker_size , 13);
+cfg.large_grid_coord = gridCoordinates(screen_width, screen_height,cfg.screen.surface_marker_size , 49);
 
 % attach keyboard
 [keyboardIndices, productNames, allInfos] = GetKeyboardIndices();
