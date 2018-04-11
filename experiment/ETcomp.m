@@ -24,52 +24,57 @@ InitializePsychSound(1);
 
 %% Eyetracking setup
 %setup eyetracker
-eyetracking=0;
-calibrate_eyelink = false;
+eyetracking=1;
+calibrate_eyelink = true;
 calibrate_pupil = false;
 requester = false;
 if eyetracking == 1
     
-    %EyelinkInit()
-    %el = EyelinkInitDefaults(cfg.screen.win);% win -> PTB window
-    Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
-    while Pupil_started ~= 1
-        Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
-    end
+    % Eyelink
+    el = setup_eyelink(cfg.screen,cfg.small_grid_coord);
+      %open log file
+    Eyelink('OpenFile', sprintf('etc_s%03u.EDF',subject_id));          %CHANGE file name ?
+    sessionInfo = sprintf('%s %s','SUBJECTINDEX',num2str(subject_id));
+    Eyelink('message','METAEX %s',sessionInfo);
+    
+    % Pupillabs
+%     Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
+%     while Pupil_started ~= 1
+%         Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
+%     end
     try
         zmq_request('init');
     catch e
         fprintf(e.message)
         error('error starting zmq. Maybe forgot to start matlab using LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 matlab, or maybe did not install zeromq?')
     end
-    requester = zmq_request('add_requester', 'tcp://100.1.0.3:45697');
+    requester = zmq_request('add_requester', 'tcp://100.1.0.3:5004');
     requester = int32(requester);
-    reply = sendETNotifications(eyetracking,requester,'Connect Pupil');
-    sendETNotifications('R',requester)
+    
+    % Setup Eyelink
+    Eyelink('StartSetup')
+
+    
+    % Start recording
+    reply =sendETNotifications(eyetracking,requester,sprintf('R etc_s%03u',subject_id));
+    
+
     
     if ~isnan(reply)
         fprintf('Pupil Labs Connected');
     end
+
+    sendETNotifications(eyetracking,requester,'Connect Pupil');
 end
 
-%setup eyelink
-if eyetracking==1 && calibrate_eyelink == 1
-    setup_eyetracker;
-    %open log file
-    Eyelink('OpenFile', sprintf('ETComp_s%u.EDF',subject_id));          %CHANGE file name ?
-    sessionInfo = sprintf('%s %s','SUBJECTINDEX',num2str(subject_id));
-    Eyelink('message','METAEX %s',sessionInfo);
-    sendETNotifications(sprintf('R ETComp_s%u.EDF',subject_id),requester)
-    
-    %send first triggers
-    send_trigger(0,eyetracking);
-    send_trigger(200,eyetracking);
-    
-end
+
 
 %%
 tic
 for block = 1
+    
+    
+    
 %block = 1;
 rand_block = select_randomization(cfg.rand, subject_id, block);
 cfg.freeviewing.randomization = rand_block.freeviewing;
@@ -77,16 +82,18 @@ cfg.freeviewing.randomization = rand_block.freeviewing;
 if calibrate_eyelink
     fprintf('\n\nEYETRACKING CALIBRATION...')
     
-    EyelinkDoTrackerSetup(el);
+    % start pupil calibration
+    sendETNotifications(eyetracking,requester,'C');
+    
+    % start eyelink calibration
+    local_EyelinkDoTrackerSetup(el)
+    
+    % stop pupil calibration
+    sendETNotifications(eyetracking,requester,'c');
+
     fprintf('DONE\n\n')
 end
 
-if calibrate_pupil
-    fprintf('\n\nEYETRACKING CALIBRATION...')
-    
-    sendETNotifications('notify',requester)
-    fprintf('DONE\n\n')
-end
 [LastFlip] = Screen('Flip', cfg.screen.win);
 
 %% large grid
@@ -127,6 +134,8 @@ if eyetracking  % send experiment end trigger
 end
 
 
+Eyelink('StopRecording')
+
 ShowCursor;
 KbQueueRelease(cfg.keyboardIndex);
 Screen('Close') %cleans up all textures
@@ -135,11 +144,11 @@ Screen('Flip', cfg.screen.win)
 
 % save eyetracking data
 if eyetracking==1 && calibrate_eyelink
-    fulledffile = sprintf('%s.EDF',outputname);
+    fulledffile = sprintf('etc_s%03u.EDF',subject_id);
     sendETNotifications('r',requester)
     zmq_request('close');
     Eyelink('CloseFile');
     Eyelink('WaitForModeReady', 500);
-    Eyelink('ReceiveFile',sprintf('ETComp_s%u.EDF',subject_id),fulledffile);
+    Eyelink('ReceiveFile',sprintf('etc_s%03u.EDF',subject_id),fulledffile);
     Eyelink('WaitForModeReady', 500);
 end
