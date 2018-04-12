@@ -4,7 +4,7 @@
 sca
 clear all
 %open screen
-debug=true;
+debug=false;
 if debug
     commandwindow;
     PsychDebugWindowConfiguration;
@@ -50,7 +50,7 @@ if eyetracking == 1
     end
     requester = zmq_request('add_requester', 'tcp://100.1.0.3:5004');
     requester = int32(requester);
-    
+    el.requester =requester;
     % Setup Eyelink
     Eyelink('StartSetup')
     
@@ -78,15 +78,13 @@ for block = 1
     % at the beginning of each block : calibrate ADD pupil labs
     if calibrate_eyelink
         fprintf('\n\nEYETRACKING CALIBRATION...')
-        
-        % start pupil calibration
-        sendETNotifications(eyetracking,requester,'C');
-        
+              
+        sendETNotifications(eyetracking,requester,sprintf('starting ET calib block %d',block));
+
         % start eyelink calibration
         local_EyelinkDoTrackerSetup(el)
         
         % stop pupil calibration
-        sendETNotifications(eyetracking,requester,'c');
         
         fprintf('DONE\n\n')
     end
@@ -150,3 +148,4 @@ if eyetracking==1 && calibrate_eyelink
     Eyelink('ReceiveFile',sprintf('etc_s%03u.EDF',subject_id),fulledffile);
     Eyelink('WaitForModeReady', 500);
 end
+Eyelink('Shutdown')
