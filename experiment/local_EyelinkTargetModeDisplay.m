@@ -32,6 +32,8 @@ while key~= 0
 end
 				% LOOP WHILE WE ARE DISPLAYING TARGETS
 stop=0;
+
+
 while stop==0 && bitand(Eyelink('CurrentMode'), el.IN_TARGET_MODE)
 
 	if Eyelink( 'IsConnected' )==el.notconnected

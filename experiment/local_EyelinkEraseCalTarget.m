@@ -8,5 +8,5 @@ function erasecaltarget(el, rect)
 %		rect: rect that will be filled with background colour 
 if ~IsEmptyRect(rect)
     Screen( 'FillOval', el.window, el.backgroundcolour,  rect );
-    flip_screen(el.screen)
+    flip_screen(el.screen);
 end

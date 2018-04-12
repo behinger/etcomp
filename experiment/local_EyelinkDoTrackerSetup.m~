@@ -52,7 +52,7 @@ while key~= 0
 end
 
 % go directly into a particular mode
-%
+% 
 % if nargin==2
 %     if el.allowlocalcontrol==1
 %         switch lower(sendkey)
@@ -64,11 +64,11 @@ end
 %     end
 % end
 
+calibmode = 0; % for ETComp we need to control two ETs at the same time
 tstart=GetSecs;
 stop=0;
-fprintf('\n\n\nUse "c" and "v" to calibrate and validate - afterwards accept with ENTER.\n IT IS VERY IMPORTANT TO FOLLOW THIS. \n else you have to manually click on the pupil labs to synchronize both softwares\n\n')
 while stop==0 && bitand(Eyelink( 'CurrentMode'), el.IN_SETUP_MODE)
-    %     [result,message] = Eyelink('CalMessage')
+%     [result,message] = Eyelink('CalMessage')
     i=Eyelink( 'CurrentMode');
     
     if ~Eyelink( 'IsConnected' ) stop=1; break; end;
@@ -90,41 +90,48 @@ while stop==0 && bitand(Eyelink( 'CurrentMode'), el.IN_SETUP_MODE)
     end
     
     [key, el]=EyelinkGetKey(el);		% getkey() HANDLE LOCAL KEY PRESS
-%     if 1 && key~=0 && key~=el.JUNK_KEY    % print pressed key codes and chars
-%         fprintf('%d\t%s\n', key, char(key) );
-%     end
+    if 1 && key~=0 && key~=el.JUNK_KEY    % print pressed key codes and chars
+        fprintf('%d\t%s\n', key, char(key) );
+    end
     
     switch key
-        case el.TERMINATE_KEY				% breakout key code
+        case el.TERMINATE_KEY,				% breakout key code
             result=el.TERMINATE_KEY;
             return;
         case { 0, el.JUNK_KEY }          % No or uninterpretable key
         case el.ESC_KEY
-            %             if Eyelink('IsConnected') == el.dummyconnected
-            %                 stop=1; % instead of 'goto exit'
-            %             end
-            %             if el.allowlocalcontrol==1
-            %                 Eyelink('SendKeyButton', key, 0, el.KB_PRESS );
-            %             end
+%             if Eyelink('IsConnected') == el.dummyconnected
+%                 stop=1; % instead of 'goto exit'
+%             end
+%             if el.allowlocalcontrol==1
+%                 Eyelink('SendKeyButton', key, 0, el.KB_PRESS );
+%             end
         case double('c')
-            % start calibration
-            sendETNotifications(1,el.requester,'v');
-            sendETNotifications(1,el.requester,'C');
-            Eyelink('SendKeyButton', double(key), 0, el.KB_PRESS );
             
-            
-        case double('v')
-            sendETNotifications(1,el.requester,'c');
-            sendETNotifications(1,el.requester,'V');
-            Eyelink('SendKeyButton', double(key), 0, el.KB_PRESS );
-        case 13 % enter?
-            fprintf('enter pressed')
-            sendETNotifications(1,el.requester,'c');
-            sendETNotifications(1,el.requester,'v');
-            %accepting calib or valid
-            
+        case double
         otherwise 		% Echo to tracker for remote control
             if el.allowlocalcontrol==1
+                if strcmp(char(key),'c')
+                    %% ETCOMP
+                    % start calibration mode on pupillabs ET
+                    % start pupil calibration
+                    
+                    calibmode = 'c';                                % switch from calibration YES, to calibration NO
+                    if calibmode == 'c'
+                        sendETNotifications(1,el.requester,'C');
+                    end
+                end
+                if strcmp(key==10)
+                    %accepting calib or valid
+                    calibmode = '';   
+                end
+                    else
+%                     fprintf('XXX todo, make accuracy test start on validation')
+                        sendETNotifications(1,el.requester,'c');
+                    end
+
+                    
+                end
                 Eyelink('SendKeyButton', double(key), 0, el.KB_PRESS );
             end
     end

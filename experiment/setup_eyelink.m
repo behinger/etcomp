@@ -9,7 +9,7 @@ el=EyelinkInitDefaults(screen.win);
 % ETCOMP SPECIALYTZ
 el.screen = screen;
 
-Eyelink('command', 'enable_automatic_calibration = YES'); %automatic calibration
+Eyelink('command', 'enable_automatic_calibration = NO'); %automatic calibration
 
 screenInfo = sprintf('screen_pixel_coords = 0 0 %d %d',screen.screen_width,screen.screen_height);
 Eyelink('command',screenInfo);
@@ -52,6 +52,6 @@ Eyelink('command', 'validation_type = HV13');
 Eyelink('command','generate_default_targets = YES');
 
 calib = sprintf('%d,%d ',calib_coords');
+calib(end) =[];
 Eyelink('command',sprintf('calibration_targets = %s',calib));
 Eyelink('command',sprintf('validation_targets = %s',calib));
-
