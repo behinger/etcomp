@@ -1,4 +1,4 @@
-function [freeviewing, yaw, roll]= loadImages(win)
+function [freeviewing, yaw, roll,marker]= loadImages(win)
 %% Image stimuli for freeviewing
 % change to Image data path
 stimpath='stimuli/';
@@ -45,4 +45,17 @@ for count = 1:numberImages                           % ascending id
     [resident] = Screen('PreloadTextures', win, roll(count,1));
 end
 
-
+%% Image stimuli for surface marker
+dirDataMarker = dir('stimuli/surface*.png');
+numberImages = size(dirDataMarker,1);
+dirDataMarker={dirDataMarker.name};
+marker = nan(numberImages,length('f'));
+for count = 1:numberImages                           % ascending id
+    
+    
+    IMG = imread([stimpath dirDataMarker{count}]);
+    
+    % make and preload texture
+    marker(count)   = Screen('MakeTexture', win, IMG);
+    [resident] = Screen('PreloadTextures', win, marker(count,1));
+end

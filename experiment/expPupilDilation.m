@@ -1,10 +1,17 @@
-function [] = expPupilDilation(win,screen_width,screen_height,randomization, eyetracking, requester, block)
+function [] = expPupilDilation(screen,randomization, eyetracking, requester, block)
+dilation.win = screen.win;
+sendETNotifications(eyetracking,requester,sprintf('DILATION start, block %d',block));
+
 for color_id = 1:25
-    Screen('FillRect', win, [randomization(color_id) randomization(color_id) randomization(color_id)]);
-    expDrawTarget(screen_width/2, screen_height/2,randomization(color_id),20,'fixcross', win);
-    LastFlip = flip_screen(screen_width,screen_height,win, 0);
-    flip_screen(screen_width,screen_height,win, LastFlip + 2);
+    dilation.background_color = randomization(color_id);
+
+    Screen('FillRect', screen.win, [randomization(color_id) randomization(color_id) randomization(color_id)]);
+    drawTarget(screen.screen_width/2, screen.screen_height/2,dilation,20,'fixbulleye');
+    LastFlip = flip_screen(screen, 0);
+    flip_screen(screen, LastFlip + 2);
 
     sendETNotifications(eyetracking,requester,sprintf('DILATION lum %d block %d',color_id,block))
     
 end
+
+sendETNotifications(eyetracking,requester,sprintf('DILATION stop, block %d', block));

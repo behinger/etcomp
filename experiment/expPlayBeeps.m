@@ -1,5 +1,10 @@
-function [] = expPlayBeeps(blink_number,block,requester,eyetracking)
+function [] = expPlayBeeps(screen,blink_number,block,requester,eyetracking)
 %%
+sendETNotifications(eyetracking,requester,sprintf('BLINK start, block %d', block))
+
+drawTarget(screen.screen_width/2, screen.screen_height/2,screen,20,'fixcross');
+LastFlip = flip_screen(screen);
+
 nrchannels = 2;
 freq = 48000;
 waitForDeviceStart = 1;
@@ -19,6 +24,7 @@ myBeep = MakeBeep(basefreq, beepLengthSecs, freq);
 
 startCue = 0;
 PsychPortAudio('FillBuffer', pahandle, [myBeep; myBeep]);
+
 for beep = 1:blink_number
     PsychPortAudio('Start', pahandle, repetitions, startCue, waitForDeviceStart);
     [actualStartTime, ~, ~, estStopTime] = PsychPortAudio('Stop', pahandle, 1, 1);
@@ -31,3 +37,7 @@ for beep = 1:blink_number
 end
 % Close the audio device
 PsychPortAudio('Close', pahandle);
+sendETNotifications(eyetracking,requester,sprintf('BLINK stop, block %d', block))
+
+LastFlip = flip_screen(screen);
+
