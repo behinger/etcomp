@@ -229,6 +229,13 @@ class NBP_Pupil_Remote(Plugin):
         elif msg == 'c':
             ipc_pub.notify({'subject': 'calibration.should_stop'})
             response = 'OK'
+            
+        elif msg == 'V':
+            ipc_pub.notify({'subject': 'accuracy_test.should_start'})
+            response = 'OK'
+        elif msg == 'v':
+            ipc_pub.notify({'subject': 'accuracy_test.should_stop'})
+            response = 'OK'
         elif msg[0] == 'T':
             try:
                 target = float(msg[2:])
