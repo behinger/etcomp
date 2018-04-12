@@ -15,7 +15,9 @@ beepLengthSecs = 0.1;
 % Length of the pause between beeps
 beepPauseTime = 1.5 - beepLengthSecs;
 
-pahandle = PsychPortAudio('Open', [], 1, 1, freq, nrchannels);
+devs = PsychPortAudio('GetDevices')
+fprintf('XXX TODO AUTO FIND USB DEVICE')
+pahandle = PsychPortAudio('Open',  6, 1, 1, freq, nrchannels);
 PsychPortAudio('Volume', pahandle, 1);
 basefreq  = 300;
 myBeep = MakeBeep(basefreq, beepLengthSecs, freq);

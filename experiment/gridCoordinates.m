@@ -1,7 +1,7 @@
 function [dots]= gridCoordinates(screen_width, screen_height,surface_marker_size, num_dots) 
 percent=0.9;
 markersize = 1.48 * surface_marker_size;
-markersize = 2 * surface_marker_size;
+markersize = 3 * surface_marker_size;
 
 
 lost_x= markersize/screen_width;

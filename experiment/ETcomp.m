@@ -71,22 +71,28 @@ end
 
 %%
 tic
-for block = 1
+for block = 1:2
     
     rand_block = select_randomization(cfg.rand, subject_id, block);
     
     % at the beginning of each block : calibrate ADD pupil labs
     if calibrate_eyelink
         fprintf('\n\nEYETRACKING CALIBRATION...')
-              
+        
+        
+        Eyelink('StopRecording')
+        
         sendETNotifications(eyetracking,requester,sprintf('starting ET calib block %d',block));
 
-        % start eyelink calibration
+        
+        % start both calibration
+        
         local_EyelinkDoTrackerSetup(el)
         
-        % stop pupil calibration
         
         fprintf('DONE\n\n')
+        
+        Eyelink('StartRecording')
     end
     
     [LastFlip] = Screen('Flip', cfg.screen.win);
@@ -113,15 +119,15 @@ for block = 1
     %% Small Grid Before
     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking);
     
-    %% Yaw Head Motion
-    expShowImages('YAW',cfg.yaw, cfg.screen, requester, block, eyetracking)
-    
-    %% Roll Head Motion
-    expShowImages('ROLL',cfg.roll, cfg.screen, requester, block, eyetracking)
-    
-    %% Small Grid After
-    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
-    
+%     %% Yaw Head Motion
+%     expShowImages('YAW',cfg.yaw, cfg.screen, requester, block, eyetracking)
+%     
+%     %% Roll Head Motion
+%     expShowImages('ROLL',cfg.roll, cfg.screen, requester, block, eyetracking)
+%     
+%     %% Small Grid After
+%     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
+%     
     %%
     toc
 end

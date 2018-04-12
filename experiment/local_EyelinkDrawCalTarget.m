@@ -14,13 +14,13 @@ function rect=local_EyelinkDrawCalTarget(el, x, y)
 % fprintf('here %f, %f\n',x,y)
 
 % %%
-rect = @(size)CenterRectOnPoint([0,0,0.5*size 0.5*size],x,y);
+rect = @(size)CenterRectOnPoint([0,0,0.7*size 0.7*size],x,y);
 
 % This is the calibration target
 Screen('FillOval', el.window,0  ,rect(190));
 Screen('FillOval', el.window,255,rect(120));
 Screen('FillOval', el.window,0  ,rect(60));
-% Screen('FillOval', el.window,255,rect(44))
+Screen('FillOval', el.window,255,rect(2.1))
 
 
 % This is the STOP target

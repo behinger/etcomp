@@ -8,7 +8,7 @@ dir_degrees = linspace(0,360,24); % with 15 degrees
 %directions = dir_degrees(randperm(24));% randomly shuffled directions, in randomization though???
 
 %velocities = [16,18,20,22,24] % deg/s velocity
-velocities_px = degToPix(velocities,60); % XXX
+% velocities_px = degToPix(velocities,60); % XXX
 ifi = Screen('GetFlipInterval', screen.win);
 
 
@@ -30,9 +30,12 @@ trunc_dist=truncate(pd,200,5000); % fixcross times
 sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT start, block %d', block))
 
 for count= 1:length(directions)%size(pos,1)-1
-    v = velocities_px(count);
+    %%
+     v = velocities(count);
+     vpx = degToPix(v,60);
+
     dir = -directions(count); % not sure why but now right is 0, top 90, left 180, down 270
-    jumpsize = 0.2 * v;
+    jumpsize = 0.2 * vpx;
     [dx,dy] = pol2cart(deg2rad(180 + dir),jumpsize);
     xstart = xCenter+dx;
     ystart = yCenter+dy;
@@ -42,17 +45,14 @@ for count= 1:length(directions)%size(pos,1)-1
     endy = dy+ yCenter;
     
     
-    [vx,vy] = pol2cart(deg2rad(dir),v);
+    [vx,vy] = pol2cart(deg2rad(dir),vpx);
     distance= diff([xstart,ystart;endx,endy]);
-    %stepsize = distance/(1.5*1/ifi);\
     stepsize = [vx, vy].*ifi;
     
 
     % get duration
     duration = random(trunc_dist)/1000; % in s
-    
-    % we want to start in the middle
-    newPos = [xstart ystart];
+    duration = 0;
     
     drawTarget(xCenter, yCenter,screen,20,'fixcross');
     LastFlip =  flip_screen(screen);
@@ -65,23 +65,18 @@ for count= 1:length(directions)%size(pos,1)-1
     LastFlip = flip_screen(screen, LastFlip + duration); % image_fixcross_time = 0.5s
     sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialstart,  velocity %d, angle %d, trial %d, block %d,',velocities(count),directions(count),count ,block))
     
+    % we want to start in the middle
+    newPos = [xstart ystart];
     
-    time = 0;%GetSecs;
-    while ((time+ifi) < 15/velocities(count))
+    time0 = GetSecs;
+    while ((GetSecs - time0+ifi) < (10+0.2*v)/v)
 
-        newPos = round(newPos + stepsize);
-%         newPos = [100-halfsize+gridPos,mid_y-halfsize,100+halfsize+gridPos,mid_y+halfsize]
-%         stimRect = [0,0,size(marker,2),size(marker,1)];
-        % TODO offset um halfsize
+        newPos = (newPos + stepsize);
         
-        drawTarget(newPos(1),newPos(2),screen,1,'fixcross');
-%         Screen('DrawTexture',screen.win, stim, stimRect,);
+        drawTarget(round(newPos(1)),round(newPos(2)),screen,1,'fixcross');
         
         LastFlip = flip_screen(screen, LastFlip + (1 - 0.5) * ifi); % image_fixcross_time = 0.5s
         
-
-         % Increment the time
-        time = time + ifi;
 
     end
     sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialend,  trial %d, block %d,',count ,block))
