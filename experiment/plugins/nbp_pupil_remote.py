@@ -204,13 +204,11 @@ class NBP_Pupil_Remote(Plugin):
 
     def on_recv(self, socket, ipc_pub):
         msg = socket.recv_string()
-        if msg.startswith('notify'):
-            t = self.g_pool.get_timestamp()
-            notification = {'subject': 'trigger', 'label': msg, 'timestamp': t, 'duration': 0.0, 'record': True}
-            ipc_pub.notify(notification)
-            response = 'nbp_ok'
 
-        elif msg == 'SUB_PORT':
+        #if msg.startswith('notify'):
+
+
+        if msg == 'SUB_PORT':
             response = self.g_pool.ipc_sub_url.split(':')[-1]
         elif msg == 'PUB_PORT':
             response = self.g_pool.ipc_pub_url.split(':')[-1]
@@ -229,7 +227,7 @@ class NBP_Pupil_Remote(Plugin):
         elif msg == 'c':
             ipc_pub.notify({'subject': 'calibration.should_stop'})
             response = 'OK'
-            
+
         elif msg == 'V':
             ipc_pub.notify({'subject': 'accuracy_test.should_start'})
             response = 'OK'
@@ -247,10 +245,12 @@ class NBP_Pupil_Remote(Plugin):
                 response = 'Timesync successful.'
         elif msg[0] == 't':
             response = repr(self.g_pool.get_timestamp())
-        elif msg[0] == 'v':
-            response = '{}'.format(self.g_pool.version)
+
         else:
-            response = 'Unknown command.'
+            t = self.g_pool.get_timestamp()
+            notification = {'subject': 'trigger', 'label': msg, 'timestamp': t, 'duration': 0.0, 'record': True}
+            ipc_pub.notify(notification)
+            response = 'nbp_ok'
         socket.send_string(response)
 
     def on_notify(self, notification):
