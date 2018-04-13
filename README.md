@@ -9,7 +9,7 @@
 # Git
 ```
 git clone https://github.com/behinger/etcomp
-git submodule init --update
+git submodule update --init
 ```
 The latter is necessary to get the files from pupillabs, which we partially will make use of.
 
