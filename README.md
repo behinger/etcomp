@@ -12,3 +12,15 @@ git clone https://github.com/behinger/etcomp
 git submodule init --update
 ```
 The latter is necessary to get the files from pupillabs, which we partially will make use of.
+
+
+# Python EDFREAD
+
+
+- go to ```lib/pyedfread```
+- make new folder: ```lib```
+- copy ```/net/store/nbp/projects/lib/edfread/build/linux64/libedfapi.so``` to ```lib/libedfapi.so```
+- make new folder ```include```
+- copy ```/net/store/nbp/projects/lib/edfread/*.h``` to ```lib/include/*.h```
+- activate your virtualenv
+- run ```python setup.py install```
