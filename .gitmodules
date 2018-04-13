@@ -1,0 +1,3 @@
+[submodule "lib/pupil"]
+	path = lib/pupil
+	url = https://github.com/pupil-labs/pupil
