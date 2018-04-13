@@ -24,3 +24,19 @@ The latter is necessary to get the files from pupillabs, which we partially will
 - copy ```/net/store/nbp/projects/lib/edfread/*.h``` to ```lib/include/*.h```
 - activate your virtualenv
 - run ```python setup.py install```
+
+
+# pip packages
+so far, probably missed a few
+
+```
+Cython==0.25.2
+h5py==2.7.1
+ipython==6.3.1
+msgpack-python==0.4.8
+numpy==1.13.3
+pandas==0.20.3
+pyedfread==0.1
+scipy==0.19.1
+spyder==3.2.8
+```
