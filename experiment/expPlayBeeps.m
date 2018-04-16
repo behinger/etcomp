@@ -1,5 +1,6 @@
 function [] = expPlayBeeps(screen,blink_number,block,requester,eyetracking)
 %%
+showInstruction('BLINK',screen,requester,eyetracking, block);
 sendETNotifications(eyetracking,requester,sprintf('BLINK start, block %d', block))
 
 drawTarget(screen.screen_width/2, screen.screen_height/2,screen,20,'fixcross');

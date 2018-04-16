@@ -1,22 +1,21 @@
-function [] = drawTarget(x,y,screen,targetsize,which_target)
+function [] = drawTarget(x,y,screen,targetsize,which_target,fix_color)
 if strcmp(which_target, 'fixcross') == 1
     if isempty(screen.background_color)
         screen.background_color = 128;
     end
-    %     fixCrossDimPix=targetsize/2;
-    %     xCoords = [-fixCrossDimPix fixCrossDimPix 0 0];
-    %     yCoords = [0 0 -fixCrossDimPix fixCrossDimPix];
-    %     lineWidthPix = 4;
-    %     allCoords = [xCoords; yCoords];
-    %     Screen('DrawLines', screen.win, allCoords,lineWidthPix,[0 0 0], [x y]);
     
     width = 45; % horizontal dimension of display (cm)
     dist = 60; % viescreen.wing distance (cm)
     
-    colorOval = [255 255 255]; % color of the two circles [R G B]
+    if nargin == 5
+        colorOval = [255 255 255];
+    else
+        colorOval = fix_color;
+    end
+    % color of the two circles [R G B]
     colorCross = [screen.background_color screen.background_color screen.background_color]; % color of the Cross [R G B] change
     
-    d1 = 0.6; % diameter of outer circle (degrees)
+    d1 = 0.6; % diameter of outer circle (degrees) (0.6)
     d2 = 0.2; % diameter of inner circle (degrees)
     rect = Screen('Rect',screen.win);
     ppd = pi * (rect(3)-rect(1)) / atan(width/ dist/2) / 360; % pixel per degree
@@ -43,16 +42,12 @@ elseif contains(which_target, 'fixbulleye') == 1
     diamL = 2*radL+1;
     radS = round(0.5*0.2 * px_per_deg); %Inner circle with diameter of 0.2°
     
-    
-
-    
-
     %Circles
     circleRect = ones(diamL, diamL)*screen.background_color; %Rectangle to plot circles in
     
     destRect = [0 0 (diamL) (diamL)];
     rect = Screen('Rect',screen.win);
-
+    
     [destRect, ~, ~] = CenterRect(destRect, rect);
     
     %Define which fields are lying within the circle and make circle texture
@@ -67,5 +62,5 @@ elseif contains(which_target, 'fixbulleye') == 1
     
     %Draw Bulleye
     Screen('drawTexture', screen.win, TexCircle, [], destRect);
-
+    
 end

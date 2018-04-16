@@ -4,7 +4,7 @@
 sca
 clear all
 %open screen
-debug=false;
+debug=true;
 if debug
     commandwindow;
     PsychDebugWindowConfiguration;
@@ -25,9 +25,9 @@ InitializePsychSound(1);
 %% Eyetracking setup
 %setup eyetracker
 eyetracking=1;
-calibrate_eyelink = true;
-calibrate_pupil = false;
-requester = false;
+calibrate_eyelink = false;
+calibrate_pupil = true;
+requester = true;
 if eyetracking == 1
     
     % Eyelink
@@ -67,9 +67,11 @@ if eyetracking == 1
     sendETNotifications(eyetracking,requester,'Connect Pupil');
 end
 
-
+testConnection(eyetracking, requester)
 
 %%
+showInstruction('BEGINNING',cfg.screen,eyetracking,requester,0)
+
 tic
 for block = 1:2
     
@@ -104,8 +106,7 @@ for block = 1:2
     expSmoothPursuit(cfg.screen,rand_block.smoothpursuit_speed,rand_block.smoothpursuit_angle, requester,eyetracking,block)
     
     %% free viewing
-    cfg.freeviewing.randomization = rand_block.freeviewing;
-    expShowImages('FREEVIEW',cfg.freeviewing, cfg.screen, requester, block, eyetracking)
+    expShowImages('FREEVIEW',cfg.freeviewing, cfg.screen, requester, block, eyetracking, rand_block.freeviewing)
     
     %% Microsaccades
     expMicrosaccades(cfg.screen, cfg.fixcross_time, eyetracking, requester, block)

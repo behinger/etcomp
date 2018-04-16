@@ -1,6 +1,7 @@
-function [ ] = expShowImages(type,cfg,screen, requester, block, eyetracking)
+function [ ] = expShowImages(type,cfg,screen, requester, block, eyetracking, randomization)
 %% Roll Head Motion
 rotation_angle = [0 35 -35];
+showInstruction(type,screen,requester,eyetracking, block);
 sendETNotifications(eyetracking,requester,sprintf('%s start, block %d', type,block))
 for count = 1:3
     
@@ -16,11 +17,11 @@ for count = 1:3
         LastFlip = flip_screen(screen,0);
         
         %draw picture
-        Screen('DrawTexture',screen.win,cfg.images(cfg.randomization(count)), [],[displayPos]);
+        Screen('DrawTexture',screen.win,cfg.images(randomization(count)), [],[displayPos]);
         LastFlip = flip_screen(screen, LastFlip + cfg.fixcross_time + rand(1)*0.2 - 0.1); % image_fixcross_time = 0.5s
         sendETNotifications(eyetracking,requester,sprintf('FREEVIEW fixcross'))
         LastFlip = flip_screen(screen, LastFlip + cfg.image_time); % image_time = 6s
-        sendETNotifications(eyetracking,requester,sprintf('FREEVIEW trial %d id %d block %d',count,cfg.randomization(count),block))
+        sendETNotifications(eyetracking,requester,sprintf('FREEVIEW trial %d id %d block %d',count, randomization(count),block))
         
         %display the three pictures for the yaw condition simultaneously
         %with a fix cross

@@ -1,30 +1,28 @@
 function []= expGuidedGrid(coords,screen,randomization, block,requester,eyetracking)
 display_pos = coords(randomization,:)';
-
-
 %%
 targetKey    ='Space';
-
+total_elements = size(display_pos,2);
+if total_elements == 49
+    condition = 'LARGEGG';
+else 
+    condition = 'SMALLGG';
+end
+lastflip = showInstruction(condition,screen,requester,eyetracking, block);
 
 %prepare a background
-Screen('FillRect', screen.win, [screen.background_color screen.background_color screen.background_color]);
+%Screen('FillRect', screen.win, [screen.background_color screen.background_color screen.background_color]);
 %actually show the screen with the background
-lastflip = Screen('Flip', screen.win);
+%lastflip = Screen('Flip', screen.win);
 
+sendETNotifications(eyetracking,requester,sprintf('GRID start block %d', block));
 
-%draw the first dot at the middle of the screen
-drawTarget(screen.screen_width/2, screen.screen_height/2,screen,20,'fixcross');
-%show the first marker
-time =  flip_screen(screen, lastflip);
-
-sendETNotifications(eyetracking,requester,sprintf('GRID start block %d', block))
-
-grid_buttonpress(targetKey,time,requester,eyetracking);
+%time = 15;
+%grid_buttonpress(targetKey,time,requester,eyetracking);
 
 
 
 %walk through the positions and show the circle
-total_elements = size(display_pos,2);
 for count=1:total_elements
     
     %draw the marker
