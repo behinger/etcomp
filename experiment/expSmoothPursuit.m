@@ -1,4 +1,6 @@
 function [] = expSmoothPursuit(screen,velocities,directions,requester,eyetracking,block)
+showInstruction('SMOOTHPURSUIT',screen,requester,eyetracking, block);
+
 jumpsize = 0.2; % in s, the length of the smooth pursuit ramp
 
 xCenter = screen.screen_width/2;

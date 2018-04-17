@@ -46,7 +46,7 @@ cfg.roll.image_width = 570;
 cfg.roll.image_height = 594;
 cfg.roll.image_time = 6;
 cfg.screen.surface_marker_size = 75; % change also in flip Screen
-
+cfg.screen.color_condition_begin = [85,107,47];
 
 % define grid coordinates
 cfg.small_grid_coord = gridCoordinates(screen_width, screen_height,cfg.screen.surface_marker_size , 13);
