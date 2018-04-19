@@ -69,9 +69,10 @@ end
 
 
 %%
+showInstruction('BEGINNING',cfg.screen,eyetracking,requester,0)
 
 tic
-for block = 1
+for block = 1:2
     
     rand_block = select_randomization(cfg.rand, subject_id, block);
     
@@ -83,7 +84,7 @@ for block = 1
         Eyelink('StopRecording')
         
         sendETNotifications(eyetracking,requester,sprintf('starting ET calib block %d',block));
-        
+
         
         % start both calibration
         
@@ -119,11 +120,11 @@ for block = 1
     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking);
     
     %% Condition shake/tild
-    expRotation('SHAKE',cfg.screen, eyetracking, requester, block);
-    %
+    expRotation('Shake',cfg.screen, eyetracking, requester, block)
+%     
     %% Small Grid After
-    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
-    %
+     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
+%     
     %%
     toc
 end

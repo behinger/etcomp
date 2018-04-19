@@ -1,8 +1,8 @@
 Blinks \n 
 
 In the next condition you will be shown a fixation target in the center of the screen. Please fixate it. \n
-You will hear 7 beeps. Please blink each time you hear a beep and then fixate again the target.
+You will hear 6 beeps. Please blink each time you hear a beep and then fixate again the target.
 
-Before the condition starts you will be shown a red target. Please fixate it and press SPACE in order to start with the trial. \n \n
+Before the condition starts you will be shown a green target. Please fixate it and press SPACE in order to start with the trial. \n \n
 Press SPACE to continue.
 
