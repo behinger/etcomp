@@ -1,0 +1,7 @@
+Rotation 1 \n 
+
+In the next condition you will see a target, please move your head so that your nose points to the target and fixate it. Once you fixate it press SPACE to lock the position. Then the next target will appear. \n
+
+Before the condition starts you will be shown a green target. Please fixate it and press SPACE in order to start with the trial. \n \n
+Press SPACE to continue.
+

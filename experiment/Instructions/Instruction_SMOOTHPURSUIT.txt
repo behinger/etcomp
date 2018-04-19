@@ -5,6 +5,6 @@ After the movement the next target will appear in the center of the screen. Plea
 In total you will be shown 20 targets.
 
 
-Before the condition starts you will be shown a red target. Please fixate it and press SPACE in order to start with the trial. \n \n
+Before the condition starts you will be shown a green target. Please fixate it and press SPACE in order to start with the trial. \n \n
 Press SPACE to continue.
              
