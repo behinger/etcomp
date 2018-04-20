@@ -40,3 +40,14 @@ pyedfread==0.1
 scipy==0.19.1
 spyder==3.2.8
 ```
+
+# isntalling pyav under linux
+This one was difficult
+- get ffmpeg3 (only v.2 is installed by defaul)
+- I used https://launchpad.net/ubuntu/+archive/primary/+files/ffmpeg_3.3.4.orig.tar.xz
+- Unzip it
+- run `./configure --prefix=/folder/to/install/ffmpeg --enable-shared`  (the enabled shared is key, else we later get errors compiling av)
+- run `make` and then `make install`
+- add the newly build ffmpeg libraries to the pkg-config path: `export PKG_CONFIG_PATH=:folder/to/install/ffmpeg/:$PKG_CONFIG_PATH` 
+- in your python3 venv, run "pip install av'
+- then you should be able to run `pip3 install git+https://github.com/pupil-labs/PyAV`
