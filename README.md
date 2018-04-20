@@ -46,8 +46,11 @@ This one was difficult
 - get ffmpeg3 (only v.2 is installed by defaul)
 - I used https://launchpad.net/ubuntu/+archive/primary/+files/ffmpeg_3.3.4.orig.tar.xz
 - Unzip it
-- run `./configure --prefix=/folder/to/install/ffmpeg --enable-shared`  (the enabled shared is key, else we later get errors compiling av)
+- run `./configure --prefix=../ffmpeg-build --enable-shared --enable-pic --cc="gcc -m64 -fPIC"  --extra-cflags="-fPIC"
+`  (the enabled shared is key, else we later get errors compiling av)
 - run `make` and then `make install`
 - add the newly build ffmpeg libraries to the pkg-config path: `export PKG_CONFIG_PATH=:folder/to/install/ffmpeg/:$PKG_CONFIG_PATH` 
 - in your python3 venv, run "pip install av'
-- then you should be able to run `pip3 install git+https://github.com/pupil-labs/PyAV`
+- you always have to add `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/net/store/nbp/users/behinger/tmp/pupil_src_test/ffmpeg-build/lib/` before import av (you should else get an error `ImportError: libavfilter.so.6: cannot open shared object file: No such file or directory`)
+- I often ran into the problem `avformat_open_input` while installing pip av. Not sure what solved this. I cloned the pyav-git, and removed both instances of avformat_open_input (just commented them out). Compiled then successfully, put them back in, and compiled again - now it worked... strange
+- start python and type `import av` - if it works, I'm happy for you... took me 2.5h 
