@@ -46,6 +46,15 @@ This one was difficult
 - get ffmpeg3 (only v.2 is installed by defaul)
 - I used https://launchpad.net/ubuntu/+archive/primary/+files/ffmpeg_3.3.4.orig.tar.xz
 - Unzip it
+- you likely need yasm, but its straight forward to build
+    - `git clone https://github.com/yasm/yasm`
+    - `cd yasm`
+    - `--prefix=../yasm-build`
+    - `make yasm`
+    - `make install`
+    - `export PATH=$PATH:/net/store/nbp/users/behinger/tmp/pupil_src_test/yasm-build/bin`
+    - should be done, I did not have trouble here at all
+
 - run `./configure --prefix=../ffmpeg-build --enable-shared --enable-pic --cc="gcc -m64 -fPIC"  --extra-cflags="-fPIC"
 `  (the enabled shared is key, else we later get errors compiling av)
 - run `make` and then `make install`
