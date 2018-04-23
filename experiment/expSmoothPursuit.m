@@ -65,7 +65,7 @@ for count= 1:length(directions)%size(pos,1)-1
     LastFlip =  flip_screen(screen);
     
     LastFlip = flip_screen(screen, LastFlip + duration); % image_fixcross_time = 0.5s
-    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialstart,  velocity %d, angle %d, trial %d, block %d,',velocities(count),directions(count),count ,block))
+    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialstart, velocity %d, angle %d, trial %d, block %d,',velocities(count),directions(count),count ,block))
     
     % we want to start in the middle
     newPos = [xstart ystart];
@@ -81,7 +81,7 @@ for count= 1:length(directions)%size(pos,1)-1
         
 
     end
-    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialend,  trial %d, block %d,',count ,block))
+    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialend, trial %d, block %d,',count ,block))
     WaitSecs(0.5); 
     
 end
