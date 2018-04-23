@@ -32,7 +32,7 @@ for subject = subjectlist
     largeBlockPerm = randperm(max_block);
     smoothPerm = randperm(length(smooth_speed_sub));
     freeviewing = randperm(max_block*numberimagesperblock);
-    for block = 1:max_block1
+    for block = 1:max_block
         
         % accuracy tests / grids
         rand.smallBefore       = [rand.smallBefore {randperm(13)}];
@@ -63,7 +63,7 @@ for subject = subjectlist
 
         rand.block =    [rand.block block];
         rand.subject = [rand.subject subject];
-        movements = {'rotate','tilt'};
+        movements = {'ROTATE','TILT'};
         rand.firstmovement =[rand.firstmovement  movements(1+mod(subject+block,2))];
         
     end

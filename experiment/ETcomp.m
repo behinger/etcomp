@@ -6,6 +6,7 @@ clear all
 %open screen
 debug=true;
 if debug
+    
     commandwindow;
     PsychDebugWindowConfiguration;
 end
@@ -66,16 +67,15 @@ if eyetracking == 1
     
     sendETNotifications(eyetracking,requester,'Connect Pupil');
 end
-
-
 %%
+showInstruction('BEGINNING',cfg.screen,requester,eyetracking,0);
 
 tic
 for block = 1
     
     rand_block = select_randomization(cfg.rand, subject_id, block);
     
-    % at the beginning of each block : calibrate ADD pupil labs
+    % at the beginni ng of each block : calibrate ADD pupil labs
     if calibrate_eyelink
         fprintf('\n\nEYETRACKING CALIBRATION...')
         
@@ -119,7 +119,8 @@ for block = 1
     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking);
     
     %% Condition shake/tild
-    expRotation('SHAKE',cfg.screen, eyetracking, requester, block);
+    expRotation(rand_block.firstmovement,cfg.screen, eyetracking, requester, block);
+    
     %
     %% Small Grid After
     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
@@ -143,7 +144,7 @@ Screen('Flip', cfg.screen.win)
 % save eyetracking data
 if eyetracking==1 && calibrate_eyelink
     fulledffile = sprintf('data/etc_s%03u.EDF',subject_id);
-    sendETNotifications('r',requester)
+    %sendETNotifications('r',requester)
     zmq_request('close');
     Eyelink('CloseFile');
     Eyelink('WaitForModeReady', 500);
