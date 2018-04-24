@@ -14,13 +14,13 @@ end
 
 cfg = expConfigure();
 
-expName = input('\n \n WELCOME EXPERIMENTER! \n\n What is your name? \n >','s');
 subject_id = input('\n subjectid: ');
 
 
 
 % Initialize Sounddriver
 InitializePsychSound(1);
+
 
 %% Test Beep%%
 fprintf('Test Beep');
@@ -29,15 +29,12 @@ testBeep()
 
 fprintf('You should have heard a beep');
 
-
 %% Eyetracking setup
 %setup eyetracker
 eyetracking=0;
-calibrate_eyelink = false;
-calibrate_pupil = false;
 requester = false;
+
 if eyetracking == 1
-    
     % Eyelink
     el = setup_eyelink(cfg.screen,cfg.small_grid_coord);
     %open log file
@@ -74,16 +71,17 @@ if eyetracking == 1
     
     sendETNotifications(eyetracking,requester,'Connect Pupil');
 end
+
 %%
-showInstruction('BEGINNING',cfg.screen,requester,eyetracking,0);
+showInstruction('BEGINNING',cfg.screen,eyetracking,requester,0)
 
 tic
-for block = 1
+for block = []
     
     rand_block = select_randomization(cfg.rand, subject_id, block);
     
     % at the beginni ng of each block : calibrate ADD pupil labs
-    if calibrate_eyelink
+    if eyetracking
         fprintf('\n\nEYETRACKING CALIBRATION...')
         
         
@@ -151,7 +149,7 @@ Screen('Flip', cfg.screen.win)
 % save eyetracking data
 if eyetracking==1 && calibrate_eyelink
     fulledffile = sprintf('data/etc_s%03u.EDF',subject_id);
-    %sendETNotifications('r',requester)
+    sendETNotifications(eyetracking,requester,'r')
     zmq_request('close');
     Eyelink('CloseFile');
     Eyelink('WaitForModeReady', 500);
