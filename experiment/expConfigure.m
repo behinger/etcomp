@@ -16,7 +16,7 @@ cfg.screen.background_color = 128;
 screen_width = ScreenSize(3);
 screen_height = ScreenSize(4);
 [cfg.screen.win, winRect] = Screen('OpenWindow',whichScreen,cfg.screen.background_color,[0,0,screen_width,screen_height]);
-[cfg.freeviewing.images cfg.yaw.images, cfg.roll.images,cfg.screen.surface_marker] = loadImages(cfg.screen.win);
+[cfg.freeviewing.images, cfg.yaw.images, cfg.roll.images,cfg.screen.surface_marker] = loadImages(cfg.screen.win);
 
 % initial screen filling
 Screen('FillRect', cfg.screen.win, [cfg.screen.background_color cfg.screen.background_color cfg.screen.background_color]);
