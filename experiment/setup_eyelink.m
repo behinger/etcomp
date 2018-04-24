@@ -19,7 +19,7 @@ Eyelink('command',screenInfo);
 prescale = sprintf('screen_write_prescale=4');
 Eyelink('command',prescale);
 remote_position = sprintf('remote_camera_position -10 10 32 -40 -225');
-display('XXX CHECK THIS')
+display('setup_eyelink: XXX CHECK THIS camera position')
 Eyelink('command',remote_position);
 
 % make sure that we get gaze data from the Eyelink and that we have the
