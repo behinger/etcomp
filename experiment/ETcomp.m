@@ -28,7 +28,7 @@ dobeep = 1;
 while dobeep
     testBeep()
     fprintf('\n')
-    dobeep = ~input('You should have heard a beep (yes = 1/ no = 0)');
+    dobeep = ~input('Did you hear a beep (yes = 1/ no = 0)');
     fprintf('\n')
 end
 
@@ -39,7 +39,11 @@ requester = false;
 
 if eyetracking == 1
     % Eyelink
-    el = setup_eyelink(cfg.screen,cfg.small_grid_coord);
+    %always start in the middle
+    calibcoordinates = cfg.small_grid_coord;
+    middlepoint = calibcoordinates(:,1) == 960 & calibcoordinates(:,2) == 540 ;
+    calibcoordinates = calibcoordinates([find(middlepoint);find(~middlepoint)],:);
+    el = setup_eyelink(cfg.screen,calibcoordinates);
     %open log file
     Eyelink('OpenFile', sprintf('etc_s%03u.EDF',subject_id));          %CHANGE file name ?
     sessionInfo = sprintf('%s %s','SUBJECTINDEX',num2str(subject_id));
