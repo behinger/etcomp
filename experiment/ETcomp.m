@@ -103,7 +103,7 @@ for block = 1:2
         
         Eyelink('StartRecording')
     end
-    
+    toc
     [LastFlip] = Screen('Flip', cfg.screen.win);
     
     %% large grid
@@ -141,24 +141,30 @@ end
 
 sendETNotifications(eyetracking,requester,'Finished Experiment');
 
-sendETNotifications(eyetracking,requester,'r'); % stop pupillabs recording
 
-Eyelink('StopRecording')
-
-ShowCursor;
-KbQueueRelease(cfg.keyboardIndex);
-Screen('Close') %cleans up all textures
 DrawFormattedText(cfg.screen.win, 'The experiment is complete! Thank you very much for your participation!', 'center', 'center',0, 60);
 Screen('Flip', cfg.screen.win)
 
 % save eyetracking data
 if eyetracking==1 
-    fulledffile = sprintf('data/etc_s%03u.EDF',subject_id);
-    sendETNotifications(eyetracking,requester,'r')
+    % pupil labs
+    sendETNotifications(eyetracking,requester,'r'); % stop pupillabs recording
     zmq_request('close');
+    
+    % eyelink
+    fulledffile = sprintf('data/etc_s%03u.EDF',subject_id);
     Eyelink('CloseFile');
     Eyelink('WaitForModeReady', 500);
     Eyelink('ReceiveFile',sprintf('etc_s%03u.EDF',subject_id),fulledffile);
     Eyelink('WaitForModeReady', 500);
+    Eyelink('Shutdown')
+    Eyelink('StopRecording')
+
+
 end
-Eyelink('Shutdown')
+
+ShowCursor;
+KbQueueRelease(cfg.keyboardIndex);
+Screen('Close') %cleans up all textures
+sca
+
