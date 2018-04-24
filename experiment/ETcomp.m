@@ -6,7 +6,7 @@ clear all
 %open screen
 debug=false;
 if debug
-    fprintf('!!!!!!DEBUG MODE ON!!!!!!!');
+    fprintf('!!!!!!DEBUG MODE ON!!!!!!!\n');
     commandwindow;
     PsychDebugWindowConfiguration;
 end
@@ -23,15 +23,18 @@ InitializePsychSound(1);
 
 
 %% Test Beep%%
-fprintf('Test Beep');
-
-testBeep()
-
-fprintf('You should have heard a beep');
+fprintf('Test Beep\n');
+dobeep = 1;
+while dobeep
+    testBeep()
+    fprintf('\n')
+    dobeep = ~input('You should have heard a beep (yes = 1/ no = 0)');
+    fprintf('\n')
+end
 
 %% Eyetracking setup
 %setup eyetracker
-eyetracking=0;
+eyetracking=1;
 requester = false;
 
 if eyetracking == 1
@@ -75,9 +78,9 @@ end
 %%
 showInstruction('BEGINNING',cfg.screen,eyetracking,requester,0)
 
-tic
-for block = []
-    
+
+for block = 1:2
+    tic
     rand_block = select_randomization(cfg.rand, subject_id, block);
     
     % at the beginni ng of each block : calibrate ADD pupil labs
@@ -104,34 +107,35 @@ for block = []
     
     %% large grid
     expGuidedGrid(cfg.large_grid_coord,cfg.screen,rand_block.large, block,requester,eyetracking)
-    
+    toc
     %% Smooth pursuit
     expSmoothPursuit(cfg.screen,rand_block.smoothpursuit_speed,rand_block.smoothpursuit_angle, requester,eyetracking,block)
-    
+    toc
     %% free viewing
     expShowImages('FREEVIEW',cfg.freeviewing, cfg.screen, requester, block, eyetracking, rand_block.freeviewing)
-    
+    toc
     %% Microsaccades
     expMicrosaccades(cfg.screen, cfg.fixcross_time, eyetracking, requester, block)
-    
+    toc
     %% Blinks (beep)
     expPlayBeeps(cfg.screen,cfg.blink_number,block,requester,eyetracking)
-    
+    toc
     %% Pupil Dilation
     expPupilDilation(cfg.screen,rand_block.pupildilation, eyetracking, requester, block)
-    
+    toc
     %% Small Grid Before
     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking);
-    
+    toc
     %% Condition shake/tild
     expRotation(rand_block.firstmovement,cfg.screen, eyetracking, requester, block);
-    
+    toc
     %
     %% Small Grid After
     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
+    toc
     %
     %%
-    toc
+    
 end
 
 sendETNotifications(eyetracking,requester,'Finished Experiment');
