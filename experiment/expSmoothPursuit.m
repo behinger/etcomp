@@ -56,16 +56,16 @@ for count= 1:length(directions)%size(pos,1)-1
     duration = random(trunc_dist)/1000; % in s
     duration = 0;
     
-    drawTarget(xCenter, yCenter,screen,20,'fixcross');
+    drawTarget(xCenter, yCenter,screen,20,'fixbulleye');
     LastFlip =  flip_screen(screen);
     KbStrokeWait(); 
     
     % start the trial
-    drawTarget(xCenter, yCenter,screen,20,'fixcross');
+    drawTarget(xCenter, yCenter,screen,20,'fixbulleye');
     LastFlip =  flip_screen(screen);
     
     LastFlip = flip_screen(screen, LastFlip + duration); % image_fixcross_time = 0.5s
-    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialstart,  velocity %d, angle %d, trial %d, block %d,',velocities(count),directions(count),count ,block))
+    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialstart, velocity %d, angle %d, trial %d, block %d,',velocities(count),directions(count),count ,block))
     
     % we want to start in the middle
     newPos = [xstart ystart];
@@ -75,13 +75,13 @@ for count= 1:length(directions)%size(pos,1)-1
 
         newPos = (newPos + stepsize);
         
-        drawTarget(round(newPos(1)),round(newPos(2)),screen,1,'fixcross');
+        drawTarget(round(newPos(1)),round(newPos(2)),screen,1,'fixbulleye');
         
         LastFlip = flip_screen(screen, LastFlip + (1 - 0.5) * ifi); % image_fixcross_time = 0.5s
         
 
     end
-    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialend,  trial %d, block %d,',count ,block))
+    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialend, trial %d, block %d,',count ,block))
     WaitSecs(0.5); 
     
 end

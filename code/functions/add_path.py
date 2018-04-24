@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-import sys
+import sys,os
 #currUser =  pwd.getpwuid(os.getuid())[0]
 #if currUser == 'behinger':
 #    PROJECT_ROOT = '/net/store/nbp/users/behinger/projects'
@@ -18,6 +18,8 @@ import sys
 #sys.path.append(os.path.join(PROJECT_ROOT,"./code/recalibration/"))
 #sys.path.append(os.path.join(PROJECT_ROOT,"./code/"))#
 
-sys.path.append("../lib/pupillabs/pupil_src/shared_modules/calibration_routines")
-sys.path.append("../lib/pupillabs/pupil_src/shared_modules/")
-sys.path.append("../lib/pupillabs/pupil_src/player/")
+sys.path.append(os.path.abspath("../lib/pupil/pupil_src/shared_modules/calibration_routines"))
+sys.path.append(os.path.abspath("../lib/pupil/pupil_src/shared_modules/"))
+sys.path.append(os.path.abspath("../lib/pupil/pupil_src/player/"))
+sys.path.append(os.path.abspath("../lib/opencv2"))
+sys.path.append(os.path.abspath("../code/functions/fake_pl_loading"))
