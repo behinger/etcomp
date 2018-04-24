@@ -4,9 +4,9 @@
 sca
 clear all
 %open screen
-debug=true;
+debug=false;
 if debug
-    
+    fprintf('!!!!!!DEBUG MODE ON!!!!!!!');
     commandwindow;
     PsychDebugWindowConfiguration;
 end
@@ -21,6 +21,13 @@ subject_id = input('\n subjectid: ');
 
 % Initialize Sounddriver
 InitializePsychSound(1);
+
+%% Test Beep%%
+fprintf('Test Beep');
+
+testBeep()
+
+fprintf('You should have heard a beep');
 
 
 %% Eyetracking setup

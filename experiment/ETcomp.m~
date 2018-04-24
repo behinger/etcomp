@@ -4,9 +4,9 @@
 sca
 clear all
 %open screen
-debug=true;
+debug=false;
 if debug
-    
+    fprintf('!!!!!!DEBUG MODE ON!!!!!!!');
     commandwindow;
     PsychDebugWindowConfiguration;
 end
@@ -22,6 +22,29 @@ subject_id = input('\n subjectid: ');
 % Initialize Sounddriver
 InitializePsychSound(1);
 
+%% Test Beep%%
+
+nrchannels = 2;
+freq = 48000;
+% How many times to we wish to play the sound
+repetitions = 1;
+% Length of the beep
+beepLengthSecs = 0.1;
+% Length of the pause between beeps
+beepPauseTime = 1.5 - beepLengthSecs;
+devs = PsychPortAudio('GetDevices')
+pahandle = PsychPortAudio('Open',  6, 1, 1, freq, nrchannels);
+PsychPortAudio('Volume', pahandle, 1);
+basefreq  = 300;
+myBeep = MakeBeep(basefreq, beepLengthSecs, freq);
+
+PsychPortAudio('FillBuffer', pahandle, [myBeep; myBeep]);
+
+    PsychPortAudio('Start', pahandle, repetitions, 0, 1);
+    [actualStartTime, ~, ~, estStopTime] = PsychPortAudio('Stop', pahandle, 1, 1);
+
+% Close the audio device
+PsychPortAudio('Close', pahandle);
 
 %% Eyetracking setup
 %setup eyetracker
@@ -68,6 +91,7 @@ if eyetracking == 1
     sendETNotifications(eyetracking,requester,'Connect Pupil');
 end
 %%
+showInstruction('BEGINNING',cfg.screen,requester,eyetracking,0);
 
 tic
 for block = 1
@@ -118,7 +142,8 @@ for block = 1
     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking);
     
     %% Condition shake/tild
-                   
+    expRotation(rand_block.firstmovement,cfg.screen, eyetracking, requester, block);
+    
     %
     %% Small Grid After
     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
