@@ -1,7 +1,9 @@
 function [] = testBeep()
 
 devs = PsychPortAudio('GetDevices');
-pahandle = PsychPortAudio('Open',  6, 1, 1, 48000, 2);
+%first USB device
+devid = find(cellfun(@(x)~isempty(x),strfind({devs.DeviceName},'USB')),1);
+pahandle = PsychPortAudio('Open',  devid, 1, 1, 48000, 2);
 PsychPortAudio('Volume', pahandle, 1);
 myBeep = MakeBeep(300, 0.1, 48000);
 

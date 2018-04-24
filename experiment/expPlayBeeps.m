@@ -16,9 +16,10 @@ beepLengthSecs = 0.1;
 % Length of the pause between beeps
 beepPauseTime = 1.5 - beepLengthSecs;
 
-devs = PsychPortAudio('GetDevices')
-fprintf('XXX TODO AUTO FIND USB DEVICE')
-pahandle = PsychPortAudio('Open',  6, 1, 1, freq, nrchannels);
+devs = PsychPortAudio('GetDevices');
+devid = find(cellfun(@(x)~isempty(x),strfind({devs.DeviceName},'USB')),1);
+pahandle = PsychPortAudio('Open',  devid, 1, 1, freq, nrchannels);
+
 PsychPortAudio('Volume', pahandle, 1);
 basefreq  = 300;
 myBeep = MakeBeep(basefreq, beepLengthSecs, freq);
