@@ -1,8 +1,8 @@
-function [reply ] = sendETNotifications(eyetracking,requester,msg)
+function [varargout ] = sendETNotifications(eyetracking,requester,msg)
 % Function to send messages to both eyetrackers at the same time. requires
 % cosymatlab - zmq. and the eyelink libraries
 assert(ischar(msg),'message is not a string')
-
+reply = 'nan';
 if eyetracking
     % send to eyelink
     Eyelink('message',msg);
@@ -18,5 +18,8 @@ else
     fprintf('The following message was NOT send: \n')
     fprintf(msg)
     fprintf('\n')
+end
+if nargout == 1
+    varargout{1} = reply;
 end
 
