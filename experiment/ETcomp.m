@@ -14,23 +14,28 @@ end
 
 cfg = expConfigure();
 
-expName = input('\n \n WELCOME EXPERIMENTER! \n\n What is your name? \n >','s');
 subject_id = input('\n subjectid: ');
 
 
 
 % Initialize Sounddriver
 InitializePsychSound(1);
-
-
+%% Test Beep
+% startCue = 0;
+% PsychPortAudio('FillBuffer', pahandle, [myBeep; myBeep]);
+%   PsychPortAudio('Start', pahandle, repetitions, startCue, waitForDeviceStart);
+%     [actualStartTime, ~, ~, estStopTime] = PsychPortAudio('Stop', pahandle, 1, 1);
+%
+% devs = PsychPortAudio('GetDevices')
+% fprintf('XXX TODO AUTO FIND USB DEVICE')
+% pahandle = PsychPortAudio('Open',  6, 1, 1, freq, nrchannels);
+% PsychPortAudio('Volume', pahandle, 1);
 %% Eyetracking setup
 %setup eyetracker
-eyetracking=1;
-calibrate_eyelink = true;
-calibrate_pupil = true;
-requester = true;
+eyetracking=0;
+requester = false;
+
 if eyetracking == 1
-    
     % Eyelink
     el = setup_eyelink(cfg.screen,cfg.small_grid_coord);
     %open log file
@@ -68,16 +73,16 @@ if eyetracking == 1
     sendETNotifications(eyetracking,requester,'Connect Pupil');
 end
 
-
+%%
 showInstruction('BEGINNING',cfg.screen,eyetracking,requester,0)
 
 tic
-for block = 1
+for block = []
     
     rand_block = select_randomization(cfg.rand, subject_id, block);
     
     % at the beginni ng of each block : calibrate ADD pupil labs
-    if calibrate_eyelink
+    if eyetracking
         fprintf('\n\nEYETRACKING CALIBRATION...')
         
         
