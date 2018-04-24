@@ -1,14 +1,14 @@
 function [] = expRotation(first,screen, eyetracking, requester, block)
 % YAW and ROLL conditions
 if strcmp(first, 'ROTATE')
-    showInstruction('ROTATE',screen,requester,eyetracking, block);
+    showInstruction('SHAKE',screen,requester,eyetracking, block);
     rotate(screen, eyetracking, requester, block);
     showInstruction('TILT',screen,requester,eyetracking, block);
     tilt(screen, eyetracking, requester, block);
 else strcmp(first, 'TILT')
     showInstruction('TILT',screen,requester,eyetracking, block);
     tilt(screen, eyetracking, requester, block);
-    showInstruction('ROTATE',screen,requester,eyetracking, block);
+    showInstruction('SHAKE',screen,requester,eyetracking, block);
     rotate(screen, eyetracking, requester, block);
 end
 
@@ -29,25 +29,25 @@ end
         coordX = [l lm rm r];
         coordX = [coordX coordX];
         coordX = coordX(randperm(length(coordX)));
-        sendETNotifications(eyetracking,requester,sprintf('ROTATION start block %d',block))
+        sendETNotifications(eyetracking,requester,sprintf('SHAKE start block %d',block))
         
         for count =1 : length(coordX)
             drawTarget(centerX,centerY,screen,20,'fixcross');
             flip_screen(screen,2);
-            sendETNotifications(eyetracking,requester,sprintf('ROTATION block %d center',block))
+            sendETNotifications(eyetracking,requester,sprintf('SHAKE block %d center',block))
             
             KbStrokeWait();
             
             
             drawTarget(coordX(count),centerY,screen,20,'fixcross');
             flip_screen(screen,2);
-            sendETNotifications(eyetracking,requester,sprintf('ROTATION block %d x %d, y %d',block, coordX(count),centerY));
+            sendETNotifications(eyetracking,requester,sprintf('SHAKE block %d x %d, y %d',block, coordX(count),centerY));
             
             KbStrokeWait();
             
             
         end
-        sendETNotifications(eyetracking,requester,sprintf('ROTATION stop block %d',block))
+        sendETNotifications(eyetracking,requester,sprintf('SHAKE stop block %d',block))
         
     end
 

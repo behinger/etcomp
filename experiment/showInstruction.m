@@ -1,4 +1,4 @@
-function [lastflip] = showInstruction(condition,screen,eyetracking, requester,block)
+function [lastflip] = showInstruction(condition,screen,requester,eyetracking,block)
 % display instructions
 instruction = fileread([ 'Instructions/Instruction_' condition '.txt']);
 

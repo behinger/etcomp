@@ -9,7 +9,7 @@ if debug
     fprintf('!!!!!!DEBUG MODE ON!!!!!!!\n');
     commandwindow;
     PsychDebugWindowConfiguration;
-end
+end                                                                                                                   
 % set up path environment
 
 cfg = expConfigure();
@@ -64,19 +64,18 @@ if eyetracking == 1
     
     
     % Start recording
-    reply =sendETNotifications(eyetracking,requester,sprintf('R etc_s%03u',subject_id));
-    
-    
+    reply =    sendETNotifications(eyetracking,requester,'Connect Pupil');    
     
     if ~isnan(reply)
         fprintf('Pupil Labs Connected');
+    else
+        error('Pupil Labs not connected')
     end
     
-    sendETNotifications(eyetracking,requester,'Connect Pupil');
 end
 
 %%
-showInstruction('BEGINNING',cfg.screen,eyetracking,requester,0)
+showInstruction('BEGINNING',cfg.screen,requester,eyetracking,0)
 
 
 for block = 1:2
@@ -86,8 +85,10 @@ for block = 1:2
     % at the beginni ng of each block : calibrate ADD pupil labs
     if eyetracking
         fprintf('\n\nEYETRACKING CALIBRATION...')
-        
-        
+        sendETNotifications(eyetracking,requester,sprintf('R etc_s%03u',subject_id));
+    
+    
+        % we need to stop eyelink to record the calibration
         Eyelink('StopRecording')
         
         sendETNotifications(eyetracking,requester,sprintf('starting ET calib block %d',block));
@@ -151,7 +152,7 @@ DrawFormattedText(cfg.screen.win, 'The experiment is complete! Thank you very mu
 Screen('Flip', cfg.screen.win)
 
 % save eyetracking data
-if eyetracking==1 && calibrate_eyelink
+if eyetracking==1 
     fulledffile = sprintf('data/etc_s%03u.EDF',subject_id);
     sendETNotifications(eyetracking,requester,'r')
     zmq_request('close');
