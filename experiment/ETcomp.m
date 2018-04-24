@@ -4,7 +4,7 @@
 sca
 clear all
 %open screen
-debug=true;
+debug=false;
 if debug
     commandwindow;
     PsychDebugWindowConfiguration;
@@ -25,7 +25,7 @@ InitializePsychSound(1);
 %% Eyetracking setup
 %setup eyetracker
 eyetracking=1;
-calibrate_eyelink = false;
+calibrate_eyelink = true;
 calibrate_pupil = true;
 requester = true;
 if eyetracking == 1
@@ -67,8 +67,9 @@ if eyetracking == 1
     sendETNotifications(eyetracking,requester,'Connect Pupil');
 end
 
-testConnection(eyetracking, requester)
 
+%%
+%testConnection(eyetracking, requester)
 %%
 showInstruction('BEGINNING',cfg.screen,eyetracking,requester,0)
 
@@ -148,7 +149,7 @@ Screen('Flip', cfg.screen.win)
 % save eyetracking data
 if eyetracking==1 && calibrate_eyelink
     fulledffile = sprintf('data/etc_s%03u.EDF',subject_id);
-    sendETNotifications('r',requester)
+    sendETNotifications(eyetracking,requester,'r')
     zmq_request('close');
     Eyelink('CloseFile');
     Eyelink('WaitForModeReady', 500);
