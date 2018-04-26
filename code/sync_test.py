@@ -9,7 +9,9 @@ from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 import os
 import matplotlib.pyplot as plt
 import functions.nbp_pupilhelper as nbp_pl
-#parses SR research EDF data files into pandas df
+import functions.etcomp_parse as parse
+
+# parses SR research EDF data files into pandas df
 from pyedfread import edf
 
 from functions import nbp_recalib
@@ -78,205 +80,7 @@ def plot_trace(pupil):
 #pldata['gaze_positions3'] = nbp_recalib.nbp_recalib(pldata,eyeID = 0)
     
 #%%
-def parse_message(msg):
-    # Input: message to be parsed
-    #        (e.g. notification from pldata['notifications'])
-    # Output: pandas Series of the parsedmsg
-    
-    #print(msg)
-    try:
-        # for EyeLink
-        msg_time = msg['msg_time']
-        string = msg['trialid '] # space on purpose
-        
-    except:
-        try:
-        # for Pupillabs
-            msg_time = msg['timestamp']
-            string = msg['label']
-        except:
-                return(np.nan)
-    
-    split = string.split(' ')
-    
-    parsedmsg = pd.DataFrame()
-    
-    # if msg has label "GRID element", then extract infos:
-    # msg_time:  timestamp when msg was sent
-    # posx/posy: position of presented fixation point (ground truth) in pix on screen
-    # total:     49=large Grid ; 13=calibration Grid
-    # block:     block of experiment
-    if split[0] == 'GRID' and split[1] == 'element':
-        parsedmsg = dict(
-              msg_time = msg_time,  
-              element=int(split[2]),
-             posx = float(split[4]),
-             posy = float(split[6]),
-             total = int(split[8]),
-             block = int(split[10])
-                )
  
-    #TODO: other GRID labels
-    
-    
-    
-    # label "DILATION"
-    # msg_time: timestamp when msg was sent
-    # lum:      intensity of luminance
-    # block:    block of experiment
-    
-    #??? 'DILATION start' ???
-    
-    if split[0] == 'DILATION' and split[1] == 'lum':
-        parsedmsg = dict(
-              msg_time = msg_time,  
-              lum=int(split[2]),
-              block = int(split[4])
-                )
-    
-    
-    # label "YAW"
-    # msg_time: timestamp when msg was sent
-    # trial:    trial number
-    # block:    block of experiment
-    if split[0] == 'YAW' and split[1] == 'trial':
-        parsedmsg = dict(
-              msg_time = msg_time,  
-              trial = int(split[2]),
-              block = int(split[4])
-                )
-
-
-    #['BLINK', 'start,', 'block', '2']
-    #['BLINK', 'beep', '1', 'block', '2']
-    #['BLINK', 'stop,'                     
-
-    # label "BLINK"
-    # msg_time: timestamp when msg was sent
-    # beep:    number of beep
-    # block:    block of experiment
-    if split[0] == 'BLINK' and split[1] == 'beep':
-        parsedmsg = dict(
-              msg_time = msg_time,  
-              beep = int(split[2]),
-              block = int(split[4])
-                )
-
-
-    #['SMOOTH', 'PURSUIT', 'trialstart,', '', 'velocity', '16,', 'angle', '75,', 'trial', '20,', 'block', '2,']
-    #['SMOOTH', 'PURSUIT', 'trialend,', '', 'trial', '20,', 'block', '2,']
-    #['SMOOTH', 'PURSUIT', 'stop,', 'block', '2']
-
-
-    # label "SMOOTH PURSUIT"
-    # msg_time: timestamp when msg was sent
-    # vel:      velocity of stimulus
-    # angl:     angle of moving stim in reference to ?vertical line? ?where 3 oclock equals 90 degrees? 0 <= angle <= 360
-    # trial:    trial number
-    # block:    block of experiment
-    if split[0] == 'SMOOTH' and split[1] == 'PURSUIT':
-        split = [remove_punctuation(elem) for elem in split]
-        parsedmsg = dict(
-              msg_time = msg_time,
-              exp_event = split[2]
-              #vel = int(split[5]),
-              #angl = int(split[7]),
-              #trial = int(split[9]),
-              #block = int(split[11])
-                )
-        if split[2] == 'trialstart,':
-            parsedmsg.update(dict(
-                vel = split[5],
-                angl = int(split[7]),
-              #trial = int(split[9]),
-              #block = int(split[11])# TODO
-                ...
-                ))
-
-
-    #['FREEVIEW', 'start,', 'block', '2']
-    #['FREEVIEW', 'fixcross']
-    #['FREEVIEW', 'trial', '1', 'id', '5', 'block', '2']
-    #['FREEVIEW', 'stop,', 'block', '2']
-
-    # label "FREEVIEW"
-    # msg_time: timestamp when msg was sent
-    # pic_id:   picture id
-    # trial:    trial number
-    # block:    block of experiment
-    if split[0] == 'FREEVIEW' and split[1] == 'trial':
-        parsedmsg = dict(
-              msg_time = msg_time,  
-              trial = int(split[2]),
-              block = int(split[6]),
-              pic_id = int(split[4]),
-               = split[1],
-                )
-
-
-    # label "MICROSACC"
-    # msg_time: timestamp when msg was sent
-    # start:    if applicable True
-    # stop:     if applicable True
-    # block:    block of experiment
-    if split[0] == 'MICROSACC':
-        parsedmsg = dict(
-              msg_time = msg_time,
-              ms_startstop = split[1],
-              block = int(split[3])              
-                )
-                 
-
-
-    # label "Connect Pupil"
-    # msg_time:         timestamp when msg was sent
-    # connect_pupil:    True?????????
-    if split[0] == 'Connect Pupil':
-        parsedmsg = dict(
-              msg_time = msg_time,
-              connect_pupil = True
-                )
-
-    # I think this isnt in the test data yet
-    # label "Rotation"
-    # msg_time:         timestamp when msg was sent
-    # rot:              True?????????
-    if split[0] == 'Rotation':
-        print(split)
-        parsedmsg = dict(
-              msg_time = msg_time,
-              rot = True
-                )
-        
-    # label "starting ET calib"
-    # msg_time:         timestamp when msg was sent
-    # calib_ET:         True?????????
-    if split[0] == 'starting' and split[1] == 'ET':
-        parsedmsg = dict(
-              msg_time = msg_time,
-              block = split[4],
-              calib_ET = True
-                )
-        split[0] = 'startingET'
-
-    # TODO : ['Finished']  ?Instruction?
-    
-    
-    # add column for condition
-    parsedmsg['condition'] = split[0] 
-
-    return(pd.Series(parsedmsg))
-
-
-def remove_punctuation(s):
-    string_punctuation = ".,;"
-    no_punct = ""
-    for letter in s:
-        if letter not in string_punctuation:
-            no_punct += letter
-    return no_punct
-    
-    
 def match_data(et,msgs,td=2):
     # Input: et(DataFrame) input data of the eyetracker (has column smpl_time)
     #        msgs(DataFrame) already parsed input messages e.g. 'GRID element 5 pos-x 123 ...' defining experimental events (has column msg_time)
@@ -325,13 +129,14 @@ def plotTraces(et,query = 'posx == 960',figure = True):
     
 
 #%%
+        
 # make a list of gridnotes that contain all notifications of pldata if they contain 'label'
 gridnotes = [note for note in pldata['notifications'] if 'label' in note.keys()]
 
 # pandas df that contains all pl parsed messages
 pd_plmsgs = pd.DataFrame();
 for note in gridnotes:
-    msg = parse_message(note)
+    msg = parse.parse_message(note)
     if not msg.empty:
         pd_plmsgs = pd_plmsgs.append(msg, ignore_index=True)
 
@@ -342,9 +147,7 @@ pd_pldata.sort_values('smpl_time',inplace=True)
 # match the et data to the msgs (match smpl_time to msg_time)
 pd_pl_matched_data = match_data(pd_pldata,pd_plmsgs)
 
-#inspect parts of df
-print(pd_pl_matched_data[4000:4005])
-
+# print(pd_pl_matched_data.query('condition=="SMOOTH"'))
 #%%
 
 # Get and parse EL data
@@ -367,18 +170,21 @@ elsamples['gx']  = elsamples.gx_left if np.mean(elsamples.gx_left != -32768)>0.9
 elsamples['gy']  = elsamples.gy_left if np.mean(elsamples.gy_left != -32768)>0.9 else elsamples.gy_right
 
 # parse EL msg and match data to get pandas df
-pd_elmsgs = elnotes.apply(parse_message,axis=1)
+pd_elmsgs = elnotes.apply(parse.parse_message,axis=1)
 pd_elmsgs = pd_elmsgs.drop(pd_elmsgs.index[pd_elmsgs.isnull().all(1)])
 
-#??? whz dont i see the index counting here?
+# match the et data to the msgs (match smpl_time to msg_time)
 pd_el_matched_data = match_data(elsamples,pd_elmsgs)
 
-# PROBLEM: empty : inspect df
-print(pd_el_matched_data)
+
 
 #%%
 
+# We are going to have 5 types of Dataframes: sample, msgs, events, epochs und for each condition a df FULL for pl and el respectively 
+
+
 # Inspection of resulting df
+
 # confidence:    pupillabs (sub-pixel estimation of contour): ratio (detected/perfect)
 # gx/gy:         horiz./vert. gaze in world camera
 # smpl_time:     pl/el timestamp of sample
@@ -399,6 +205,9 @@ print(pd_el_matched_data)
 
 
 print(pd_pl_matched_data.dtypes)
+print(pd_el_matched_data)
+
+
 
 # trying to plot a little
 # fixationcross vert. posy at 540  (middle of screen)  and in td btw. 0 and 0.4
