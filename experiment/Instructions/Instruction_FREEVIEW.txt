@@ -3,6 +3,6 @@ Freeviewing \n \n
 In the following, each stimulus presented will show a natural scene. \n
 You are allowed to freely explore the scene. \n Before each scene, you will see a fixation target. Please fixate it, press SPACE and remain fixated until it disappears. \n
 
-Before the condition starts you will be shown a red target. Please fixate it and press SPACE in order to start with the trial. \n \n
+Before the condition starts you will be shown a green target. Please fixate it and press SPACE in order to start with the trial. \n \n
 Press SPACE to continue.
 

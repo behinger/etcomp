@@ -20,10 +20,13 @@ smooth_angle_sub = sort(repmat(smooth_angle,1,length(smooth_speed)));
 smooth_speed_sub = repmat(smooth_speed,1,length(smooth_angle));
 
 smooth_trials_per_block = length(smooth_angle_sub)/max_block;
+%initialize fields
 rand = struct();
-for fn = {'smallBefore','smallAfter','large','pupildilation','smoothpursuit_speed','smoothpursuit_angle','block','subject','freeviewing'}
+for fn = {'smallBefore','smallAfter','large','pupildilation','smoothpursuit_speed','smoothpursuit_angle','block','subject','freeviewing','firstmovement'}
 rand.(fn{1}) = [];
 end
+
+% generate randomization
 for subject = subjectlist
     
     largeBlockPerm = randperm(max_block);
@@ -60,6 +63,8 @@ for subject = subjectlist
 
         rand.block =    [rand.block block];
         rand.subject = [rand.subject subject];
+        movements = {'ROTATE','TILT'};
+        rand.firstmovement =[rand.firstmovement  movements(1+mod(subject+block,2))];
         
     end
     

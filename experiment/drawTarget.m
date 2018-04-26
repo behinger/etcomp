@@ -46,9 +46,11 @@ elseif contains(which_target, 'fixbulleye') == 1
     circleRect = ones(diamL, diamL)*screen.background_color; %Rectangle to plot circles in
     
     destRect = [0 0 (diamL) (diamL)];
+    %destRect = [0 0 x y];
     rect = Screen('Rect',screen.win);
     
-    [destRect, ~, ~] = CenterRect(destRect, rect);
+    destRect = [x-radL y-radL x+radL y+radL];
+    %[destRect, ~, ~] = CenterRect(destRect, rect);
     
     %Define which fields are lying within the circle and make circle texture
     X = repmat((1:diamL), diamL, 1);

@@ -69,6 +69,7 @@ enang = entr(tang);
 % 
 subplot(3,2,1)
 histogram(di,edges)
+xlabel('Saccade Amplitude °')
 subplot(3,2,3)
 histogram(di,0.5:1:30)
 subplot(3,2,5)
@@ -76,12 +77,15 @@ histogram(di,0:0.1:30)
 
 subplot(3,2,2)
 histogram(diang,edgesangle)
+xlabel('Saccade Angle°')
 subplot(3,2,4)
 histogram(diang,-pi:1:pi)
 subplot(3,2,6)
 histogram(diang,-pi:0.1:pi)
 
+set(findobj(gcf,'-property','box'),'box','off')
 %% plot trajectory
+
 figure
 for k = 1:length(ix)
     hold off
@@ -95,6 +99,6 @@ for k = 1:length(ix)
     plot(xx2(k:k+1),yy2(k:k+1),'r-')
     pause()
     
-end
 
+end
 end

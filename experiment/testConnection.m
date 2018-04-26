@@ -7,4 +7,4 @@ for i=1:1000
 end
 
 
-save('delayedTriggers.mat','elapsedTimes')
+save('delayedTriggers3.mat','elapsedTimes')

@@ -16,7 +16,7 @@ cfg.screen.background_color = 128;
 screen_width = ScreenSize(3);
 screen_height = ScreenSize(4);
 [cfg.screen.win, winRect] = Screen('OpenWindow',whichScreen,cfg.screen.background_color,[0,0,screen_width,screen_height]);
-[cfg.freeviewing.images cfg.yaw.images, cfg.roll.images,cfg.screen.surface_marker] = loadImages(cfg.screen.win);
+[cfg.freeviewing.images, cfg.yaw.images, cfg.roll.images,cfg.screen.surface_marker] = loadImages(cfg.screen.win);
 
 % initial screen filling
 Screen('FillRect', cfg.screen.win, [cfg.screen.background_color cfg.screen.background_color cfg.screen.background_color]);
@@ -46,7 +46,7 @@ cfg.roll.image_width = 570;
 cfg.roll.image_height = 594;
 cfg.roll.image_time = 6;
 cfg.screen.surface_marker_size = 75; % change also in flip Screen
-cfg.screen.color_condition_begin = [85,107,47];
+cfg.screen.color_condition_begin = [0,100,0];
 
 % define grid coordinates
 cfg.small_grid_coord = gridCoordinates(screen_width, screen_height,cfg.screen.surface_marker_size , 13);
