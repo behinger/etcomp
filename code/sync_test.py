@@ -3,80 +3,295 @@
 import functions.add_path
 import numpy as np
 import pandas as pd
+import os,sys,inspect
 
 from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 import os
 import matplotlib.pyplot as plt
 import functions.nbp_pupilhelper as nbp_pl
+#parses SR research EDF data files into pandas df
 from pyedfread import edf
 
 from functions import nbp_recalib
 
 #%%
+# set path and subjectname
 datapath = '/net/store/nbp/projects/etcomp/pilot'
 subject = 'inga'
 
-
 filename = os.path.join(datapath,subject,'raw')
 
-
+# load pupillabs data (dictionary)
+# with dict_keys(['notifications', 'pupil_positions', 'gaze_positions'])
+# where each value is a list that contains a dictionary
 pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'))
 
+# 'notification'
+# dict_keys(['record', 'subject', 'timestamp', 'label', 'duration'])
+
+# 'pupil_positions'
+# dict_keys(['diameter', 'confidence', 'method', 'norm_pos', 'timestamp', 'id', 'topic', 'ellipse'])
+
+# 'gaze_positions'
+# dict_keys(['base_data', 'timestamp', 'topic', 'confidence', 'norm_pos'])
+
+# where 'base_data' has a dict within a list 
+# dict_keys(['diameter', 'confidence', 'method', 'norm_pos', 'timestamp', 'id', 'topic', 'ellipse'])
+
+# where 'normpos' is a list (with horizon. and vert. component)
+
+
 def plot_trace(pupil):
+    # Input: pupil is a list that contains a dictionary with 
+    # Output: plot where the timestamp is on x-axis and the norm_pos is on the y-axis
+    
+    # collect all timestamps
     t = [p['timestamp'] for p in pupil]
+    
+    # horizontal component is at 'norm_pos'[0]; vertical at ['norm_pos'][1] respectively
+    # could i call this norm_x? This is the position in pupillabs coordinates (0 <= x <= 1) world position?
     x = [p['norm_pos'][0] for p in pupil]
+    # y = [p['norm_pos'][1] for p in pupil]
+            
     plt.plot(t,x,'o')
     
-plot_trace(pldata['gaze_positions'])
-plot_trace(pldata['gaze_positions2'])
-plot_trace(pldata['gaze_positions3'])
+    # plot x and y components (position on in world_camera_pic_norm)
+    # plt.plot(x,y,'o')
 
 
-plot_trace([p for p in pldata['pupil_positions'] if p['id'] == 0])
 
-plot_trace([p for p in pldata['pupil_positions'] if p['id'] == 1])
+# calls the plot_trace function to make a plot where
+# timestamp is on x-axis and the norm_pos[0] is on the y-axis
+#plt.figure()
+#plot_trace(pldata['gaze_positions'])
 
-pldata['gaze_positions3'] = nbp_recalib.nbp_recalib(pldata,eyeID = 0)
+#plot_trace(pldata['gaze_positions2'])
+#plot_trace(pldata['gaze_positions3'])
+
+
+# left /right eye:  p['id'] == 0/1
+# plot each eyes' pupil position in respect to pupilcamera_norm
+#plt.figure()
+#plot_trace([p for p in pldata['pupil_positions'] if p['id'] == 0])
+#plot_trace([p for p in pldata['pupil_positions'] if p['id'] == 1])
+
+#pldata['gaze_positions3'] = nbp_recalib.nbp_recalib(pldata,eyeID = 0)
+    
 #%%
 def parse_message(msg):
+    # Input: message to be parsed
+    #        (e.g. notification from pldata['notifications'])
+    # Output: pandas Series of the parsedmsg
     
     #print(msg)
     try:
-        time = msg['time']
+        # for EyeLink
+        msg_time = msg['msg_time']
         string = msg['trialid '] # space on purpose
         
     except:
         try:
-            time = msg['timestamp']
+        # for Pupillabs
+            msg_time = msg['timestamp']
             string = msg['label']
         except:
                 return(np.nan)
     
-    split = string.split(' ')    
+    split = string.split(' ')
+    
     parsedmsg = pd.DataFrame()
+    
+    # if msg has label "GRID element", then extract infos:
+    # msg_time:  timestamp when msg was sent
+    # posx/posy: position of presented fixation point (ground truth) in pix on screen
+    # total:     49=large Grid ; 13=calibration Grid
+    # block:     block of experiment
     if split[0] == 'GRID' and split[1] == 'element':
         parsedmsg = dict(
-              time = time,  
-              id=int(split[2]),
+              msg_time = msg_time,  
+              element=int(split[2]),
              posx = float(split[4]),
              posy = float(split[6]),
              total = int(split[8]),
              block = int(split[10])
                 )
-    return(pd.Series(parsedmsg))
+ 
+    #TODO: other GRID labels
     
+    
+    
+    # label "DILATION"
+    # msg_time: timestamp when msg was sent
+    # lum:      intensity of luminance
+    # block:    block of experiment
+    
+    #??? 'DILATION start' ???
+    
+    if split[0] == 'DILATION' and split[1] == 'lum':
+        parsedmsg = dict(
+              msg_time = msg_time,  
+              lum=int(split[2]),
+              block = int(split[4])
+                )
+    
+    
+    # label "YAW"
+    # msg_time: timestamp when msg was sent
+    # trial:    trial number
+    # block:    block of experiment
+    if split[0] == 'YAW' and split[1] == 'trial':
+        parsedmsg = dict(
+              msg_time = msg_time,  
+              trial = int(split[2]),
+              block = int(split[4])
+                )
+
+
+    #['BLINK', 'start,', 'block', '2']
+    #['BLINK', 'beep', '1', 'block', '2']
+    #['BLINK', 'stop,'                     
+
+    # label "BLINK"
+    # msg_time: timestamp when msg was sent
+    # beep:    number of beep
+    # block:    block of experiment
+    if split[0] == 'BLINK' and split[1] == 'beep':
+        parsedmsg = dict(
+              msg_time = msg_time,  
+              beep = int(split[2]),
+              block = int(split[4])
+                )
+
+
+    #['SMOOTH', 'PURSUIT', 'trialstart,', '', 'velocity', '16,', 'angle', '75,', 'trial', '20,', 'block', '2,']
+    #['SMOOTH', 'PURSUIT', 'trialend,', '', 'trial', '20,', 'block', '2,']
+    #['SMOOTH', 'PURSUIT', 'stop,', 'block', '2']
+
+
+    # label "SMOOTH PURSUIT"
+    # msg_time: timestamp when msg was sent
+    # vel:      velocity of stimulus
+    # angl:     angle of moving stim in reference to ?vertical line? ?where 3 oclock equals 90 degrees? 0 <= angle <= 360
+    # trial:    trial number
+    # block:    block of experiment
+    if split[0] == 'SMOOTH' and split[1] == 'PURSUIT':
+        split = [remove_punctuation(elem) for elem in split]
+        parsedmsg = dict(
+              msg_time = msg_time,
+              exp_event = split[2]
+              #vel = int(split[5]),
+              #angl = int(split[7]),
+              #trial = int(split[9]),
+              #block = int(split[11])
+                )
+        if split[2] == 'trialstart,':
+            parsedmsg.update(dict(
+                vel = split[5],
+                angl = int(split[7]),
+              #trial = int(split[9]),
+              #block = int(split[11])# TODO
+                ...
+                ))
+
+
+    #['FREEVIEW', 'start,', 'block', '2']
+    #['FREEVIEW', 'fixcross']
+    #['FREEVIEW', 'trial', '1', 'id', '5', 'block', '2']
+    #['FREEVIEW', 'stop,', 'block', '2']
+
+    # label "FREEVIEW"
+    # msg_time: timestamp when msg was sent
+    # pic_id:   picture id
+    # trial:    trial number
+    # block:    block of experiment
+    if split[0] == 'FREEVIEW' and split[1] == 'trial':
+        parsedmsg = dict(
+              msg_time = msg_time,  
+              trial = int(split[2]),
+              block = int(split[6]),
+              pic_id = int(split[4]),
+               = split[1],
+                )
+
+
+    # label "MICROSACC"
+    # msg_time: timestamp when msg was sent
+    # start:    if applicable True
+    # stop:     if applicable True
+    # block:    block of experiment
+    if split[0] == 'MICROSACC':
+        parsedmsg = dict(
+              msg_time = msg_time,
+              ms_startstop = split[1],
+              block = int(split[3])              
+                )
+                 
+
+
+    # label "Connect Pupil"
+    # msg_time:         timestamp when msg was sent
+    # connect_pupil:    True?????????
+    if split[0] == 'Connect Pupil':
+        parsedmsg = dict(
+              msg_time = msg_time,
+              connect_pupil = True
+                )
+
+    # I think this isnt in the test data yet
+    # label "Rotation"
+    # msg_time:         timestamp when msg was sent
+    # rot:              True?????????
+    if split[0] == 'Rotation':
+        print(split)
+        parsedmsg = dict(
+              msg_time = msg_time,
+              rot = True
+                )
+        
+    # label "starting ET calib"
+    # msg_time:         timestamp when msg was sent
+    # calib_ET:         True?????????
+    if split[0] == 'starting' and split[1] == 'ET':
+        parsedmsg = dict(
+              msg_time = msg_time,
+              block = split[4],
+              calib_ET = True
+                )
+        split[0] = 'startingET'
+
+    # TODO : ['Finished']  ?Instruction?
+    
+    
+    # add column for condition
+    parsedmsg['condition'] = split[0] 
+
+    return(pd.Series(parsedmsg))
+
+
+def remove_punctuation(s):
+    string_punctuation = ".,;"
+    no_punct = ""
+    for letter in s:
+        if letter not in string_punctuation:
+            no_punct += letter
+    return no_punct
     
     
 def match_data(et,msgs,td=2):
-    # Input: et(DataFrame) input data of the eyetracker
-    #        msgs(DataFrame) already parsed input messages e.g. 'GRID element 5 pos-x 123 ...' defining experimental events
-    # Output: Data.frame for each notification, find all samples that are in the range of +- td (default 2 s)
+    # Input: et(DataFrame) input data of the eyetracker (has column smpl_time)
+    #        msgs(DataFrame) already parsed input messages e.g. 'GRID element 5 pos-x 123 ...' defining experimental events (has column msg_time)
+    # Output: Data.frame for each notification, find all samples that are in the range of +-td (default timediff 2 s)
     pd_matched_data = pd.DataFrame()
+    
     for idx,msg in msgs.iterrows():
         print(idx)
-        ix = abs(et['time'] - msg['time'])<td # ix is a boolean (0 / 1, false / true)
+        ix = abs(et['smpl_time'] - msg['msg_time'])<td # ix is a boolean (0 / 1, false / true) (this way we find all samples +-td)
+        if np.sum(ix) == 0:
+            print('warning, no sample found for msg %i'%(idx))
+            print(msg)
+            continue
         tmp= et.loc[ix]
-        tmp = tmp.assign(td=tmp.time-msg['time'])
+        tmp = tmp.assign(td=tmp.smpl_time-msg['msg_time'])
     
         
         msg_tmp = pd.concat([msg.to_frame()]*tmp.shape[0],axis=1).T
@@ -85,13 +300,21 @@ def match_data(et,msgs,td=2):
         
         tmp = pd.concat([tmp,msg_tmp],axis=1)
         pd_matched_data = pd_matched_data.append(tmp)
+   
     return(pd_matched_data)
+    
+  
     
 def findFile(path,ftype):
     out = [edf for edf in os.listdir(path) if edf.endswith(ftype)]
     return(out)
 
+
 def plotTraces(et,query = 'posx == 960',figure = True):
+    # Input:    et         
+    #           query     all samples that fulfill query get selected
+    #           figure
+    # Output:   plot with x-axis: td time and y-axis: horiz. comp. of gaze
     if type(et) != list:
         et = [et]
     for dat in et:
@@ -101,48 +324,105 @@ def plotTraces(et,query = 'posx == 960',figure = True):
         plt.plot(tmp.td,tmp.gx,'o')
     
 
-#%%    
+#%%
+# make a list of gridnotes that contain all notifications of pldata if they contain 'label'
+gridnotes = [note for note in pldata['notifications'] if 'label' in note.keys()]
 
-gridnotes = [note for note in pldata['notifications'] if 'label' in note.keys() and 'GRID' in note['label']]
-
+# pandas df that contains all pl parsed messages
 pd_plmsgs = pd.DataFrame();
 for note in gridnotes:
     msg = parse_message(note)
     if not msg.empty:
         pd_plmsgs = pd_plmsgs.append(msg, ignore_index=True)
 
-
+# use pupilhelper func to make df (confidence, gx, gy, smpl_time) and sort according to smpl_time
 pd_pldata = nbp_pl.gaze_to_pandas(pldata['gaze_positions'])
-pd_pldata.sort_values('time',inplace=True)
+pd_pldata.sort_values('smpl_time',inplace=True)
 
+# match the et data to the msgs (match smpl_time to msg_time)
 pd_pl_matched_data = match_data(pd_pldata,pd_plmsgs)
 
-#%%
-
-
-    
+#inspect parts of df
+print(pd_pl_matched_data[4000:4005])
 
 #%%
-elsamples, elevents,elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+
+# Get and parse EL data
+# elsamples:  contains individual EL samples
+# elevents:   contains fixation and saccade definitions
+# elnotes:    contains notes (meta data) associated with each trial
+elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+
 # change to seconds to be the same as pupil
-elsamples['time'] = elsamples['time']/1000
-elnotes['time'] = elnotes['trialid_time']/1000
-elnotes = elnotes.drop('trialid_time',axis=1)
-elevents['time'] = elevents['time']/1000
+elsamples['smpl_time'] = elsamples['time']/1000
 
+elnotes['msg_time'] = elnotes['trialid_time']/1000
+elnotes = elnotes.drop('trialid_time',axis=1)
+
+elevents['msg_time'] = elevents['time']/1000
+
+# determine recorded eye
 # if more than 90% of samples are on the the left, assume everything was recorded left
 elsamples['gx']  = elsamples.gx_left if np.mean(elsamples.gx_left != -32768)>0.9 else elsamples.gx_right
+elsamples['gy']  = elsamples.gy_left if np.mean(elsamples.gy_left != -32768)>0.9 else elsamples.gy_right
 
-#
+# parse EL msg and match data to get pandas df
 pd_elmsgs = elnotes.apply(parse_message,axis=1)
-pd_elmsgs = pd_elmsgs.dropna()
+pd_elmsgs = pd_elmsgs.drop(pd_elmsgs.index[pd_elmsgs.isnull().all(1)])
+
+#??? whz dont i see the index counting here?
 pd_el_matched_data = match_data(elsamples,pd_elmsgs)
+
+# PROBLEM: empty : inspect df
+print(pd_el_matched_data)
+
 #%%
-pd_pl_matched_data.gx = pd_pl_matched_data.gx*1960
+
+# Inspection of resulting df
+# confidence:    pupillabs (sub-pixel estimation of contour): ratio (detected/perfect)
+# gx/gy:         horiz./vert. gaze in world camera
+# smpl_time:     pl/el timestamp of sample
+# td:            timedifference (default=2)
+# block:         specifies block of recording
+# cond:          name of condition
+# msg_time:      time when msg was sent
+# trial:         number of trial
+# calib_ET:      was it the calibration phase of ET? (boolean)
+# element:       id of gridpoint (element)
+# posx/posy:     position of presented fixation point (ground truth) in pix on screen?
+# total:         49=large Grid ; 13=calibration Grid
+# pic_id         id of the presented picture
+# start          ?was it start??
+# stop           ?was it stop??
+# beep           number of beep
+# lum            luminance
+
+
+print(pd_pl_matched_data.dtypes)
+
+# trying to plot a little
+# fixationcross vert. posy at 540  (middle of screen)  and in td btw. 0 and 0.4
+example = pd_el_matched_data.query('posy==540&td>0.18 & td<0.5')       # for EL
+# example = pd_pl_matched_data.query('posy==540&td>0 & td<0.4')     # for PL
+print(example.head())
+print(example.columns)
+
+plt.figure()
+plt.plot((example['gx'] ),(example['gy'] ),'o')          # gaze
+
+
+
 #%%
+
+pd_pl_matched_data.gx = pd_pl_matched_data.gx*1920
+
+#%%
+# plot pl against el   if fixationcross presented at posx==960
+# x-axis: td time 
+# y-axis: horiz. component of gaze 
 plotTraces([pd_pl_matched_data,pd_el_matched_data],query = 'posx==960')
 
-plotTraces([pd_pl_matched_data,pd_el_matched_data],query = 'id == 15 & block == 1',figure=False)
+plotTraces([pd_pl_matched_data,pd_el_matched_data],query = 'element == 15 & block == 1',figure=False)
     
 
 
