@@ -3,6 +3,8 @@
 import pandas as pd
 import numpy as np
 
+
+
 def parse_message(msg):
     # Input: message to be parsed
     #        (e.g. notification from pldata['notifications'])
@@ -98,6 +100,7 @@ def parse_message(msg):
     # block:    block of experiment
 
     if split[0] == 'YAW':
+        print("hi")
         parsedmsg = dict(
               msg_time = msg_time,
               exp_event = split[1])
@@ -122,13 +125,13 @@ def parse_message(msg):
     if split[0] == 'BLINK':
         parsedmsg = dict(
               msg_time = msg_time,  
-              exp_event = split[2]
+              exp_event = split[1]
               )
 
         if split[1] == 'beep':
             parsedmsg.update(dict(
                 beep = int(split[2]),
-                block = int(split[2])
+                block = int(split[4])
                 ))
 
         if split[1] == 'start' or split[1] == 'stop':

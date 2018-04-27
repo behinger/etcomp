@@ -43,6 +43,9 @@ pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'))
 # where 'normpos' is a list (with horizon. and vert. component)
 
 
+#%%
+# Plotting
+
 def plot_trace(pupil):
     # Input: pupil is a list that contains a dictionary with 
     # Output: plot where the timestamp is on x-axis and the norm_pos is on the y-axis
@@ -79,6 +82,22 @@ def plot_trace(pupil):
 
 #pldata['gaze_positions3'] = nbp_recalib.nbp_recalib(pldata,eyeID = 0)
     
+
+
+def plotTraces(et,query = 'posx == 960',figure = True):
+    # Input:    et         
+    #           query     all samples that fulfill query get selected
+    #           figure
+    # Output:   plot with x-axis: td time and y-axis: horiz. comp. of gaze
+    if type(et) != list:
+        et = [et]
+    for dat in et:
+        tmp = dat.query(query)
+        if figure:
+            plt.figure()
+        plt.plot(tmp.td,tmp.gx,'o')
+        
+        
 #%%
  
 def match_data(et,msgs,td=2):
@@ -112,20 +131,6 @@ def match_data(et,msgs,td=2):
 def findFile(path,ftype):
     out = [edf for edf in os.listdir(path) if edf.endswith(ftype)]
     return(out)
-
-
-def plotTraces(et,query = 'posx == 960',figure = True):
-    # Input:    et         
-    #           query     all samples that fulfill query get selected
-    #           figure
-    # Output:   plot with x-axis: td time and y-axis: horiz. comp. of gaze
-    if type(et) != list:
-        et = [et]
-    for dat in et:
-        tmp = dat.query(query)
-        if figure:
-            plt.figure()
-        plt.plot(tmp.td,tmp.gx,'o')
     
 
 #%%
@@ -140,19 +145,17 @@ for note in gridnotes:
     if not msg.empty:
         pd_plmsgs = pd_plmsgs.append(msg, ignore_index=True)
 
-# inspect msgs df
-pd_plmsgs.columns
-
-
 # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time) and sort according to smpl_time
 pd_pldata = nbp_pl.gaze_to_pandas(pldata['gaze_positions'])
 pd_pldata.sort_values('smpl_time',inplace=True)
 
-# match the et data to the msgs (match smpl_time to msg_time)
+# match the pl samples df to the msgs df  to get epoched df
 pd_pl_matched_data = match_data(pd_pldata,pd_plmsgs)
 
 
+# How to query for samples from a specific condition
 # print(pd_pl_matched_data.query('condition=="SMOOTH"'))
+
 #%%
 
 # Get and parse EL data
@@ -181,14 +184,29 @@ pd_elmsgs = pd_elmsgs.drop(pd_elmsgs.index[pd_elmsgs.isnull().all(1)])
 # match the et data to the msgs (match smpl_time to msg_time)
 pd_el_matched_data = match_data(elsamples,pd_elmsgs)
 
+#%%
+# samples df
+
+# function to get samples df
+def samples_df(etsamples):
+    return etsamples.loc[:, ['smpl_time', 'gx', 'gy']]
+
+
+elsamples = samples_df(elsamples)
+plsamples = samples_df(pd_pldata)    #!!! gx and gy of pl are not converted yet!!!
+
+#%%
+
+# 
+
 
 
 #%%
 
 # We are going to have 5 types of Dataframes: sample, msgs, events, epochs und for each condition a df FULL for pl and el respectively 
+# for more details please have a look at the "overview dataframes pdf"
 
-
-# Inspection of resulting df
+# Inspection of resulting matched / epoched df
 
 # confidence:    pupillabs (sub-pixel estimation of contour): ratio (detected/perfect)
 # gx/gy:         horiz./vert. gaze in world camera
@@ -198,13 +216,10 @@ pd_el_matched_data = match_data(elsamples,pd_elmsgs)
 # cond:          name of condition
 # msg_time:      time when msg was sent
 # trial:         number of trial
-# calib_ET:      was it the calibration phase of ET? (boolean)
-# element:       id of gridpoint (element)
+# element:       count of gridpoint (element)
 # posx/posy:     position of presented fixation point (ground truth) in pix on screen?
 # total:         49=large Grid ; 13=calibration Grid
 # pic_id         id of the presented picture
-# start          ?was it start??
-# stop           ?was it stop??
 # beep           number of beep
 # lum            luminance
 
@@ -214,13 +229,14 @@ print(pd_el_matched_data)
 
 
 
+#%%
+
 # trying to plot a little
-# fixationcross vert. posy at 540  (middle of screen)  and in td btw. 0 and 0.4
+# grab samples where fixationcross vert. posy at 540  (middle of screen)  and in td btw. 0 and 0.4
 example = pd_el_matched_data.query('posy==540&td>0.18 & td<0.5')       # for EL
 # example = pd_pl_matched_data.query('posy==540&td>0 & td<0.4')     # for PL
-print(example.head())
-print(example.columns)
 
+# 2d plot of gaze postion of samples 
 plt.figure()
 plt.plot((example['gx'] ),(example['gy'] ),'o')          # gaze
 
@@ -228,6 +244,7 @@ plt.plot((example['gx'] ),(example['gy'] ),'o')          # gaze
 
 #%%
 
+# intend to convert pl gaze data to same scale as EL  :   Is it correct?
 pd_pl_matched_data.gx = pd_pl_matched_data.gx*1920
 
 #%%
