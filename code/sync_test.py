@@ -140,12 +140,17 @@ for note in gridnotes:
     if not msg.empty:
         pd_plmsgs = pd_plmsgs.append(msg, ignore_index=True)
 
-# use pupilhelper func to make df (confidence, gx, gy, smpl_time) and sort according to smpl_time
+# inspect msgs df
+pd_plmsgs.columns
+
+
+# use pupilhelper func to make samples df (confidence, gx, gy, smpl_time) and sort according to smpl_time
 pd_pldata = nbp_pl.gaze_to_pandas(pldata['gaze_positions'])
 pd_pldata.sort_values('smpl_time',inplace=True)
 
 # match the et data to the msgs (match smpl_time to msg_time)
 pd_pl_matched_data = match_data(pd_pldata,pd_plmsgs)
+
 
 # print(pd_pl_matched_data.query('condition=="SMOOTH"'))
 #%%

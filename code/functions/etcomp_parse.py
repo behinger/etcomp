@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import pandas as pd
-
-
+import numpy as np
 
 def parse_message(msg):
     # Input: message to be parsed
     #        (e.g. notification from pldata['notifications'])
     # Output: pandas Series of the parsedmsg
-    #         see ?Documentation? for whole dataframe
+    #         see "overview dataframe pdf"
     
-    #print(msg)
     try:
         # for EyeLink
         msg_time = msg['msg_time']
@@ -24,67 +22,103 @@ def parse_message(msg):
         except:
                 return(np.nan)
     
+    # splits msg into list of str and removes punctuation
     split = string.split(' ')
+    split = [remove_punctuation(elem) for elem in split]
     
     parsedmsg = pd.DataFrame()
+        
     
     # if msg has label "GRID element", then extract infos:
     # msg_time:  timestamp when msg was sent
-    # posx/posy: position of presented fixation point (ground truth) in pix on screen
-    # total:     49=large Grid ; 13=calibration Grid
+    # exp_event: experimental event of GRID (buttonpress, element, start, stop)
     # block:     block of experiment
-    if split[0] == 'GRID' and split[1] == 'element':
+        # for GRID element:    
+        # element:   count of elements shown
+        # posx/posy: position of presented fixation point (ground truth) in pix on screen
+        # total:     49=large Grid ; 13=calibration Grid
+
+    if split[0] == 'GRID':
         parsedmsg = dict(
-              msg_time = msg_time,  
-              element=int(split[2]),
-             posx = float(split[4]),
-             posy = float(split[6]),
-             total = int(split[8]),
-             block = int(split[10])
-                )
- 
+                msg_time = msg_time,
+                exp_event = split[1])
+        
+        # buttonpress is an exp_event with no additional information
+        
+        if split[1] == 'element':
+            parsedmsg.update(dict(
+                    element = int(split[2]),
+                    posx = float(split[4]),
+                    posy = float(split[6]),
+                    total = int(split[8]),
+                    block = int(split[10])
+                    ))
+
+        elif split[1] == 'start':
+            parsedmsg.update(dict(
+                    block = split[3]))
+        
+        #TODO check index again
+        elif split[1] == 'stop':
+            parsedmsg.update(dict(
+                    block = split[2]))
+           
+         
     #TODO: other GRID labels  small GRID before / after
     
     
     
     # label "DILATION"
     # msg_time: timestamp when msg was sent
+    # exp_event: experimental event of DILATION (start, stop, lum)
     # lum:      intensity of luminance
     # block:    block of experiment
-    
-    #??? 'DILATION start' ???
-    
-    if split[0] == 'DILATION' and split[1] == 'lum':
+
+    if split[0] == 'DILATION':
         parsedmsg = dict(
               msg_time = msg_time,  
-              lum=int(split[2]),
-              block = int(split[4])
-                )
-    
-    
+              exp_event = split[1])
+        
+        if split[1] == 'lum':
+            parsedmsg.update(dict(
+                  lum=int(split[2]),
+                  block = int(split[4])
+                    ))
+            
+        elif split[1] == 'start' or split[1] == 'stop':
+            parsedmsg.update(dict(
+                  block = int(split[3])
+                    ))
+           
+                
     # label "YAW"
     # msg_time: timestamp when msg was sent
+    # exp_event: experimental event of YAW (start, stop, trial)
     # trial:    trial number
     # block:    block of experiment
-    if split[0] == 'YAW' and split[1] == 'trial':
+
+    if split[0] == 'YAW':
         parsedmsg = dict(
-              msg_time = msg_time,  
-              trial = int(split[2]),
-              block = int(split[4])
-                )
-
-
-    #['BLINK', 'start,', 'block', '2']
-    #['BLINK', 'beep', '1', 'block', '2']
-    #['BLINK', 'stop,'                     
+              msg_time = msg_time,
+              exp_event = split[1])
+        
+        if split[1] == 'trial':
+            parsedmsg.update(dict(
+                  trial = int(split[2]),
+                  block = int(split[4])
+                    ))
+        
+        elif split[1] == 'start' or split[1] == 'stop':
+            parsedmsg.update(dict(
+                  block = int(split[3])
+                    ))
 
     # label "BLINK"
     # msg_time: timestamp when msg was sent
-    # exp_event:  experimental event of smooth pursuit (start, beep, stop)
+    # exp_event:  experimental event of BLINK (start, beep, stop)
     # beep:    number of beep
     # block:    block of experiment
-    if split[0] == 'BLINK':
-        print(msg)
+
     if split[0] == 'BLINK':
         parsedmsg = dict(
               msg_time = msg_time,  
@@ -96,32 +130,27 @@ def parse_message(msg):
                 beep = int(split[2]),
                 block = int(split[2])
                 ))
-        # TODO
-        if split[1] == 'start' or 'stop':
+
+        if split[1] == 'start' or split[1] == 'stop':
             parsedmsg.update(dict(
-                beep = int(split[2]),
-                block = int(split[2])
+                block = int(split[3])
                 ))
 
 
-
-    #['SMOOTH', 'PURSUIT', 'trialstart,', '', 'velocity', '16,', 'angle', '75,', 'trial', '20,', 'block', '2,']
-    #['SMOOTH', 'PURSUIT', 'trialend,', '', 'trial', '20,', 'block', '2,']
-    #['SMOOTH', 'PURSUIT', 'stop,', 'block', '2']
-
     # label "SMOOTH PURSUIT"
     # msg_time:   timestamp when msg was sent
-    # exp_event:  experimental event of smooth pursuit (trialstart, trialend, stop)
-    # vel:        velocity of stimulus
-    # angl:       angle of moving stim in reference to ?vertical line? ?where 3 oclock equals 90 degrees? 0 <= angle <= 360
-    # trial:      trial number
+    # exp_event:  experimental event of SMOOTH PURSUIT (trialstart, trialend, stop)
     # block:      block of experiment
+        # for "trialstart":
+        # vel:        velocity of stimulus
+        # angl:       angle of moving stim in reference to ?vertical line? ?where 3 oclock equals 90 degrees? 0 <= angle <= 360
+        # trial:      trial number
+
     if split[0] == 'SMOOTH' and split[1] == 'PURSUIT':
-        split = [remove_punctuation(elem) for elem in split]
         parsedmsg = dict(
               msg_time = msg_time,
-              exp_event = split[2]
-              )
+              exp_event = split[2])
+        
         # TODO: correct index again
         if split[2] == 'trialstart':
             parsedmsg.update(dict(
@@ -143,55 +172,62 @@ def parse_message(msg):
                 ))
 
 
-
-
-
-    #['FREEVIEW', 'start,', 'block', '2']
-    #['FREEVIEW', 'fixcross']
-    #['FREEVIEW', 'trial', '1', 'id', '5', 'block', '2']
-    #['FREEVIEW', 'stop,', 'block', '2']
-
     # label "FREEVIEW"
     # msg_time: timestamp when msg was sent
-    # pic_id:   picture id
+    # exp_event:  experimental event of FREEVIEW (trial, fixcross, start, stop)
     # trial:    trial number
+    # pic_id:   picture id
     # block:    block of experiment
-    if split[0] == 'FREEVIEW' and split[1] == 'trial':
+   
+    if split[0] == 'FREEVIEW':
         parsedmsg = dict(
-              msg_time = msg_time,  
-              trial = int(split[2]),
-              block = int(split[6]),
-              pic_id = int(split[4])
-                )
+              msg_time = msg_time,
+              exp_event = split[1])
+
+        if split[1] == 'trial':
+            parsedmsg.update(dict(    
+                  trial = int(split[2]),
+                  pic_id = int(split[4]),
+                  block = int(split[6])
+                  ))
+
+        if split[1] == 'start' or split[1] == 'stop':
+            parsedmsg.update(dict(
+                block = int(split[3])
+                ))
 
 
     # label "MICROSACC"
     # msg_time: timestamp when msg was sent
-    # start:    if applicable True
-    # stop:     if applicable True
+    # exp_event:  experimental event of MICROSACC (start, stop)
     # block:    block of experiment
+
     if split[0] == 'MICROSACC':
         parsedmsg = dict(
               msg_time = msg_time,
-              ms_startstop = split[1],
-              block = int(split[3])              
-                )
-                 
-
+              exp_event = split[1],
+              block = int(split[3]))
+               
 
     # label "Connect Pupil"
     # msg_time:         timestamp when msg was sent
-    # connect_pupil:    True?????????
+    # connect_pupil:    True
+    
+    # TODO: check is this is correct as there are no samples with this label
     if split[0] == 'Connect Pupil':
+        print(split)
         parsedmsg = dict(
               msg_time = msg_time,
               connect_pupil = True
                 )
 
-    # I think this isnt in the test data yet
+
     # label "Rotation"
     # msg_time:         timestamp when msg was sent
-    # rot:              True?????????
+    # exp_event:        experimental event of Rotation ???
+    # block:            block of experiment
+    
+    # TODO: check is this is correct as there are no samples with this label
     if split[0] == 'Rotation':
         print(split)
         parsedmsg = dict(
@@ -199,20 +235,19 @@ def parse_message(msg):
               rot = True
                 )
         
+        
     # label "starting ET calib"
     # msg_time:         timestamp when msg was sent
-    # calib_ET:         True?????????
+    # block:            block of experiment
+    
     if split[0] == 'starting' and split[1] == 'ET':
         parsedmsg = dict(
               msg_time = msg_time,
               block = split[4],
-              calib_ET = True
-                )
+              )
         split[0] = 'startingET'
 
-    # TODO : ['Finished']  ?Instruction?
-    
-    
+  
     # add column for condition
     parsedmsg['condition'] = split[0] 
 
