@@ -196,34 +196,51 @@ elsamples = samples_df(elsamples)
 plsamples = samples_df(pd_pldata)    #!!! gx and gy of pl are not converted yet!!!
 
 #%%
+# msgs df
 
-# 
+# this pd_ is not consistent with our notation
+pd_elmsgs.dtypes
+pd_plmsgs.dtypes
+
+#%%
+# events df
+
+# TODO
+def make_events(etdata):
+    # is this conceptually correct?
+    pass
+
+elevents = make_events(elsamples)
+plevents = make_events(plsamples)
+
+#%%
+# epochs df
+
+elepochs = match_data(elsamples,pd_elmsgs)
+plepochs = match_data(plsamples,pd_plmsgs)
+
+#%%
+# FULL df
+
+def full_df(etmsgs, etevents, condition):
+    # Input:
+    # Output:    
+    full_df = pd.DataFrame()
+    # search for start message of condition in **etmsgs**
+    
+    # search for first saccade / fixation / blink after msg_time in **etevents**
+    
+    return full_df
 
 
 
 #%%
 
+
 # We are going to have 5 types of Dataframes: sample, msgs, events, epochs und for each condition a df FULL for pl and el respectively 
 # for more details please have a look at the "overview dataframes pdf"
 
 # Inspection of resulting matched / epoched df
-
-# confidence:    pupillabs (sub-pixel estimation of contour): ratio (detected/perfect)
-# gx/gy:         horiz./vert. gaze in world camera
-# smpl_time:     pl/el timestamp of sample
-# td:            timedifference (default=2)
-# block:         specifies block of recording
-# cond:          name of condition
-# msg_time:      time when msg was sent
-# trial:         number of trial
-# element:       count of gridpoint (element)
-# posx/posy:     position of presented fixation point (ground truth) in pix on screen?
-# total:         49=large Grid ; 13=calibration Grid
-# pic_id         id of the presented picture
-# beep           number of beep
-# lum            luminance
-
-
 print(pd_pl_matched_data.dtypes)
 print(pd_el_matched_data)
 

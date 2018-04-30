@@ -100,7 +100,6 @@ def parse_message(msg):
     # block:    block of experiment
 
     if split[0] == 'YAW':
-        print("hi")
         parsedmsg = dict(
               msg_time = msg_time,
               exp_event = split[1])
