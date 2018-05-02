@@ -19,7 +19,7 @@ from functions import nbp_recalib
 #%%
 # set path and subjectname
 datapath = '/net/store/nbp/projects/etcomp/pilot'
-subject = 'inga'
+subject = 'inga_2'
 
 filename = os.path.join(datapath,subject,'raw')
 
@@ -39,7 +39,6 @@ original_pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'
 
 # where 'base_data' has a dict within a list 
 # dict_keys(['diameter', 'confidence', 'method', 'norm_pos', 'timestamp', 'id', 'topic', 'ellipse'])
-
 # where 'normpos' is a list (with horizon. and vert. component)
 
 
@@ -123,7 +122,8 @@ def match_data(et,msgs,td=2):
         
         tmp = pd.concat([tmp,msg_tmp],axis=1)
         matched_data = matched_data.append(tmp)
-   
+       
+          
     return(matched_data)
     
   
@@ -138,6 +138,7 @@ def findFile(path,ftype):
 # make a list of gridnotes that contain all notifications of original_pldata if they contain 'label'
 gridnotes = [note for note in original_pldata['notifications'] if 'label' in note.keys()]
 
+labels = set()
 # pandas df that contains all pl parsed messages
 plmsgs = pd.DataFrame();
 for note in gridnotes:
@@ -145,9 +146,13 @@ for note in gridnotes:
     if not msg.empty:
         plmsgs = plmsgs.append(msg, ignore_index=True)
 
+
+#%%
+
 # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time) and sort according to smpl_time
 pldata = nbp_pl.gaze_to_pandas(original_pldata['gaze_positions'])
 pldata.sort_values('smpl_time',inplace=True)
+
 
 # match the pl samples df to the msgs df  to get epoched df
 pl_matched_data = match_data(pldata,plmsgs)
@@ -177,9 +182,14 @@ elevents['msg_time'] = elevents['time']/1000
 elsamples['gx']  = elsamples.gx_left if np.mean(elsamples.gx_left != -32768)>0.9 else elsamples.gx_right
 elsamples['gy']  = elsamples.gy_left if np.mean(elsamples.gy_left != -32768)>0.9 else elsamples.gy_right
 
+
+# TODO grab eye with pa 
+# convert to diameter
+
 # parse EL msg and match data to get pandas df
 elmsgs = elnotes.apply(parse.parse_message,axis=1)
 elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
+
 
 # match the et data to the msgs (match smpl_time to msg_time)
 el_matched_data = match_data(elsamples,elmsgs)
@@ -189,7 +199,8 @@ el_matched_data = match_data(elsamples,elmsgs)
 #%%
 
 
-# We are going to have 5 types of Dataframes: sample, msgs, events, epochs und for each condition a df FULL for pl and el respectively 
+# We are going to have 5 types of Dataframes:
+# sample, msgs, events, epochs und for each condition a df FULL for pl and el respectively 
 # for more details please have a look at the "overview dataframes pdf"
 
 
@@ -199,16 +210,18 @@ el_matched_data = match_data(elsamples,elmsgs)
 # function to get samples df
 def samples_df(etsamples):
     if 'confidence' in etsamples:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence']]
-    # TODO: what confidence parameter do we use for el?
-    #elif 'errors' in etsamples:
-    #    return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'errors']]
-    else:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy']]
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence', 'diameter']]
     
-#TODO: el doesnt have confidence
+    # this should be the pupil area, but do the numbers make sense??
+    # TODO add diameter
+    elif 'pa_left' in etsamples.columns:
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'pa_left', 'pa_right']]
+    else:
+        raise 'Error should not come here'
+    
 elsamples = samples_df(elsamples)
 plsamples = samples_df(pldata)    #!!! gx and gy of pl are not converted yet!!!
+
 
 #%%
 # msgs df
@@ -216,6 +229,7 @@ plsamples = samples_df(pldata)    #!!! gx and gy of pl are not converted yet!!!
 elmsgs.dtypes
 plmsgs.dtypes
 
+# Why do we find a missmatch here?
 elmsgs.condition.value_counts()
 plmsgs.condition.value_counts()
 
@@ -264,6 +278,18 @@ def full_df(etmsgs, etevents, condition):
 #%%
 # Looking at pupil dilation
     
+
+def plot_diam(dat,query = 'condition=="DILATION" & block==1 & lum==1'):
+    plt.figure()
+    dat.loc[dat['pa_right'] == 0,'pa_right'] = np.nan
+    dilation_data_subset = dat.query(query )
+    plt.plot(dilation_data_subset['td'],dilation_data_subset['pa_right'])
+    
+    
+dilation_data = plepochs.loc[:,['td', 'condition', 'exp_event', 'lum', 'block','diameter']]
+dilation_data_subset = dilation_data.query('condition=="DILATION" & block==1 & lum==1' )
+
+
 
 
 #%%
