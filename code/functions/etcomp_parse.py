@@ -41,6 +41,7 @@ def parse_message(msg):
         # grid_size:     49=large Grid ; 13=calibration Grid
 
     if split[0] == 'GRID':
+        #print(split)
         parsedmsg = dict(
                 msg_time = msg_time,
                 exp_event = split[1])
@@ -48,6 +49,7 @@ def parse_message(msg):
         # buttonpress is an exp_event with no additional information
         
         if split[1] == 'element':
+            #print(split)
             parsedmsg.update(dict(
                     element = int(split[2]),
                     posx = float(split[4]),
@@ -55,20 +57,27 @@ def parse_message(msg):
                     grid_size = int(split[8]),
                     block = int(split[10])
                     ))
+            
+        #TODO did you mean this with grid_small_before
+        # but how do i know if it is before or after ??
+        elif split[1] == 'element' and split[8] == '13':
+            parsedmsg.update(dict(
+                    exp_event = 'small_grid_before',
+                    element = int(split[2]),
+                    posx = float(split[4]),
+                    posy = float(split[6]),
+                    grid_size = int(split[8]),
+                    block = int(split[10])
+                    ))            
 
         elif split[1] == 'start':
             parsedmsg.update(dict(
                     block = split[3]))
-        
-        #TODO check index again
+
         elif split[1] == 'stop':
             parsedmsg.update(dict(
                     block = split[2]))
-           
-         
-    #TODO: other GRID labels  small GRID before / after
-    
-    
+
     
     # label "DILATION"
     # msg_time: timestamp when msg was sent
@@ -77,6 +86,7 @@ def parse_message(msg):
     # block:    block of experiment
 
     if split[0] == 'DILATION':
+        print(split)
         parsedmsg = dict(
               msg_time = msg_time,  
               exp_event = split[1])
@@ -93,27 +103,6 @@ def parse_message(msg):
                     ))
            
                 
-    # label "YAW"
-    # msg_time: timestamp when msg was sent
-    # exp_event: experimental event of YAW (start, stop, trial)
-    # trial:    trial number
-    # block:    block of experiment
-
-    if split[0] == 'YAW':
-        parsedmsg = dict(
-              msg_time = msg_time,
-              exp_event = split[1])
-        
-        if split[1] == 'trial':
-            parsedmsg.update(dict(
-                  trial = int(split[2]),
-                  block = int(split[4])
-                    ))
-        
-        elif split[1] == 'start' or split[1] == 'stop':
-            parsedmsg.update(dict(
-                  block = int(split[3])
-                    ))
 
     # label "BLINK"
     # msg_time: timestamp when msg was sent
@@ -142,30 +131,34 @@ def parse_message(msg):
     # label "SMOOTH PURSUIT"
     # msg_time:   timestamp when msg was sent
     # exp_event:  experimental event of SMOOTH PURSUIT (trialstart, trialend, stop)
-    # block:      block of experiment
         # for "trialstart":
         # vel:        velocity of stimulus
         # angl:       angle of moving stim in reference to ?vertical line? ?where 3 oclock equals 90 degrees? 0 <= angle <= 360
         # trial:      trial number
-
+        # block:      block of experiment
+        
     if split[0] == 'SMOOTH' and split[1] == 'PURSUIT':
         parsedmsg = dict(
               msg_time = msg_time,
               exp_event = split[2])
+
+        if split[2] == 'start':
+            parsedmsg.update(dict(
+                block = int(split[4])
+                ))
         
-        # TODO: correct index again
         if split[2] == 'trialstart':
             parsedmsg.update(dict(
-                vel = int(split[5]),
-                angl = int(split[7]),
-                trial = int(split[9]),
-                block = int(split[11])
+                vel = int(split[4]),
+                angl = int(split[6]),
+                trial = int(split[8]),
+                block = int(split[10])
                 ))
 
         if split[2] == 'trialend':
             parsedmsg.update(dict(
-                trial = int(split[5]),
-                block = int(split[7])
+                trial = int(split[4]),
+                block = int(split[6])
                 ))
 
         if split[2] == 'stop':
@@ -220,21 +213,7 @@ def parse_message(msg):
         parsedmsg = dict(
               msg_time = msg_time,
               exp_event = "ConnectPupil")
-
-
-    # label "Rotation"
-    # msg_time:         timestamp when msg was sent
-    # exp_event:        experimental event of Rotation ???
-    # block:            block of experiment
-    
-    # TODO: check is this is correct as there are no samples with this label
-    if split[0] == 'Rotation':
-        print(split)
-        parsedmsg = dict(
-              msg_time = msg_time,
-              rot = True
-                )
-        
+     
         
     # label "starting ET calib"
     # msg_time:         timestamp when msg was sent
@@ -250,71 +229,87 @@ def parse_message(msg):
 
     # label "Finished"
     # msg_time:         timestamp when msg was sent
-    # finished:         boolean: True when Experiment is finished  ??
+    # exp_event:        True when Experiment is finished  ??
 
     if split[0] == 'Finished':
+        print(split)
         parsedmsg = dict(
               msg_time = msg_time,                
-              finished = True)
+              exp_event = 'exp_finished')
 
 
     # label "Instruction"
     # msg_time:         timestamp when msg was sent
-    # instruct:         boolean
-    #if split[0] == 'instruction':
-    #    print(split)
-    #    parsedmsg = dict(
-    #          msg_time = msg_time,                
-    #          instruct = True)
-    
-
+    # exp_event:        specifys for which condition Instruction was sent (start, end)
+    # block:            block of experiment
+  
+    if split[0] == 'Instruction':
+        parsedmsg = dict(
+              msg_time = msg_time,                
+              exp_event = str(split[2]) + '_' + str(split[3]),
+              block = split[5]
+              )
 
 
     # label "SHAKE"
     # msg_time:         timestamp when msg was sent
+    # exp_event:        experimental event of SHAKE (start, center, stop)
     # block:            block of experiment
-    
-    # look at this again  exp_event  start stop... etc.
-    
+  
     if split[0] == 'SHAKE':
-        print(split)
         parsedmsg = dict(
               msg_time = msg_time,
               exp_event = split[1])
+    
+        if split[3] == 'x':
+            parsedmsg.update(dict(
+                shake_x = int(split[4]),
+                shake_y = int(split[6]),
+                block = int(split[2]),
+                exp_event = 'shake_point'
+                ))
 
         if split[1] == 'start' or split[1] == 'stop':
             parsedmsg.update(dict(
                 block = int(split[3])
                 ))
-    
 
-
+        elif split[3] == 'center':
+            parsedmsg.update(dict(
+                block = int(split[2]),
+                exp_event = 'shake_center',
+                # is it okay that i put (0,540) as center?
+                shake_x = 0,
+                shake_y = 540,
+                ))     
+        
+        
     # label "TILT"
     # msg_time:         timestamp when msg was sent
+    # exp_event:        experimental event of TILT (start, stop, trial)
     # block:            block of experiment
     
-    # look at this again  exp_event  start stop... etc.
+    # TODO  I dont find tilt in PL
     
     if split[0] == 'TILT':
-        print(split)
         parsedmsg = dict(
               msg_time = msg_time,
               exp_event = split[1])
-        
+    
         if split[1] == 'angle':
-            parsedmsg.update(dict(    
-                  #block = int(split[6])
-                  ))
+            parsedmsg.update(dict(
+                angl = int(split[2]),
+                block = int(split[4])
+                ))
 
         if split[1] == 'start' or split[1] == 'stop':
             parsedmsg.update(dict(
                 block = int(split[3])
                 ))
-    
 
 
     # TODO: check if parsed for everything
-    
+    #labels.add(split[0])
     
     # add column for condition
     parsedmsg['condition'] = split[0] 
