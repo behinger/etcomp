@@ -31,14 +31,14 @@ def parse_message(msg):
     parsedmsg = pd.DataFrame()
         
     
-    # if msg has label "GRID element", then extract infos:
+    # if msg has label "GRID", then extract infos:
     # msg_time:  timestamp when msg was sent
     # exp_event: experimental event of GRID (buttonpress, element, start, stop)
     # block:     block of experiment
         # for GRID element:    
         # element:   count of elements shown
         # posx/posy: position of presented fixation point (ground truth) in pix on screen
-        # total:     49=large Grid ; 13=calibration Grid
+        # grid_size:     49=large Grid ; 13=calibration Grid
 
     if split[0] == 'GRID':
         parsedmsg = dict(
@@ -52,7 +52,7 @@ def parse_message(msg):
                     element = int(split[2]),
                     posx = float(split[4]),
                     posy = float(split[6]),
-                    total = int(split[8]),
+                    grid_size = int(split[8]),
                     block = int(split[10])
                     ))
 
@@ -213,15 +213,13 @@ def parse_message(msg):
 
     # label "Connect Pupil"
     # msg_time:         timestamp when msg was sent
-    # connect_pupil:    True
+    # exp_event:        connectpupil
     
-    # TODO: check is this is correct as there are no samples with this label
-    if split[0] == 'Connect Pupil':
-        print(split)
+    # TODO: check is this is correct
+    if split[0] == 'Connect'and split[1] == 'Pupil':
         parsedmsg = dict(
               msg_time = msg_time,
-              connect_pupil = True
-                )
+              exp_event = "ConnectPupil")
 
 
     # label "Rotation"
@@ -249,7 +247,75 @@ def parse_message(msg):
               )
         split[0] = 'startingET'
 
-  
+
+    # label "Finished"
+    # msg_time:         timestamp when msg was sent
+    # finished:         boolean: True when Experiment is finished  ??
+
+    if split[0] == 'Finished':
+        parsedmsg = dict(
+              msg_time = msg_time,                
+              finished = True)
+
+
+    # label "Instruction"
+    # msg_time:         timestamp when msg was sent
+    # instruct:         boolean
+    #if split[0] == 'instruction':
+    #    print(split)
+    #    parsedmsg = dict(
+    #          msg_time = msg_time,                
+    #          instruct = True)
+    
+
+
+
+    # label "SHAKE"
+    # msg_time:         timestamp when msg was sent
+    # block:            block of experiment
+    
+    # look at this again  exp_event  start stop... etc.
+    
+    if split[0] == 'SHAKE':
+        print(split)
+        parsedmsg = dict(
+              msg_time = msg_time,
+              exp_event = split[1])
+
+        if split[1] == 'start' or split[1] == 'stop':
+            parsedmsg.update(dict(
+                block = int(split[3])
+                ))
+    
+
+
+    # label "TILT"
+    # msg_time:         timestamp when msg was sent
+    # block:            block of experiment
+    
+    # look at this again  exp_event  start stop... etc.
+    
+    if split[0] == 'TILT':
+        print(split)
+        parsedmsg = dict(
+              msg_time = msg_time,
+              exp_event = split[1])
+        
+        if split[1] == 'angle':
+            parsedmsg.update(dict(    
+                  #block = int(split[6])
+                  ))
+
+        if split[1] == 'start' or split[1] == 'stop':
+            parsedmsg.update(dict(
+                block = int(split[3])
+                ))
+    
+
+
+    # TODO: check if parsed for everything
+    
+    
     # add column for condition
     parsedmsg['condition'] = split[0] 
 

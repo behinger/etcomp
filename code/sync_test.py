@@ -26,7 +26,7 @@ filename = os.path.join(datapath,subject,'raw')
 # load pupillabs data (dictionary)
 # with dict_keys(['notifications', 'pupil_positions', 'gaze_positions'])
 # where each value is a list that contains a dictionary
-pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'))
+original_pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'))
 
 # 'notification'
 # dict_keys(['record', 'subject', 'timestamp', 'label', 'duration'])
@@ -68,19 +68,19 @@ def plot_trace(pupil):
 # calls the plot_trace function to make a plot where
 # timestamp is on x-axis and the norm_pos[0] is on the y-axis
 #plt.figure()
-#plot_trace(pldata['gaze_positions'])
+#plot_trace(original_pldata['gaze_positions'])
 
-#plot_trace(pldata['gaze_positions2'])
-#plot_trace(pldata['gaze_positions3'])
+#plot_trace(original_pldata['gaze_positions2'])
+#plot_trace(original_pldata['gaze_positions3'])
 
 
 # left /right eye:  p['id'] == 0/1
 # plot each eyes' pupil position in respect to pupilcamera_norm
 #plt.figure()
-#plot_trace([p for p in pldata['pupil_positions'] if p['id'] == 0])
-#plot_trace([p for p in pldata['pupil_positions'] if p['id'] == 1])
+#plot_trace([p for p in original_pldata['pupil_positions'] if p['id'] == 0])
+#plot_trace([p for p in original_pldata['pupil_positions'] if p['id'] == 1])
 
-#pldata['gaze_positions3'] = nbp_recalib.nbp_recalib(pldata,eyeID = 0)
+#original_pldata['gaze_positions3'] = nbp_recalib.nbp_recalib(original_pldata,eyeID = 0)
     
 
 
@@ -104,7 +104,7 @@ def match_data(et,msgs,td=2):
     # Input: et(DataFrame) input data of the eyetracker (has column smpl_time)
     #        msgs(DataFrame) already parsed input messages e.g. 'GRID element 5 pos-x 123 ...' defining experimental events (has column msg_time)
     # Output: Data.frame for each notification, find all samples that are in the range of +-td (default timediff 2 s)
-    pd_matched_data = pd.DataFrame()
+    matched_data = pd.DataFrame()
     
     for idx,msg in msgs.iterrows():
         print(idx)
@@ -122,9 +122,9 @@ def match_data(et,msgs,td=2):
         
         
         tmp = pd.concat([tmp,msg_tmp],axis=1)
-        pd_matched_data = pd_matched_data.append(tmp)
+        matched_data = matched_data.append(tmp)
    
-    return(pd_matched_data)
+    return(matched_data)
     
   
     
@@ -135,26 +135,26 @@ def findFile(path,ftype):
 
 #%%
         
-# make a list of gridnotes that contain all notifications of pldata if they contain 'label'
-gridnotes = [note for note in pldata['notifications'] if 'label' in note.keys()]
+# make a list of gridnotes that contain all notifications of original_pldata if they contain 'label'
+gridnotes = [note for note in original_pldata['notifications'] if 'label' in note.keys()]
 
 # pandas df that contains all pl parsed messages
-pd_plmsgs = pd.DataFrame();
+plmsgs = pd.DataFrame();
 for note in gridnotes:
     msg = parse.parse_message(note)
     if not msg.empty:
-        pd_plmsgs = pd_plmsgs.append(msg, ignore_index=True)
+        plmsgs = plmsgs.append(msg, ignore_index=True)
 
 # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time) and sort according to smpl_time
-pd_pldata = nbp_pl.gaze_to_pandas(pldata['gaze_positions'])
-pd_pldata.sort_values('smpl_time',inplace=True)
+pldata = nbp_pl.gaze_to_pandas(original_pldata['gaze_positions'])
+pldata.sort_values('smpl_time',inplace=True)
 
 # match the pl samples df to the msgs df  to get epoched df
-pd_pl_matched_data = match_data(pd_pldata,pd_plmsgs)
+pl_matched_data = match_data(pldata,plmsgs)
 
 
 # How to query for samples from a specific condition
-# print(pd_pl_matched_data.query('condition=="SMOOTH"'))
+# print(pl_matched_data.query('condition=="SMOOTH"'))
 
 #%%
 
@@ -178,29 +178,46 @@ elsamples['gx']  = elsamples.gx_left if np.mean(elsamples.gx_left != -32768)>0.9
 elsamples['gy']  = elsamples.gy_left if np.mean(elsamples.gy_left != -32768)>0.9 else elsamples.gy_right
 
 # parse EL msg and match data to get pandas df
-pd_elmsgs = elnotes.apply(parse.parse_message,axis=1)
-pd_elmsgs = pd_elmsgs.drop(pd_elmsgs.index[pd_elmsgs.isnull().all(1)])
+elmsgs = elnotes.apply(parse.parse_message,axis=1)
+elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
 
 # match the et data to the msgs (match smpl_time to msg_time)
-pd_el_matched_data = match_data(elsamples,pd_elmsgs)
+el_matched_data = match_data(elsamples,elmsgs)
+
+
+
+#%%
+
+
+# We are going to have 5 types of Dataframes: sample, msgs, events, epochs und for each condition a df FULL for pl and el respectively 
+# for more details please have a look at the "overview dataframes pdf"
+
 
 #%%
 # samples df
 
 # function to get samples df
 def samples_df(etsamples):
-    return etsamples.loc[:, ['smpl_time', 'gx', 'gy']]
-
-
+    if 'confidence' in etsamples:
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence']]
+    # TODO: what confidence parameter do we use for el?
+    #elif 'errors' in etsamples:
+    #    return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'errors']]
+    else:
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy']]
+    
+#TODO: el doesnt have confidence
 elsamples = samples_df(elsamples)
-plsamples = samples_df(pd_pldata)    #!!! gx and gy of pl are not converted yet!!!
+plsamples = samples_df(pldata)    #!!! gx and gy of pl are not converted yet!!!
 
 #%%
 # msgs df
 
-# this pd_ is not consistent with our notation
-pd_elmsgs.dtypes
-pd_plmsgs.dtypes
+elmsgs.dtypes
+plmsgs.dtypes
+
+elmsgs.condition.value_counts()
+plmsgs.condition.value_counts()
 
 #%%
 # events df
@@ -216,8 +233,18 @@ plevents = make_events(plsamples)
 #%%
 # epochs df
 
-elepochs = match_data(elsamples,pd_elmsgs)
-plepochs = match_data(plsamples,pd_plmsgs)
+elepochs = match_data(elsamples,elmsgs)
+plepochs = match_data(plsamples,plmsgs)
+
+
+elepochs.head()
+elepochs.dtypes
+
+# look how many samples that can be used for each condition
+elepochs.condition.value_counts()
+plepochs.condition.value_counts()
+
+#TODO: why is there yaw data for pl but not for el?
 
 #%%
 # FULL df
@@ -235,22 +262,15 @@ def full_df(etmsgs, etevents, condition):
 
 
 #%%
-
-
-# We are going to have 5 types of Dataframes: sample, msgs, events, epochs und for each condition a df FULL for pl and el respectively 
-# for more details please have a look at the "overview dataframes pdf"
-
-# Inspection of resulting matched / epoched df
-print(pd_pl_matched_data.dtypes)
-print(pd_el_matched_data)
-
+# Looking at pupil dilation
+    
 
 
 #%%
 
 # trying to plot a little
 # grab samples where fixationcross vert. posy at 540  (middle of screen)  and in td btw. 0 and 0.4
-example = pd_el_matched_data.query('posy==540&td>0.18 & td<0.5')       # for EL
+example = el_matched_data.query('posy==540&td>0.18 & td<0.5')       # for EL
 # example = pd_pl_matched_data.query('posy==540&td>0 & td<0.4')     # for PL
 
 # 2d plot of gaze postion of samples 
@@ -262,15 +282,15 @@ plt.plot((example['gx'] ),(example['gy'] ),'o')          # gaze
 #%%
 
 # intend to convert pl gaze data to same scale as EL  :   Is it correct?
-pd_pl_matched_data.gx = pd_pl_matched_data.gx*1920
+pl_matched_data.gx = pl_matched_data.gx*1920
 
 #%%
 # plot pl against el   if fixationcross presented at posx==960
 # x-axis: td time 
 # y-axis: horiz. component of gaze 
-plotTraces([pd_pl_matched_data,pd_el_matched_data],query = 'posx==960')
+plotTraces([pl_matched_data,el_matched_data],query = 'posx==960')
 
-plotTraces([pd_pl_matched_data,pd_el_matched_data],query = 'element == 15 & block == 1',figure=False)
+plotTraces([pl_matched_data,el_matched_data],query = 'element == 15 & block == 1',figure=False)
     
 
 
