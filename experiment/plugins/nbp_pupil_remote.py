@@ -249,7 +249,7 @@ class NBP_Pupil_Remote(Plugin):
         else:
             t = self.g_pool.get_timestamp()
             t_frame =self.g_pool.capture._recent_frame.timestamp
-            notification = {'subject': 'trigger', 'label': msg, 'timestamp': t, 'recent_frame_time',t_frame, 'duration': 0.0, 'record': True}
+            notification = {'subject': 'trigger', 'label': msg, 'timestamp': t, 'recent_frame_timestamp',t_frame, 'duration': 0.0, 'record': True}
             ipc_pub.notify(notification)
             response = 'nbp_ok'
         socket.send_string(response)
