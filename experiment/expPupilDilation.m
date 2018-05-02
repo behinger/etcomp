@@ -12,7 +12,7 @@ for color_id = 1:25
     LastFlip = flip_screen(screen, 0);
     flip_screen(screen, LastFlip + 2.5);
 
-    sendETNotifications(eyetracking,requester,sprintf('DILATION lum %d block %d',color_id,block))
+    sendETNotifications(eyetracking,requester,sprintf('DILATION lum %d block %d',randomization(color_id),block))
     
 end
 
