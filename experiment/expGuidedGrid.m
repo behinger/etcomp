@@ -46,7 +46,7 @@ drawTarget(screen.screen_width/2, screen.screen_height/2,screen,20,'fixcross');
 %[time]=Screen('Flip', win);
 time =  flip_screen(screen, lastflip);
 
-sendETNotifications(eyetracking,requester,sprintf('GRID stop %d',block))
+sendETNotifications(eyetracking,requester,sprintf('GRID stop block %d',block))
 
 
 grid_buttonpress(targetKey,time,requester,eyetracking);
