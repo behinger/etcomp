@@ -22,4 +22,5 @@ sys.path.append(os.path.abspath("../lib/pupil/pupil_src/shared_modules/calibrati
 sys.path.append(os.path.abspath("../lib/pupil/pupil_src/shared_modules/"))
 sys.path.append(os.path.abspath("../lib/pupil/pupil_src/player/"))
 sys.path.append(os.path.abspath("../lib/opencv2"))
+sys.path.append(os.path.abspath("../lib/glfw3"))
 sys.path.append(os.path.abspath("../code/functions/fake_pl_loading"))

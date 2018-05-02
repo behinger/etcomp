@@ -48,7 +48,7 @@ class global_container():
 def notify_all(self,notification=''):
         print(notification)
 
-def gen_fakepool(pupil_list,ref_list,inp_gaze,calibration_mode): 
+def gen_fakepool(inp_gaze=[],calibration_mode='2D'): 
     
         from lib.pupil.pupil_src.shared_modules.plugin import Plugin_List
         
@@ -95,7 +95,7 @@ def pl_recalibV2(pupil_list,ref_list,inp_gaze,calibration_mode='2d',eyeID=None):
             pupil = [p for p in pupil if p['id']==eyeID]
             
         
-        fake_gpool = gen_fakepool(pupil,ref,gaze,calibration_mode)
+        fake_gpool = gen_fakepool(gaze,calibration_mode)
         
         #method, result = select_calibration_method(fake_gpool, pupil_list, ref_list)
         
@@ -108,11 +108,13 @@ def pl_recalibV2(pupil_list,ref_list,inp_gaze,calibration_mode='2d',eyeID=None):
                 i += 1
                 newsamp = next(calib_generator)
                 if newsamp[0] == 'Mapping complete.':
+                    print('Mapping complete')
                     break
                 if i%100000 == 1:
                     print(newsamp[0])
                 output.append(newsamp[1][0])
         except StopIteration:
+            print('error')
             pass
 
         return(output)
