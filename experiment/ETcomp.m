@@ -4,7 +4,7 @@
 sca
 clear all
 %open screen
-debug=false;
+debug=true;
 if debug
     fprintf('!!!!!!DEBUG MODE ON!!!!!!!\n');
     commandwindow;
@@ -14,8 +14,7 @@ end
 
 cfg = expConfigure();
 
-subject_id = input('\n subjectid: ');
-
+cfg.subject_id = input('\n subjectid: ');
 
 
 % Initialize Sounddriver
@@ -34,7 +33,7 @@ end
 
 %% Eyetracking setup
 %setup eyetracker
-eyetracking=1;
+eyetracking=0;
 requester = false;
 
 if eyetracking == 1
@@ -45,8 +44,8 @@ if eyetracking == 1
     calibcoordinates = calibcoordinates([find(middlepoint);find(~middlepoint)],:);
     el = setup_eyelink(cfg.screen,calibcoordinates);
     %open log file
-    Eyelink('OpenFile', sprintf('etc_s%03u.EDF',subject_id));          %CHANGE file name ?
-    sessionInfo = sprintf('%s %s','SUBJECTINDEX',num2str(subject_id));
+    Eyelink('OpenFile', sprintf('etc_s%03u.EDF',cfg.subject_id));          %CHANGE file name ?
+    sessionInfo = sprintf('%s %s','SUBJECTINDEX',num2str(cfg.subject_id));
     Eyelink('message','METAEX %s',sessionInfo);
     
     % Pupillabs
@@ -79,17 +78,17 @@ if eyetracking == 1
 end
 
 %%
+sendETNotifications(eyetracking,requester,sprintf('R etc_s%03u',cfg.subject_id));
 showInstruction('BEGINNING',cfg.screen,requester,eyetracking,0)
 
 
 for block = 1:2
     tic
-    rand_block = select_randomization(cfg.rand, subject_id, block);
+    rand_block = select_randomization(cfg.rand, cfg.subject_id, block);
     
     % at the beginni ng of each block : calibrate ADD pupil labs
     if eyetracking
         fprintf('\n\nEYETRACKING CALIBRATION...')
-        sendETNotifications(eyetracking,requester,sprintf('R etc_s%03u',subject_id));
     
     
         % we need to stop eyelink to record the calibration
@@ -156,10 +155,10 @@ if eyetracking==1
     zmq_request('close');
     
     % eyelink
-    fulledffile = sprintf('data/etc_s%03u.EDF',subject_id);
+    fulledffile = sprintf('data/etc_s%03u.EDF',cfg.subject_id);
     Eyelink('CloseFile');
     Eyelink('WaitForModeReady', 500);
-    Eyelink('ReceiveFile',sprintf('etc_s%03u.EDF',subject_id),fulledffile);
+    Eyelink('ReceiveFile',sprintf('etc_s%03u.EDF',cfg.subject_id),fulledffile);
     Eyelink('WaitForModeReady', 500);
     Eyelink('Shutdown')
     Eyelink('StopRecording')
@@ -170,5 +169,9 @@ end
 ShowCursor;
 KbQueueRelease(cfg.keyboardIndex);
 Screen('Close') %cleans up all textures
+
+%% Save Datastructure
+save(sprintf('data/etc_s%03u.mat',cfg.subject_id), 'cfg')
+
 sca
 
