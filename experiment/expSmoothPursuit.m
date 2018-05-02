@@ -54,7 +54,7 @@ for count= 1:length(directions)%size(pos,1)-1
 
     % get duration
     duration = random(trunc_dist)/1000; % in s
-    duration = 0;
+    %duration = 0;
     
     drawTarget(xCenter, yCenter,screen,20,'fixbulleye');
     LastFlip =  flip_screen(screen);
