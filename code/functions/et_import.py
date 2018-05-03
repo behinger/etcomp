@@ -67,11 +67,8 @@ def preprocess_pl(original_pldata):
             plmsgs = plmsgs.append(msg, ignore_index=True)
     
 
-    # Get epochs df
-    # match the pl samples df to the msgs df  to get epoched df
-    plepochs = match_data(plsamples,plmsgs)
 
-    return plsamples, plmsgs, plepochs
+    return plsamples, plmsgs
 
   
 #%% EYELINK
@@ -134,17 +131,11 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
     elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
     
+
     
-    # Match samples to the msgs (make epochs; match smpl_time to msg_time)
-    elepochs = match_data(elsamples,elmsgs)
-    
-    # TODO: is this correct ??
-    # set pa to NaN instead of 0
-    elepochs.loc[elepochs['pa_right'] == 0,'pa_right'] = np.nan
-    elepochs.loc[elepochs['pa_left'] == 0,'pa_left'] = np.nan
+ 
         
-        
-    return samples_df(elsamples), elmsgs, elepochs
+    return samples_df(elsamples), elmsgs
     
 
 #%% MAKE EPOCHS
