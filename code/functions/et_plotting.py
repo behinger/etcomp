@@ -26,19 +26,35 @@ def plot_trace(pupil):
     # plt.plot(x,y,'o')
 
 
-def plotTraces(et, query='posx==960', figure = True):
-    # Input:    et         
-    #           query     all samples that fulfill query get selected
-    #           figure
-    # Output:   plot with x-axis: td time and y-axis: horiz. comp. of gaze
+
+def plotTraces(et,field = 'gx',query = 'posx == 960'):
+    from bokeh.plotting import figure,show
+    from bokeh.models import Span, CrosshairTool, HoverTool, ResetTool, PanTool, BoxZoomTool,WheelZoomTool
+    from bokeh.transform import factor_cmap
+    from bokeh.palettes import Spectral6
+
+
+    TOOLS = [CrosshairTool(dimensions='both'),
+             HoverTool(),PanTool(),BoxZoomTool(),
+             ResetTool()]
     if type(et) != list:
         et = [et]
-    for dat in et:
-        tmp = dat.query(query)
-        if figure:
-            plt.figure()
-        plt.plot(tmp.td,tmp.gx,'o')
+    p = figure()
+    for ix,e in enumerate(et):
+        #et[ix] = e.query(query) 
+        et[ix]['group'] = str(ix)
+        #et[ix] = et[ix][[field,'td','group']]
+
         
+        
+    tmp = pd.concat(et,ignore_index=True,)
+    tmp = tmp.query(query)
+     #   if figure:
+            #plt.figure()
+    
+    p = figure(width=1400,tools=TOOLS)
+    p.circle(x='td',y=field,source = tmp,legend='group',color=factor_cmap('group',factors=['0','1'], palette=Spectral6))
+    show(p)        
 
 #%%
   
