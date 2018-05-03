@@ -130,8 +130,8 @@ for block = 1:2
     %% Small Grid Before
     expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking);
     toc
-    %% Condition shake/tild
-    expRotation(rand_block.firstmovement,cfg.screen, eyetracking, requester, block);
+    %% Condition shake/tilt
+    expRotation(rand_block.firstmovement,cfg.screen, eyetracking, requester,rand_block, block); % give the whole randomization because it needs tilt + shake
     toc
     %
     %% Small Grid After
