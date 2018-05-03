@@ -86,7 +86,6 @@ def parse_message(msg):
     # block:    block of experiment
 
     if split[0] == 'DILATION':
-        print(split)
         parsedmsg = dict(
               msg_time = msg_time,  
               exp_event = split[1])

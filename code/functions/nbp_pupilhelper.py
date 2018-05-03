@@ -1,4 +1,5 @@
-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
   
 def gaze_to_pandas(gaze):
         # Input: gaze data as dictionary
