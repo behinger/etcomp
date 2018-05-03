@@ -1,7 +1,7 @@
 function rand = randomize_stimuli()
 rng(1)
 subjectlist = 1:40;
-max_block = 6;
+max_block = 8;
 numberimagesperblock = 3;
 
 randomization = load('randomization_larger_grid.mat');
@@ -20,9 +20,17 @@ smooth_angle_sub = sort(repmat(smooth_angle,1,length(smooth_speed)));
 smooth_speed_sub = repmat(smooth_speed,1,length(smooth_angle));
 
 smooth_trials_per_block = length(smooth_angle_sub)/max_block;
+
+
+tilt_angles = [0 5 -5 10 -10 15 -15];
+tilt_angles = [tilt_angles tilt_angles];
+
+shake_points = [2/3 1/3 0 -1/3 -2/3];
+shake_points = [shake_points shake_points shake_points];
+
 %initialize fields
 rand = struct();
-for fn = {'smallBefore','smallAfter','large','pupildilation','smoothpursuit_speed','smoothpursuit_angle','block','subject','freeviewing','firstmovement'}
+for fn = {'smallBefore','smallAfter','large','pupildilation','smoothpursuit_speed','smoothpursuit_angle','block','subject','freeviewing','firstmovement','shake','tilt'}
 rand.(fn{1}) = [];
 end
 
@@ -32,6 +40,7 @@ for subject = subjectlist
     largeBlockPerm = randperm(max_block);
     smoothPerm = randperm(length(smooth_speed_sub));
     freeviewing = randperm(max_block*numberimagesperblock);
+    
     for block = 1:max_block
         
         % accuracy tests / grids
@@ -60,11 +69,36 @@ for subject = subjectlist
         free_ix(1) = (block-1)*3+1;
         free_ix(2) = (block)*3;
         rand.freeviewing = [rand.freeviewing {freeviewing(free_ix(1):free_ix(2))}];
-
+        
+        % shake and Tilt
+        movements = {'SHAKE','TILT'};
+        rand.firstmovement =[rand.firstmovement  movements(1+mod(subject+block,2))];
+               
+        % shake
+        while true
+            % make sure no two following numbers are equal
+            ix = randperm(length(shake_points));
+            if all(diff(shake_points(ix))~=0)
+                break
+                
+            end
+        end
+        rand.shake = [rand.shake {shake_points(ix)}];
+        % Tilt
+        while true
+            % make sure no two following numbers are equal
+            ix = randperm(length(tilt_angles));
+            if all(diff(tilt_angles(ix))~=0)
+                break
+                
+            end
+        end
+        rand.tilt = [rand.tilt {tilt_angles(ix)}];
+        
+        
         rand.block =    [rand.block block];
         rand.subject = [rand.subject subject];
-        movements = {'ROTATE','TILT'};
-        rand.firstmovement =[rand.firstmovement  movements(1+mod(subject+block,2))];
+
         
     end
     
