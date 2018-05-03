@@ -101,7 +101,6 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     # take the pupil area pa of the recorded eye
     # convert and create column "diameter"
     
-    # TODO: is this correct ??
     # set pa to NaN instead of 0  or -32768
     elsamples.loc[elsamples['pa_right'] == 0,'pa_right'] = np.nan
     elsamples.loc[elsamples['pa_right'] == -32768,'pa_right'] = np.nan
@@ -113,15 +112,14 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     ix_left = elsamples.gx_left  != -32768 
     ix_right = elsamples.gx_right != -32768
     
-    #TODO: ask again to undestand
-    #if (np.mean(ix_left | ix_right)>0.01):
-    #    raise NameError('In more than 1 % neither left or right data')
+    if (np.mean(ix_left | ix_right)<0.99):
+        raise NameError('In more than 1 % neither left or right data')
     
     # TODO attention: pa has not been converted to diameter yet
-    elsamples.loc[ix_left,'gx'] = elsamples.gx_left[ix_left]
+    elsamples.loc[ix_left,'gx']       = elsamples.gx_left[ix_left]
     elsamples.loc[ix_left,'diameter'] = elsamples.pa_left[ix_left]
     # is second part correct?
-    elsamples.loc[ix_right,'gx'] = elsamples.gx_right[ix_right]
+    elsamples.loc[ix_right,'gx']       = elsamples.gx_right[ix_right]
     elsamples.loc[ix_right,'diameter'] = elsamples.pa_right[ix_right]
         
     # for gy
