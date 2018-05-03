@@ -208,11 +208,8 @@ class NBP_Pupil_Remote(Plugin):
         #if msg.startswith('notify'):
 
 
-        if msg == 'SUB_PORT':
-            response = self.g_pool.ipc_sub_url.split(':')[-1]
-        elif msg == 'PUB_PORT':
-            response = self.g_pool.ipc_pub_url.split(':')[-1]
-        elif msg[0] == 'R':
+     
+        if msg[0] == 'R':
             try:
                 ipc_pub.notify({'subject': 'recording.should_start', 'session_name': msg[2:]})
                 response = 'OK'
@@ -234,22 +231,11 @@ class NBP_Pupil_Remote(Plugin):
         elif msg == 'v':
             ipc_pub.notify({'subject': 'accuracy_test.should_stop'})
             response = 'OK'
-        elif msg[0] == 'T':
-            try:
-                target = float(msg[2:])
-            except:
-                response = "'{}' cannot be converted to float.".format(msg[2:])
-            else:
-                raw_time = self.g_pool.get_now()
-                self.g_pool.timebase.value = raw_time-target
-                response = 'Timesync successful.'
-        elif msg[0] == 't':
-            response = repr(self.g_pool.get_timestamp())
-
+      
         else:
             t = self.g_pool.get_timestamp()
             t_frame =self.g_pool.capture._recent_frame.timestamp
-            notification = {'subject': 'trigger', 'label': msg, 'timestamp': t, 'recent_frame_timestamp',t_frame, 'duration': 0.0, 'record': True}
+            notification = {'subject': 'trigger', 'label': msg, 'timestamp': t, 'recent_frame_timestamp':t_frame, 'duration': 0.0, 'record': True}
             ipc_pub.notify(notification)
             response = 'nbp_ok'
         socket.send_string(response)
