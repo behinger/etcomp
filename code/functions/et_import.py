@@ -45,11 +45,19 @@ def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     return original_pldata
 
  
-def preprocess_pl(original_pldata):
+def preprocess_pl(original_pldata,recalib=False,surfaceMap = False):
     # Input:    pupillabs dictionary
     # Output:   Returns list of 3 el df
     
+
     # Get samples df
+    
+    # recalibrate data
+    if recalib:
+        original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
+        
+    if surfaceMap:
+        pass        
     # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time, diameter)
     pldata = nbp_pl.gaze_to_pandas(original_pldata['gaze_positions'])
     # sort according to smpl_time
