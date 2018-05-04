@@ -23,15 +23,15 @@ from functions import nbp_recalib
 # load and preprocess et data
 
 # specify subject
-subject = 'inga_2'
+subject = 'inga_3'
 
 # load pl data
 original_pldata = load.raw_pl_data(subject)
 
 # TODO: this is a little inconsistent
 # preprocess original_pldata to get 3 dataframes: samples msgs epochs
-plsamples, plmsgs, plepochs = load.preprocess_pl(original_pldata)
-
+plsamples, plmsgs = load.preprocess_pl(original_pldata)
+plepochs = load
 
 # load **preprocessed** el data as 3 dataframes: samples msgs epochs
 elsamples, elmsgs, elepochs = load.preprocess_el(subject)
@@ -72,6 +72,67 @@ plepochs.condition.value_counts()
    
 #%% SANITY CHECKS
 
+
+# samples EL
+elsamples['smpl_time'].min()
+elsamples['smpl_time'].max()
+
+# TODO exclude bad samples and check again
+elsamples['gx'].min()
+elsamples['gx'].max()
+elsamples['gy'].min()
+elsamples['gy'].max()
+
+# TODO are these realistic values??
+# area in pixels not corrected for viewing angle
+elsamples['diameter'].min()
+elsamples['diameter'].max()
+
+
+# samples EL
+plsamples['smpl_time'].min()
+plsamples['smpl_time'].max()
+
+# TODO exclude bad samples and check again
+plsamples['gx'].min()
+plsamples['gx'].max()
+plsamples['gy'].min()
+plsamples['gy'].max()
+
+# TODO are these realistic values??
+plsamples['diameter'].min()
+plsamples['diameter'].max()
+
+
+
+
+# msgs EL
+elmsgs.head()
+
+elmsgs['condition'].unique()
+plmsgs['condition'].unique()
+
+elmsgs['angl'].unique()
+plmsgs['angl'].unique()
+
+# TODO cant explain this
+set(elmsgs['angl'].unique()) - set(plmsgs['angl'].unique()) 
+
+
+
+elmsgs['block'].unique()
+plmsgs['block'].unique()
+# TODO cant explain this
+set(elmsgs['block'].unique()) - set(plmsgs['block'].unique()) 
+
+
+
+
+#df['Column Name'].unique()
+
+# Grab DataFrame rows where column has certain values   
+#valuelist = ['value1', 'value2', 'value3']
+#df = df[df.column.isin(valuelist)]
 
 
    
