@@ -23,18 +23,29 @@ from functions import nbp_recalib
 # load and preprocess et data
 
 # specify subject
-subject = 'inga_2'
+subject = 'inga_3'
 
 # load pl data
-original_pldata = load.raw_pl_data(subject)
+# original_pldata = load.raw_pl_data(subject)
 
-# preprocess original_pldata to get 3 dataframes: samples msgs epochs
+
+# preprocess pl_pldata to get 2 dataframes: samples, msgs
 plsamples, plmsgs = load.preprocess_pl(subject)
-plepochs = load.make_epochs(plsamples, plmsgs)
 
-# load **preprocessed** el data as 3 dataframes: samples msgs epochs
+# load **preprocessed** el data as 2 dataframes: samples msgs
 elsamples, elmsgs = load.preprocess_el(subject)
-elepochs = load.make_epochs(elsamples, elmsgs)
+
+
+# remove bad_samples (gaze outside monitor)
+plsamples = load.remove_bad_samples(plsamples)
+# elsamples = load.remove_bad_samples(elsamples)
+
+
+# epoch etdata according to query
+condquery = 'condition == "DILATION" & exp_event=="lum"&block == 1'
+plepochs = load.make_epochs(plsamples, plmsgs.query(condquery))
+elepochs = load.make_epochs(elsamples, elmsgs.query(condquery))
+
 
 #%%
 
@@ -45,13 +56,17 @@ elepochs = load.make_epochs(elsamples, elmsgs)
 # have a look at the data
 
 # samples df
-elsamples.dtypes
-elsamples.head()
-plsamples.dtypes
+plsamples.info()
+plsamples.describe()
+elsamples.info()
+elsamples.describe()
+
 
 # msgs df
-elmsgs.dtypes
-plmsgs.dtypes
+plmsgs.info()
+plmsgs.describe()
+elmsgs.info()
+elmsgs.describe()
 
 # TODO: Why do we find a missmatch here?
 elmsgs.condition.value_counts()
@@ -59,52 +74,18 @@ plmsgs.condition.value_counts()
 
 
 # epochs df
-elepochs.head()
-elepochs.dtypes
+elepochs.info()
+elepochs.describe()
+plepochs.info()
+plepochs.describe()
+
 
 # look how many samples that can be used for each condition
-elepochs.condition.value_counts()
 plepochs.condition.value_counts()
-
-# How to query for samples from a specific condition
-# print(pl_epochs.query('condition=="SMOOTH"'))
+elepochs.condition.value_counts()
 
    
 #%% SANITY CHECKS
-
-
-# samples EL
-elsamples['smpl_time'].min()
-elsamples['smpl_time'].max()
-
-# TODO exclude bad samples and check again
-elsamples['gx'].min()
-elsamples['gx'].max()
-elsamples['gy'].min()
-elsamples['gy'].max()
-
-# TODO are these realistic values??
-# area in pixels not corrected for viewing angle
-elsamples['diameter'].min()
-elsamples['diameter'].max()
-
-
-# samples EL
-plsamples['smpl_time'].min()
-plsamples['smpl_time'].max()
-
-# TODO exclude bad samples and check again
-plsamples['gx'].min()
-plsamples['gx'].max()
-plsamples['gy'].min()
-plsamples['gy'].max()
-
-# TODO are these realistic values??
-plsamples['diameter'].min()
-plsamples['diameter'].max()
-
-
-
 
 # msgs EL
 elmsgs.head()
@@ -112,13 +93,8 @@ elmsgs.head()
 elmsgs['condition'].unique()
 plmsgs['condition'].unique()
 
-elmsgs['angl'].unique()
-plmsgs['angl'].unique()
-
 # TODO cant explain this
 set(elmsgs['angl'].unique()) - set(plmsgs['angl'].unique()) 
-
-
 
 elmsgs['block'].unique()
 plmsgs['block'].unique()

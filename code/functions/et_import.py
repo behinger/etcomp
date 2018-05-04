@@ -73,8 +73,12 @@ def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', reca
     # sort according to smpl_time
     pldata.sort_values('smpl_time',inplace=True)
     
-    plsamples = make_samples_df(pldata)
+    # TODO: set pa values that are 0 to NaN
+    # please check for correctness
+    pldata.loc[pldata['pa'] == 0,'pa'] = np.nan
 
+    plsamples = make_samples_df(pldata)
+    
 
     # Get msgs df      
     # make a list of gridnotes that contain all notifications of original_pldata if they contain 'label'
@@ -120,7 +124,7 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     elsamples.loc[elsamples['pa_left'] == -32768,'pa_left'] = np.nan
     
     # add pa column that takes the value that is not NaN
-    # TODO
+    # TODO: Bene is this the way you had it in mind?
     ix_left = elsamples.pa_left  != np.nan 
     ix_right = elsamples.pa_right != np.nan
     
@@ -176,8 +180,8 @@ def remove_bad_samples(etsamples):
     
     print("Caution: {} samples got removed as the calculated gazeposition is outside the monitor".format(number_bad_samples))
     
-    if (number_bad_samples > 0.2):
-        raise NameError('More than 20% of the data got removed')
+    if (number_bad_samples > 0.4):
+        raise NameError('More than 40% of the data got removed')
 
     cleaned_samples = etsamples.drop(ix_badsamples)
     
@@ -227,7 +231,7 @@ def make_samples_df(etsamples):
     # this should be the pupil area, but do the numbers make sense??
     # TODO add diameter
     elif 'pa_left' in etsamples.columns:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa_left', 'pa_right', 'pa']]
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa']]
 
     else:
         raise 'Error should not come here'

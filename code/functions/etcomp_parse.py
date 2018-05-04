@@ -72,11 +72,11 @@ def parse_message(msg):
 
         elif split[1] == 'start':
             parsedmsg.update(dict(
-                    block = split[3]))
+                    block = int(split[3])))
 
         elif split[1] == 'stop':
             parsedmsg.update(dict(
-                    block = split[2]))
+                    block = int(split[3])))
 
     
     # label "DILATION"
@@ -221,8 +221,7 @@ def parse_message(msg):
     if split[0] == 'starting' and split[1] == 'ET':
         parsedmsg = dict(
               msg_time = msg_time,
-              block = split[4],
-              )
+              block = int(split[4]))
         split[0] = 'startingET'
 
 
@@ -246,8 +245,7 @@ def parse_message(msg):
         parsedmsg = dict(
               msg_time = msg_time,                
               exp_event = str(split[2]) + '_' + str(split[3]),
-              block = split[5]
-              )
+              block = int(split[5]))
 
 
     # label "SHAKE"
