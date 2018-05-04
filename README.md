@@ -42,6 +42,7 @@ spyder==3.2.8
 ```
 # install opencv
 - compile opencv3 as pupil-labs
+```
   git clone https://github.com/itseez/opencv
   cd opencv
   mkdir build &&  cd build
@@ -50,6 +51,7 @@ spyder==3.2.8
   make -j4
   make install
   
+  ```
 # isntalling pyav under linux
 This one was difficult
 - get ffmpeg3 (only v.2 is installed by defaul)
