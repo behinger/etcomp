@@ -59,7 +59,7 @@ This one was difficult
 - you likely need yasm, but its straight forward to build
     - `git clone https://github.com/yasm/yasm`
     - `cd yasm`
-    - `--prefix=../yasm-build`
+    - `./configure --prefix=../yasm-build` # or cmake?
     - `make yasm`
     - `make install`
     - `export PATH=$PATH:/net/store/nbp/users/behinger/tmp/pupil_src_test/yasm-build/bin`
