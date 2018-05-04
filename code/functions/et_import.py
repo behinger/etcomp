@@ -119,6 +119,14 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     elsamples.loc[elsamples['pa_left'] == 0,'pa_left'] = np.nan
     elsamples.loc[elsamples['pa_left'] == -32768,'pa_left'] = np.nan
     
+    # add pa column that takes the value that is not NaN
+    # TODO
+    ix_left = elsamples.pa_left  != np.nan 
+    ix_right = elsamples.pa_right != np.nan
+    
+    elsamples.loc[ix_left,'pa'] = elsamples.pa_left[ix_left]
+    elsamples.loc[ix_right,'pa'] = elsamples.pa_right[ix_right]
+    
     
     # Determine which eye was recorded
 
@@ -129,14 +137,16 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     
     if (np.mean(ix_left | ix_right)<0.99):
         raise NameError('In more than 1 % neither left or right data')
-    
+        
+    # for horizontal gaze component    
     elsamples.loc[ix_left,'gx']       = elsamples.gx_left[ix_left]
     elsamples.loc[ix_right,'gx']      = elsamples.gx_right[ix_right]
 
     # for horizontal gaze velocity component
     elsamples.loc[ix_left,'gx_vel']       = elsamples.gxvel_left[ix_left]
     elsamples.loc[ix_right,'gx_vel']      = elsamples.gxvel_right[ix_right]
-        
+    
+    
     # for vertical gaze component
     ix_left = elsamples.gy_left  != -32768 
     ix_right = elsamples.gy_right != -32768
@@ -161,12 +171,16 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
 def remove_bad_samples(etsamples):
     # Idea: logical indexing
     # TODO: is or correct??
-    ix_badsamples = (etsamples.gx < -500) | (etsamples.gx > 2420) | (etsamples.gy < -500) | (etsamples.gy > 1580)
+    ix_badsamples = etsamples.index[(etsamples.gx < -500) | (etsamples.gx > 2420) | (etsamples.gy < -500) | (etsamples.gy > 1580)]
     number_bad_samples = np.mean(ix_badsamples)
     
-    print("Caution: {} samples got removed as the calculated gazeposition is outside the monitor", number_bad_samples)
+    print("Caution: {} samples got removed as the calculated gazeposition is outside the monitor".format(number_bad_samples))
     
+    if (number_bad_samples > 0.2):
+        raise NameError('More than 20% of the data got removed')
+
     cleaned_samples = etsamples.drop(ix_badsamples)
+    
     
     return cleaned_samples
 
@@ -213,7 +227,7 @@ def make_samples_df(etsamples):
     # this should be the pupil area, but do the numbers make sense??
     # TODO add diameter
     elif 'pa_left' in etsamples.columns:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa_left', 'pa_right']]
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa_left', 'pa_right', 'pa']]
 
     else:
         raise 'Error should not come here'
