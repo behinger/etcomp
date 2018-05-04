@@ -46,7 +46,8 @@ def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     return original_pldata
 
 def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', recalib=False, surfaceMap = False):
-    # Input:    original_pldata:    pupillabs dictionary
+    # Input:    subject:         (str) name
+    #           datapath:        (str) location where data is stored
     #           recalib:
     #           surfaceMap:
     # Output:   Returns 2 dfs (plsamples and plmsgs)
@@ -91,11 +92,11 @@ def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', reca
 #%% EYELINK
 
 def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
-    # Input:
-    # Output:   Returns list of 3 el df
+    # Input:    subject:         (str) name
+    #           datapath:        (str) location where data is stored
+    # Output:   Returns list of 2 el df (elsamples, elmsgs)
     
     # Load edf
-    
     filename = os.path.join(datapath,subject,'raw')
     
     # elsamples:  contains individual EL samples
@@ -103,7 +104,7 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     # elnotes:    contains notes (meta data) associated with each trial
     elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
     
-    elsamples.dtypes
+    
     # Convert to same units
     # change to seconds to be the same as pupil
     elsamples['smpl_time'] = elsamples['time']/1000 
@@ -121,7 +122,8 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     
     # Determine which eye was recorded
 
-    # for gx
+    # for horizontal gaze component
+    # Idea: Logical indexing
     ix_left = elsamples.gx_left  != -32768 
     ix_right = elsamples.gx_right != -32768
     
@@ -130,17 +132,19 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     
     elsamples.loc[ix_left,'gx']       = elsamples.gx_left[ix_left]
     elsamples.loc[ix_right,'gx']      = elsamples.gx_right[ix_right]
-    # for gx_vel
+
+    # for horizontal gaze velocity component
     elsamples.loc[ix_left,'gx_vel']       = elsamples.gxvel_left[ix_left]
     elsamples.loc[ix_right,'gx_vel']      = elsamples.gxvel_right[ix_right]
         
-    # for gy
+    # for vertical gaze component
     ix_left = elsamples.gy_left  != -32768 
     ix_right = elsamples.gy_right != -32768
     
     elsamples.loc[ix_left,'gy'] = elsamples.gy_left[ix_left]
     elsamples.loc[ix_right,'gy'] = elsamples.gy_right[ix_right]
-    # for gx_vel
+    
+    # for vertical gaze velocity component
     elsamples.loc[ix_left,'gy_vel']       = elsamples.gyvel_left[ix_left]
     elsamples.loc[ix_right,'gy_vel']      = elsamples.gyvel_right[ix_right]
             
@@ -155,13 +159,14 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
 
 #%% MAKE EPOCHS
 
-def match_data(et,msgs,td=2):
+def make_epochs(et,msgs,td=2):
+    # formally called match_data
     # Input:    et(DataFrame)      input data of the eyetracker (has column smpl_time)
     #           msgs(DataFrame)    already parsed input messages    e.g. 'GRID element 5 pos-x 123 ...' defining experimental events (has column msg_time)
     # Output:   df for each notification,
     #           find all samples that are in the range of +-td (default timediff 2 s)
     
-    matched_data = pd.DataFrame()
+    epoched_data = pd.DataFrame()
     
     for idx,msg in msgs.iterrows():
         print(idx)
@@ -177,9 +182,9 @@ def match_data(et,msgs,td=2):
         msg_tmp.index = tmp.index
                 
         tmp = pd.concat([tmp,msg_tmp],axis=1)
-        matched_data = matched_data.append(tmp)
+        epoched_data = epoched_data.append(tmp)
                  
-    return(matched_data)
+    return(epoched_data)
     
  
 #%% GET nice DATAFRAMES

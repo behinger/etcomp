@@ -23,19 +23,18 @@ from functions import nbp_recalib
 # load and preprocess et data
 
 # specify subject
-subject = 'inga_3'
+subject = 'inga_2'
 
 # load pl data
 original_pldata = load.raw_pl_data(subject)
 
-# TODO: this is a little inconsistent
 # preprocess original_pldata to get 3 dataframes: samples msgs epochs
 plsamples, plmsgs = load.preprocess_pl(subject)
-plepochs = load.match_data(plsamples, plmsgs)
+plepochs = load.make_epochs(plsamples, plmsgs)
 
 # load **preprocessed** el data as 3 dataframes: samples msgs epochs
 elsamples, elmsgs = load.preprocess_el(subject)
-elepochs = load.match_data(elsamples, elmsgs)
+elepochs = load.make_epochs(elsamples, elmsgs)
 
 #%%
 
