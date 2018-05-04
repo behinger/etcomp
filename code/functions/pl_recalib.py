@@ -116,8 +116,9 @@ def pl_recalibV2(pupil_list,ref_list,inp_gaze,calibration_mode='2d',eyeID=None):
         except StopIteration:
             print('error')
             pass
-
+        calib_generator.close()
         return(output)
+        
         #finish_calibration(fake_gpool,pupil,ref)
         
         #output = fake_gpool.plugins.get_initializers()[0]

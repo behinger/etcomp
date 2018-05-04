@@ -49,7 +49,7 @@ def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', reca
     # Input:    pupillabs dictionary
     # Output:   Returns list of 3 el df
     
-
+    assert(type(subject)==str)
     # Get samples df
     original_pldata = raw_pl_data(subject,datapath)
     
