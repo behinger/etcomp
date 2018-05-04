@@ -73,8 +73,7 @@ def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', reca
     # sort according to smpl_time
     pldata.sort_values('smpl_time',inplace=True)
     
-    # TODO: set pa values that are 0 to NaN
-    # please check for correctness
+    # set pa values that are 0 to NaN
     pldata.loc[pldata['pa'] == 0,'pa'] = np.nan
 
     plsamples = make_samples_df(pldata)
@@ -116,28 +115,33 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     elnotes = elnotes.drop('trialid_time',axis=1)  
     elevents['msg_time'] = elevents['time']/1000
 
+
+    # for horizontal gaze component
+    # Idea: Logical indexing
+    ix_left = elsamples.gx_left  != -32768 
+    ix_right = elsamples.gx_right != -32768
+    
     # take the pupil area pa of the recorded eye
     # set pa to NaN instead of 0  or -32768
     elsamples.loc[elsamples['pa_right'] == 0,'pa_right'] = np.nan
-    elsamples.loc[elsamples['pa_right'] == -32768,'pa_right'] = np.nan
+    elsamples.loc[ix_right,'pa_right'] = np.nan
     elsamples.loc[elsamples['pa_left'] == 0,'pa_left'] = np.nan
-    elsamples.loc[elsamples['pa_left'] == -32768,'pa_left'] = np.nan
+    elsamples.loc[ix_left,'pa_left'] = np.nan
     
     # add pa column that takes the value that is not NaN
     # TODO: Bene is this the way you had it in mind?
     ix_left = elsamples.pa_left  != np.nan 
     ix_right = elsamples.pa_right != np.nan
     
-    elsamples.loc[ix_left,'pa'] = elsamples.pa_left[ix_left]
+    # init with nan
+    elsamples['pa'] = np.nan
+    
+    elsamples.loc[ix_left, 'pa'] = elsamples.pa_left[ix_left]
     elsamples.loc[ix_right,'pa'] = elsamples.pa_right[ix_right]
     
     
     # Determine which eye was recorded
 
-    # for horizontal gaze component
-    # Idea: Logical indexing
-    ix_left = elsamples.gx_left  != -32768 
-    ix_right = elsamples.gx_right != -32768
     
     if (np.mean(ix_left | ix_right)<0.99):
         raise NameError('In more than 1 % neither left or right data')
@@ -228,8 +232,6 @@ def make_samples_df(etsamples):
     if 'confidence' in etsamples:
         return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence', 'pa']]
     
-    # this should be the pupil area, but do the numbers make sense??
-    # TODO add diameter
     elif 'pa_left' in etsamples.columns:
         return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa']]
 

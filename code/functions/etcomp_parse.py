@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 
 
-
 def parse_message(msg):
     # Input: message to be parsed
     #        (e.g. notification from pldata['notifications'])
@@ -47,6 +46,8 @@ def parse_message(msg):
                 exp_event = split[1])
         
         # buttonpress is an exp_event with no additional information
+        
+        # TODO mit if abfrage LARGEGG in LARGEGRID umbennen
         
         if split[1] == 'element':
             #print(split)
@@ -132,7 +133,7 @@ def parse_message(msg):
     # exp_event:  experimental event of SMOOTH PURSUIT (trialstart, trialend, stop)
         # for "trialstart":
         # vel:        velocity of stimulus
-        # angl:       angle of moving stim in reference to ?vertical line? ?where 3 oclock equals 90 degrees? 0 <= angle <= 360
+        # angle:       angle of moving stim in reference to ?vertical line? ?where 3 oclock equals 90 degrees? 0 <= angle <= 360
         # trial:      trial number
         # block:      block of experiment
         
@@ -149,7 +150,7 @@ def parse_message(msg):
         if split[2] == 'trialstart':
             parsedmsg.update(dict(
                 vel = int(split[4]),
-                angl = int(split[6]),
+                angle = int(split[6]),
                 trial = int(split[8]),
                 block = int(split[10])
                 ))
@@ -263,7 +264,7 @@ def parse_message(msg):
                 shake_x = int(split[4]),
                 shake_y = int(split[6]),
                 block = int(split[2]),
-                exp_event = 'shake_point'
+                exp_event = 'SHAKE_point'
                 ))
 
         if split[1] == 'start' or split[1] == 'stop':
@@ -295,7 +296,7 @@ def parse_message(msg):
     
         if split[1] == 'angle':
             parsedmsg.update(dict(
-                angl = int(split[2]),
+                angle = int(split[2]),
                 block = int(split[4])
                 ))
 

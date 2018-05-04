@@ -88,28 +88,8 @@ elepochs.condition.value_counts()
 #%% SANITY CHECKS
 
 # msgs EL
-elmsgs.head()
-
-elmsgs['condition'].unique()
-plmsgs['condition'].unique()
-
-# TODO cant explain this
-set(elmsgs['angl'].unique()) - set(plmsgs['angl'].unique()) 
-
-elmsgs['block'].unique()
-plmsgs['block'].unique()
-# TODO cant explain this
-set(elmsgs['block'].unique()) - set(plmsgs['block'].unique()) 
-
-
-
-
-#df['Column Name'].unique()
-
-# Grab DataFrame rows where column has certain values   
-#valuelist = ['value1', 'value2', 'value3']
-#df = df[df.column.isin(valuelist)]
-
+elmsgs.info()
+set(elmsgs['pic_id'].unique()) - set(plmsgs['pic_id'].unique()) 
 
    
 #%%
