@@ -30,11 +30,12 @@ original_pldata = load.raw_pl_data(subject)
 
 # TODO: this is a little inconsistent
 # preprocess original_pldata to get 3 dataframes: samples msgs epochs
-plsamples, plmsgs = load.preprocess_pl(original_pldata)
-plepochs = load
+plsamples, plmsgs = load.preprocess_pl(subject)
+plepochs = load.match_data(plsamples, plmsgs)
 
 # load **preprocessed** el data as 3 dataframes: samples msgs epochs
-elsamples, elmsgs, elepochs = load.preprocess_el(subject)
+elsamples, elmsgs = load.preprocess_el(subject)
+elepochs = load.match_data(elsamples, elmsgs)
 
 #%%
 

@@ -72,7 +72,7 @@ def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', reca
     # sort according to smpl_time
     pldata.sort_values('smpl_time',inplace=True)
     
-    plsamples = samples_df(pldata)
+    plsamples = make_samples_df(pldata)
 
 
     # Get msgs df      
@@ -103,7 +103,7 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     # elnotes:    contains notes (meta data) associated with each trial
     elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
     
-    
+    elsamples.dtypes
     # Convert to same units
     # change to seconds to be the same as pupil
     elsamples['smpl_time'] = elsamples['time']/1000 
@@ -111,9 +111,7 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     elnotes = elnotes.drop('trialid_time',axis=1)  
     elevents['msg_time'] = elevents['time']/1000
 
-    # Determine which eye was recorded
     # take the pupil area pa of the recorded eye
-
     # set pa to NaN instead of 0  or -32768
     elsamples.loc[elsamples['pa_right'] == 0,'pa_right'] = np.nan
     elsamples.loc[elsamples['pa_right'] == -32768,'pa_right'] = np.nan
@@ -121,6 +119,8 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     elsamples.loc[elsamples['pa_left'] == -32768,'pa_left'] = np.nan
     
     
+    # Determine which eye was recorded
+
     # for gx
     ix_left = elsamples.gx_left  != -32768 
     ix_right = elsamples.gx_right != -32768
@@ -130,6 +130,9 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     
     elsamples.loc[ix_left,'gx']       = elsamples.gx_left[ix_left]
     elsamples.loc[ix_right,'gx']      = elsamples.gx_right[ix_right]
+    # for gx_vel
+    elsamples.loc[ix_left,'gx_vel']       = elsamples.gxvel_left[ix_left]
+    elsamples.loc[ix_right,'gx_vel']      = elsamples.gxvel_right[ix_right]
         
     # for gy
     ix_left = elsamples.gy_left  != -32768 
@@ -137,14 +140,17 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     
     elsamples.loc[ix_left,'gy'] = elsamples.gy_left[ix_left]
     elsamples.loc[ix_right,'gy'] = elsamples.gy_right[ix_right]
-    
+    # for gx_vel
+    elsamples.loc[ix_left,'gy_vel']       = elsamples.gyvel_left[ix_left]
+    elsamples.loc[ix_right,'gy_vel']      = elsamples.gyvel_right[ix_right]
+            
     
     # Parse EL msg
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
     elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
 
         
-    return samples_df(elsamples), elmsgs
+    return make_samples_df(elsamples), elmsgs
     
 
 #%% MAKE EPOCHS
@@ -180,7 +186,7 @@ def match_data(et,msgs,td=2):
  
 
 # samples df 
-def samples_df(etsamples):
+def make_samples_df(etsamples):
     # function to get samples df
     if 'confidence' in etsamples:
         return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence', 'pa']]
@@ -207,7 +213,7 @@ def make_events(etsamples):
 
 # FULL df
 # TODO
-def full_df(etmsgs, etevents, condition):
+def make_full_df(etmsgs, etevents, condition):
     # Input:
     # Output:    
     full_df = pd.DataFrame()
