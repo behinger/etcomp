@@ -156,10 +156,23 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
         
     return make_samples_df(elsamples), elmsgs
     
+#%% Detect bad samples
+    
+def remove_bad_samples(etsamples):
+    # Idea: logical indexing
+    # TODO: is or correct??
+    ix_badsamples = (etsamples.gx < -500) | (etsamples.gx > 2420) | (etsamples.gy < -500) | (etsamples.gy > 1580)
+    number_bad_samples = np.mean(ix_badsamples)
+    
+    print("Caution: {} samples got removed as the calculated gazeposition is outside the monitor", number_bad_samples)
+    
+    cleaned_samples = etsamples.drop(ix_badsamples)
+    
+    return cleaned_samples
 
 #%% MAKE EPOCHS
 
-def make_epochs(et,msgs,td=2):
+def make_epochs(et,msgs,td=2, query=False):
     # formally called match_data
     # Input:    et(DataFrame)      input data of the eyetracker (has column smpl_time)
     #           msgs(DataFrame)    already parsed input messages    e.g. 'GRID element 5 pos-x 123 ...' defining experimental events (has column msg_time)
