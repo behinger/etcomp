@@ -40,7 +40,17 @@ pyedfread==0.1
 scipy==0.19.1
 spyder==3.2.8
 ```
-
+# install opencv
+- compile opencv3 as pupil-labs
+```
+  git clone https://github.com/itseez/opencv
+  cd opencv
+  mkdir build &&  cd build
+  cmake -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_TBB=ON -D WITH_TBB=ON -D WITH_CUDA=OFF -D BUILD_opencv_python2=OFF -DBUILD_opencv_python3=ON  -D CMAKE_INSTALL_PREFIX='XXX/opencv-build'
+  make -j4
+  make install
+  
+  ```
 # isntalling pyav under linux
 This one was difficult
 - get ffmpeg3 (only v.2 is installed by defaul)
@@ -49,7 +59,7 @@ This one was difficult
 - you likely need yasm, but its straight forward to build
     - `git clone https://github.com/yasm/yasm`
     - `cd yasm`
-    - `--prefix=../yasm-build`
+    - `./configure --prefix=../yasm-build` # or cmake?
     - `make yasm`
     - `make install`
     - `export PATH=$PATH:/net/store/nbp/users/behinger/tmp/pupil_src_test/yasm-build/bin`
