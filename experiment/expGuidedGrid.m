@@ -1,4 +1,4 @@
-function []= expGuidedGrid(coords,screen,randomization, block,requester,eyetracking)
+function []= expGuidedGrid(coords,screen,randomization, block,requester,eyetracking,smallgg_before_after)
 display_pos = coords(randomization,:)';
 %%
 targetKey    ='Space';
@@ -7,6 +7,7 @@ if total_elements == 49
     condition = 'LARGEGG';
 else 
     condition = 'SMALLGG';
+    condition = [condition '_' smallgg_before_after];
 end
 lastflip = showInstruction(condition,screen,requester,eyetracking, block);
 
