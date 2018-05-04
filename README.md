@@ -47,7 +47,6 @@ spyder==3.2.8
   cd opencv
   mkdir build &&  cd build
   cmake -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_TBB=ON -D WITH_TBB=ON -D WITH_CUDA=OFF -D BUILD_opencv_python2=OFF -DBUILD_opencv_python3=ON  -D CMAKE_INSTALL_REFIX='XXX/opencv-build'
-  cmake -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_TBB=ON -D WITH_TBB=ON -D CMAKE_INSTALL_REFIX='XXX/opencv-build' ..
   make -j4
   make install
   
