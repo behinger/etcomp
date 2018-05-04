@@ -4,13 +4,14 @@
 import functions.add_path
 import numpy as np
 import pandas as pd
+import math
 import os,sys,inspect
 
 from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 import os
 import functions.nbp_pupilhelper as nbp_pl
 import functions.etcomp_parse as parse
-import functions.pl_surface as pl_surface
+#import functions.pl_surface as pl_surface
 
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
@@ -44,17 +45,15 @@ def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
         
     return original_pldata
 
- def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', recalib=False,surfaceMap = False):
+def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', recalib=False, surfaceMap = False):
     # Input:    original_pldata:    pupillabs dictionary
     #           recalib:
     #           surfaceMap:
     # Output:   Returns 2 dfs (plsamples and plmsgs)
-    
 
     # Get samples df
-    original_pldata = raw_pl_data(subject,datapath)
+    original_pldata = raw_pl_data(subject, datapath)
 
-    
     # recalibrate data
     if recalib:
         original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
@@ -70,6 +69,7 @@ def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     pldata = nbp_pl.gaze_to_pandas(original_pldata['gaze_positions'])
     # sort according to smpl_time
     pldata.sort_values('smpl_time',inplace=True)
+    
     plsamples = samples_df(pldata)
 
 
@@ -111,8 +111,7 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
 
     # Determine which eye was recorded
     # take the pupil area pa of the recorded eye
-    # convert and create column "diameter"
-    
+
     # set pa to NaN instead of 0  or -32768
     elsamples.loc[elsamples['pa_right'] == 0,'pa_right'] = np.nan
     elsamples.loc[elsamples['pa_right'] == -32768,'pa_right'] = np.nan
@@ -127,12 +126,8 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     if (np.mean(ix_left | ix_right)<0.99):
         raise NameError('In more than 1 % neither left or right data')
     
-    # TODO attention: pa has not been converted to diameter yet
     elsamples.loc[ix_left,'gx']       = elsamples.gx_left[ix_left]
-    elsamples.loc[ix_left,'diameter'] = elsamples.pa_left[ix_left]
-    # is second part correct?
-    elsamples.loc[ix_right,'gx']       = elsamples.gx_right[ix_right]
-    elsamples.loc[ix_right,'diameter'] = elsamples.pa_right[ix_right]
+    elsamples.loc[ix_right,'gx']      = elsamples.gx_right[ix_right]
         
     # for gy
     ix_left = elsamples.gy_left  != -32768 
@@ -186,12 +181,12 @@ def match_data(et,msgs,td=2):
 def samples_df(etsamples):
     # function to get samples df
     if 'confidence' in etsamples:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence', 'diameter']]
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence', 'pa']]
     
     # this should be the pupil area, but do the numbers make sense??
     # TODO add diameter
     elif 'pa_left' in etsamples.columns:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'pa_left', 'pa_right', 'diameter']]
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa_left', 'pa_right']]
 
     else:
         raise 'Error should not come here'
@@ -229,6 +224,5 @@ def findFile(path,ftype):
     return(out)
 
 
-    
-    
+ 
         
