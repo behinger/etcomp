@@ -51,6 +51,8 @@ def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', reca
     #           surfaceMap:
     # Output:   Returns 2 dfs (plsamples and plmsgs)
 
+    assert(type(subject)==str)
+
     # Get samples df
     original_pldata = raw_pl_data(subject, datapath)
 
