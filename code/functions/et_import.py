@@ -172,8 +172,9 @@ def remove_bad_samples(etsamples):
 
 #%% MAKE EPOCHS
 
-def make_epochs(et,msgs,td=2, query=False):
+def make_epochs(et,msgs,td=[-2,2]):
     # formally called match_data
+
     # Input:    et(DataFrame)      input data of the eyetracker (has column smpl_time)
     #           msgs(DataFrame)    already parsed input messages    e.g. 'GRID element 5 pos-x 123 ...' defining experimental events (has column msg_time)
     # Output:   df for each notification,
@@ -183,7 +184,7 @@ def make_epochs(et,msgs,td=2, query=False):
     
     for idx,msg in msgs.iterrows():
         print(idx)
-        ix = abs(et['smpl_time'] - msg['msg_time'])<td # ix is a boolean (0 / 1, false / true) (this way we find all samples +-td)
+        ix = ((et['smpl_time'] - msg['msg_time'])>td[0]) & ((et['smpl_time'] - msg['msg_time'])<td[1]) # ix is a boolean (0 / 1, false / true) (this way we find all samples +-td)
         if np.sum(ix) == 0:
             print('warning, no sample found for msg %i'%(idx))
             print(msg)
