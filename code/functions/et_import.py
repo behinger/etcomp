@@ -44,14 +44,16 @@ def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
         
     return original_pldata
 
- 
-def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', recalib=False,surfaceMap = False):
-    # Input:    pupillabs dictionary
-    # Output:   Returns list of 3 el df
+ def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', recalib=False,surfaceMap = False):
+    # Input:    original_pldata:    pupillabs dictionary
+    #           recalib:
+    #           surfaceMap:
+    # Output:   Returns 2 dfs (plsamples and plmsgs)
     
     assert(type(subject)==str)
     # Get samples df
     original_pldata = raw_pl_data(subject,datapath)
+
     
     # recalibrate data
     if recalib:
@@ -59,11 +61,11 @@ def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', reca
         
     if surfaceMap:
         folder= os.path.join(datapath,subject,'raw')
-
         tracker = pl_surface.map_surface(folder)   
         gaze_on_srf  = pl_surface.surface_map_data(tracker,original_pldata['gaze_positions'])
         original_pldata['gaze_positions'] = gaze_on_srf
         
+
     # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time, diameter)
     pldata = nbp_pl.gaze_to_pandas(original_pldata['gaze_positions'])
     # sort according to smpl_time
@@ -80,7 +82,6 @@ def preprocess_pl(subject, datapath='/net/store/nbp/projects/etcomp/pilot', reca
         if not msg.empty:
             plmsgs = plmsgs.append(msg, ignore_index=True)
     
-
 
     return plsamples, plmsgs
 
@@ -144,10 +145,7 @@ def preprocess_el(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     # Parse EL msg
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
     elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
-    
 
-    
- 
         
     return samples_df(elsamples), elmsgs
     
