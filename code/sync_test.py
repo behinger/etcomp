@@ -30,21 +30,23 @@ subject = 'inga_3'
 
 
 # preprocess pl_pldata to get 2 dataframes: samples, msgs
-plsamples, plmsgs = load.preprocess_pl(subject)
+plsamples, plmsgs = load.preprocess_pl(subject, recalculate=True, save=True)
 
 # load **preprocessed** el data as 2 dataframes: samples msgs
-elsamples, elmsgs = load.preprocess_el(subject)
+elsamples, elmsgs = load.preprocess_el(subject, recalculate=False)
 
 
+# TODO
 # remove bad_samples (gaze outside monitor)
-plsamples = load.remove_bad_samples(plsamples)
+# plsamples = load.remove_bad_samples(plsamples)
 # elsamples = load.remove_bad_samples(elsamples)
 
 
 # epoch etdata according to query
-condquery = 'condition == "DILATION" & exp_event=="lum"&block == 1'
+condquery = 'condition == "DILATION" & exp_event=="lum" & block == 1'
 plepochs = load.make_epochs(plsamples, plmsgs.query(condquery))
 elepochs = load.make_epochs(elsamples, elmsgs.query(condquery))
+
 
 
 #%%
@@ -96,11 +98,16 @@ set(elmsgs['pic_id'].unique()) - set(plmsgs['pic_id'].unique())
 
 # Looking at dilation data
 
+elepochs.lum.unique()
+
+
+# TODO something is still wrong with dilation
+
 # EL
-etplot.plot_diam(elepochs, measure='pa', query='condition=="DILATION" & block==1 & lum==1')
+etplot.plot_diam(elepochs, measure='pa', query='condition=="DILATION" & block==1 & lum==64')
 
 # PL
-etplot.plot_diam(plepochs, measure='diameter', query='condition=="DILATION" & block==1 & lum==1')
+etplot.plot_diam(plepochs, measure='pa', query='condition=="DILATION" & block==1 & lum==64')
 
 
 #%%

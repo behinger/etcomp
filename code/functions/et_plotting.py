@@ -83,14 +83,14 @@ def plotTraces(et,x='td',y = 'gx',query = ''):
 # Looking at pupil dilation
     
 
-def plot_diam(etepochs, measure = 'pa', query = 'condition=="DILATION" & block==1 & lum==1'):
+def plot_diam(etepochs, measure = 'pa', query = 'condition=="DILATION" & block==1 & lum==64'):
     # Input:    etepochs  epoched etdata         
     #           query     all samples that fulfill query get selected
     #           measure   set to pa for el  or to diameter for pl
     # Output:   plot with x-axis: td time and y-axis: horiz. comp. of gaze
 
     # select relevant data    
-    dilation_data_subset = etepochs.query(query).loc[:,['td', 'pa_right', 'pa_left', 'diameter', 'lum', 'condition']]
+    dilation_data_subset = etepochs.query(query).loc[:,['td', 'pa', 'lum', 'condition']]
     # print head of plottet df
     print(dilation_data_subset.head()) 
     
@@ -98,11 +98,6 @@ def plot_diam(etepochs, measure = 'pa', query = 'condition=="DILATION" & block==
     if measure=='pa':         
         #plotting
         plt.figure()
-        plt.plot(dilation_data_subset['td'],dilation_data_subset['pa_right'])
-        
-    if measure=='diameter':
-        #plotting
-        plt.figure()
-        plt.plot(dilation_data_subset['td'],dilation_data_subset['diameter'])
+        plt.plot(dilation_data_subset['td'],dilation_data_subset['pa'])
         
 

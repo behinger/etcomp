@@ -311,10 +311,7 @@ def parse_message(msg):
                 block = int(split[3])
                 ))
 
-
-    # TODO: check if parsed for everything
-    #labels.add(split[0])
-    
+ 
     # add column for condition
     parsedmsg['condition'] = split[0] 
 
