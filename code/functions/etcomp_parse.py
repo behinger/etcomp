@@ -46,9 +46,7 @@ def parse_message(msg):
                 exp_event = split[1])
         
         # buttonpress is an exp_event with no additional information
-        
-        # TODO mit if abfrage LARGEGG in LARGEGRID umbennen
-        
+               
         if split[1] == 'element':
             #print(split)
             parsedmsg.update(dict(
@@ -62,6 +60,7 @@ def parse_message(msg):
         #TODO did you mean this with grid_small_before
         # but how do i know if it is before or after ??
         elif split[1] == 'element' and split[8] == '13':
+            #print(split)
             parsedmsg.update(dict(
                     exp_event = 'small_grid_before',
                     element = int(split[2]),
@@ -72,6 +71,7 @@ def parse_message(msg):
                     ))            
 
         elif split[1] == 'start':
+            #print(split)
             parsedmsg.update(dict(
                     block = int(split[3])))
 
@@ -231,7 +231,6 @@ def parse_message(msg):
     # exp_event:        True when Experiment is finished  ??
 
     if split[0] == 'Finished':
-        print(split)
         parsedmsg = dict(
               msg_time = msg_time,                
               exp_event = 'exp_finished')
@@ -243,6 +242,13 @@ def parse_message(msg):
     # block:            block of experiment
   
     if split[0] == 'Instruction':
+        
+        #LARGEGG in LARGEGRID umbennen
+        if split[2] == "LARGEGG":
+            split[2] = "LARGEGRID"
+        if split[2] == "SMALLGG":
+            split[2] = "SMALLGRID"
+
         parsedmsg = dict(
               msg_time = msg_time,                
               exp_event = str(split[2]) + '_' + str(split[3]),
