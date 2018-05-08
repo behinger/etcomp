@@ -30,10 +30,10 @@ subject = 'inga_3'
 
 
 # preprocess pl_pldata to get 2 dataframes: samples, msgs
-plsamples, plmsgs = load.preprocess_pl(subject, recalculate=True, save=True)
+plsamples, plmsgs = load.preprocess_pl(subject, date='2018-05-07', recalculate=True,   recalib=True)
 
 # load **preprocessed** el data as 2 dataframes: samples msgs
-elsamples, elmsgs = load.preprocess_el(subject, recalculate=False)
+elsamples, elmsgs = load.preprocess_el(subject, date='2018-05-07', recalculate=False)
 
 
 # TODO
@@ -43,7 +43,7 @@ elsamples, elmsgs = load.preprocess_el(subject, recalculate=False)
 
 
 # epoch etdata according to query
-condquery = 'condition == "DILATION" & exp_event=="lum" & block == 1'
+condquery = 'condition == "DILATION" & exp_event=="lum"'
 plepochs = load.make_epochs(plsamples, plmsgs.query(condquery))
 elepochs = load.make_epochs(elsamples, elmsgs.query(condquery))
 
@@ -104,10 +104,15 @@ elepochs.lum.unique()
 # TODO something is still wrong with dilation
 
 # EL
-etplot.plot_diam(elepochs, measure='pa', query='condition=="DILATION" & block==1 & lum==64')
+etplot.plot_diam(elepochs,query='condition=="DILATION" & block==1 & lum==255')
 
 # PL
-etplot.plot_diam(plepochs, measure='pa', query='condition=="DILATION" & block==1 & lum==64')
+etplot.plot_diam(plepochs, query='condition=="DILATION" & block==1 & lum==64')
+
+
+
+etplot.plotTraces(plepochs, y='pa', query='condition=="DILATION" & lum==64')
+etplot.plotTraces(elepochs, y='pa', query='condition=="DILATION" & block==1 & lum==255')
 
 
 #%%
@@ -124,7 +129,7 @@ etplot.plot_diam(plepochs, measure='pa', query='condition=="DILATION" & block==1
 # y-axis: horiz. component of gaze 
 etplot.plotTraces([plepochs,elepochs],query = 'posx==960')
 
-etplot.plotTraces([pl_matched_data,el_matched_data],query = 'element == 15 & block == 1',figure=False)
+etplot.plotTraces([plepochs,elepochs],query = 'element == 15 & block == 1',figure=False)
 
 
 #%% ---- Have a look at the surface CSV files
