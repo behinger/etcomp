@@ -5,14 +5,18 @@ Created on Tue May  8 16:42:55 2018
 
 @author: tknapen https://github.com/tknapen/hedfpy/blob/master/hedfpy/EyeSignalOperator.py
 """
+
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 import pandas as pd
 import numpy.linalg as LA
+import time
 
+#%% WRAPPER TO DETECT SACCADES   (IN THE CASE OF PL INTERPOLATE SAMPLES FIRST)
 
 def detect_saccades_engbert_mergenthaler(etsamples,fs = None):
-    
+    # Input: 
+    # Output:     
     if fs:
         interpgaze = interpolate_gaze(etsamples,fs=fs)
     else:
@@ -24,10 +28,16 @@ def detect_saccades_engbert_mergenthaler(etsamples,fs = None):
     saccades = apply_engbert_mergenthaler(xy_data = interpgaze[['gx','gy']],vel_data = None,sample_rate=fs)
     return(saccades)
 
-def interpolate_gaze(etsamples,fs=None):
- 
-    
 
+#%% INTERPOLATE
+
+def interpolate_gaze(etsamples,fs=None, recalculate=None, save=None, date=time.strftime, datapath='/net/store/nbp/projects/etcomp/pilot'): 
+    #TODO implement recalculate / save
+    # Input: 
+    # Output: 
+
+    print('Start.... Interpolating Samples')
+    
     #find the time range
     fromT = etsamples.smpl_time.iloc[0] #find the first sample
     toT   = etsamples.smpl_time.iloc[-1] #find the last sample
@@ -44,8 +54,13 @@ def interpolate_gaze(etsamples,fs=None):
     gazeInt['smpl_time']  = timeIX
     gazeInt['gx']  = interp(etsamples.smpl_time,etsamples.gx)
     gazeInt['gy']  = interp(etsamples.smpl_time,etsamples.gy)
-
+    
+    print('Done.... Interpolating Samples')
     return(gazeInt)
+
+
+#%%  SACCADE DETECTION ALGORITHM
+
 
 def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_rate = 1000.0, minimum_saccade_duration = 0.0075):
     """Uses the engbert & mergenthaler algorithm (PNAS 2006) to detect saccades.
@@ -68,6 +83,9 @@ def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_ra
         ValueError: If neither xy_data and vel_data were passed to the function.
     
     """
+    #TODO: expanded means: ...
+    
+    print('Start.... Detecting Saccades')
     
     # If xy_data and vel_data are both None, function can't continue
     if xy_data is None and vel_data is None:
@@ -129,15 +147,15 @@ def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_ra
             threshold_crossings_int[threshold_crossing_indices[-1]] = 0
             threshold_crossing_indices = threshold_crossing_indices[:-1]
         
-#        if threshold_crossing_indices.shape == 0:
-#            break
+        # if threshold_crossing_indices.shape == 0:
+        # break
         # check the durations of the saccades
         threshold_crossing_indices_2x2 = threshold_crossing_indices.reshape((-1,2))
         raw_saccade_durations = np.diff(threshold_crossing_indices_2x2, axis = 1).squeeze()
     
         # and check whether these saccades were also blinks...
-        #blinks_during_saccades = np.ones(threshold_crossing_indices_2x2.shape[0], dtype = bool)
-        #for i in range(blinks_during_saccades.shape[0]):
+        # blinks_during_saccades = np.ones(threshold_crossing_indices_2x2.shape[0], dtype = bool)
+        # for i in range(blinks_during_saccades.shape[0]):
         #    if np.sum(xy_data_zeros[threshold_crossing_indices_2x2[i,0]-20:threshold_crossing_indices_2x2[i,1]+20]) > 0:
         #        blinks_during_saccades[i] = False
     
@@ -155,6 +173,7 @@ def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_ra
     
     saccades = []
     for i, cis in enumerate(valid_threshold_crossing_indices):
+        print(i)
         # find the real start and end of the saccade by looking at when the acceleleration reverses sign before the start and after the end of the saccade:
         # sometimes the saccade has already started?
         expanded_saccade_start = np.arange(cis[0])[np.r_[0,np.diff(signed_acc_data[:cis[0]] != 1)] != 0]
@@ -220,4 +239,5 @@ def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_ra
         saccades.append(this_saccade)
 
     # shell()
-    return saccades
+    print('Done... Detecting Saccades')
+    return pd.DataFrame(saccades)

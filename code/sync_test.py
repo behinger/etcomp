@@ -12,6 +12,7 @@ import functions.nbp_pupilhelper as nbp_pl
 import functions.etcomp_parse as parse
 import functions.et_plotting as etplot
 import functions.et_import as load
+import functions.detect_events as detect_events
 
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
@@ -30,7 +31,7 @@ subject = 'inga_3'
 
 
 # preprocess pl_pldata to get 2 dataframes: samples, msgs
-plsamples, plmsgs = load.preprocess_pl(subject, date='2018-05-07', recalculate=True,   recalib=True)
+plsamples, plmsgs = load.preprocess_pl(subject, date='2018-05-07', recalculate=False)
 
 # load **preprocessed** el data as 2 dataframes: samples msgs
 elsamples, elmsgs = load.preprocess_el(subject, date='2018-05-07', recalculate=False)
@@ -114,6 +115,19 @@ etplot.plot_diam(plepochs, query='condition=="DILATION" & block==1 & lum==64')
 etplot.plotTraces(plepochs, y='pa', query='condition=="DILATION" & lum==64')
 etplot.plotTraces(elepochs, y='pa', query='condition=="DILATION" & block==1 & lum==255')
 
+
+#%%
+
+# Detect Saccades
+
+plsaccades = detect_events.detect_saccades_engbert_mergenthaler(plsamples,fs=120)
+
+plsaccades.head()
+plsaccades.columns
+plsaccades.describe()
+
+
+#%%
 
 #%%
 
