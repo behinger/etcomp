@@ -13,6 +13,7 @@ import functions.etcomp_parse as parse
 import functions.et_plotting as etplot
 import functions.et_import as load
 import functions.detect_events as detect_events
+import functions.detect_blinks as detect_blinks
 
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
@@ -120,7 +121,8 @@ etplot.plotTraces(elepochs, y='pa', query='condition=="DILATION" & block==1 & lu
 
 # Detect Saccades
 
-plsaccades = detect_events.detect_saccades_engbert_mergenthaler(plsamples,fs=120)
+plsaccades = detect_events.detect_saccades_engbert_mergenthaler(plsamples,fs=240)
+elsaccades = detect_events.detect_saccades_engbert_mergenthaler(elsamples)
 
 plsaccades.head()
 plsaccades.columns
@@ -128,6 +130,22 @@ plsaccades.describe()
 
 
 #%%
+
+# Detect Blinks
+
+plblinks = detect_blinks.pupil_detect_blinks(plsamples)
+
+# add blinks to plsamples df 
+plsamples2 = pd.concat([plsamples, plblinks], axis=1)
+
+query='is_blink==1'
+
+
+# plot to check
+plt.plot(plsamples2.smpl_time, plsamples2.confidence, 'o')
+plt.plot(plsamples2.query(query)['smpl_time'], plsamples2.query(query)['confidence'], 'o')
+
+# TODO: and for el we are going to use SMI blink detection?  -- elevents look at blink
 
 #%%
 

@@ -263,7 +263,7 @@ def remove_bad_samples(etsamples):
     
     
     
-    ix_badsamples = etsamples.index[(etsamples.gx < -500) | (etsamples.gx > 2420) | (etsamples.gy < -500) | (etsamples.gy > 1580)]
+    ix_badsamples = (etsamples.gx < -500) | (etsamples.gx > 2420) | (etsamples.gy < -500) | (etsamples.gy > 1580)
     number_bad_samples = np.mean(ix_badsamples)
     
     print("Caution: {} samples got removed as the calculated gazeposition is outside the monitor".format(number_bad_samples))
@@ -271,7 +271,7 @@ def remove_bad_samples(etsamples):
     if (number_bad_samples > 0.4):
         raise NameError('More than 40% of the data got removed')
 
-    cleaned_samples = etsamples.drop(ix_badsamples)
+    cleaned_samples = etsamples.loc[~ix_badsamples]
     
     
     #TODO  check diameter large values inga_3 end

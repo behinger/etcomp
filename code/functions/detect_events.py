@@ -26,6 +26,14 @@ def detect_saccades_engbert_mergenthaler(etsamples,fs = None):
          
          
     saccades = apply_engbert_mergenthaler(xy_data = interpgaze[['gx','gy']],vel_data = None,sample_rate=fs)
+    sacsave = saccades.copy()
+    saccades = sacsave
+    # convert samples of data back to sample time
+    for fn in ['raw_start_time','raw_end_time']:
+        saccades[fn]=np.array(interpgaze.smpl_time.iloc[np.array(saccades[fn])])
+        
+        
+    
     return(saccades)
 
 
@@ -110,9 +118,9 @@ def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_ra
         vel_data = np.array(vel_data)
 
     # median-based standard deviation, for x and y separately
-    med = np.median(vel_data, axis = 0)
+    med = np.nanmedian(vel_data, axis = 0)
      
-    scaled_vel_data = vel_data / np.mean(np.array(np.sqrt((vel_data - med)**2)), axis = 0) # scale by the standard deviation
+    scaled_vel_data = vel_data / np.nanmean(np.array(np.sqrt((vel_data - med)**2)), axis = 0) # scale by the standard deviation
     # normalize and to acceleration and its sign
     if (float(np.__version__.split('.')[1]) == 1.0) and (float(np.__version__.split('.')[1]) > 6):
         normed_scaled_vel_data = LA.norm(scaled_vel_data, axis = 1)
@@ -173,7 +181,8 @@ def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_ra
     
     saccades = []
     for i, cis in enumerate(valid_threshold_crossing_indices):
-        print(i)
+        if i%100 == 0:
+            print(i)
         # find the real start and end of the saccade by looking at when the acceleleration reverses sign before the start and after the end of the saccade:
         # sometimes the saccade has already started?
         expanded_saccade_start = np.arange(cis[0])[np.r_[0,np.diff(signed_acc_data[:cis[0]] != 1)] != 0]
@@ -193,21 +202,21 @@ def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_ra
             this_saccade = {
                 'expanded_start_time': expanded_saccade_start,
                 'expanded_end_time': expanded_saccade_end,
-                'expanded_duration': expanded_saccade_end - expanded_saccade_start,
+                'expanded_duration': (expanded_saccade_end - expanded_saccade_start)*1./sample_rate,
                 'expanded_start_point': xy_data[expanded_saccade_start],
                 'expanded_end_point': xy_data[expanded_saccade_end],
                 'expanded_vector': xy_data[expanded_saccade_end] - xy_data[expanded_saccade_start],
-                'expanded_amplitude': np.sum(normed_vel_data[expanded_saccade_start:expanded_saccade_end]) / sample_rate,
-                'expanded_peak_velocity': np.max(normed_vel_data[expanded_saccade_start:expanded_saccade_end]),
+                'expanded_amplitude': np.sum(normed_vel_data[expanded_saccade_start:expanded_saccade_end]),
+                'expanded_peak_velocity': np.max(normed_vel_data[expanded_saccade_start:expanded_saccade_end])*sample_rate,
 
                 'raw_start_time': cis[0],
                 'raw_end_time': cis[1],
-                'raw_duration': cis[1] - cis[0],
+                'raw_duration': (cis[1] - cis[0])*1./sample_rate,
                 'raw_start_point': xy_data[cis[1]],
                 'raw_end_point': xy_data[cis[0]],
                 'raw_vector': xy_data[cis[1]] - xy_data[cis[0]],
-                'raw_amplitude': np.sum(normed_vel_data[cis[0]:cis[1]]) / sample_rate,
-                'raw_peak_velocity': np.max(normed_vel_data[cis[0]:cis[1]]),
+                'raw_amplitude': np.sum(normed_vel_data[cis[0]:cis[1]]),
+                'raw_peak_velocity': np.max(normed_vel_data[cis[0]:cis[1]]) * sample_rate,
 
             }
             saccades.append(this_saccade)
