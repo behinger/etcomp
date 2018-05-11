@@ -1,3 +1,4 @@
+pip==9.0.1
 scipy
 pyopengl
 patsy
@@ -10,4 +11,3 @@ numexpr
 psutil
 pyzmq
 msgpack_python
-pyaudio

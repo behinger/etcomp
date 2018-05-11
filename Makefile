@@ -10,10 +10,12 @@ install:${VENV} python-reqs compile-dependencies
 		echo 'installation done, whew.. you should be very happy that this worked ;)'
 
 ${VENV}:
-	python3 -m venv --system-site-packages ${VENV}
+	virtualenv --system-site-packages ${VENV}
+	#python3 -m venv --system-site-packages ${VENV}#
 
-python-reqs: requirements.pip | ${VENV}
-	pip install --upgrade -r requirements.pip
+
+python-reqs: ${VENV}
+	pip3 install --upgrade -r requirements.pip
 
 
 compile-dependencies: pyav edfread opencv
@@ -25,7 +27,7 @@ pyavsrc = ${installfolder}/build/src_pyav
 ${pyavsrc}:
 		git clone https://github.com/pupil-labs/PyAV ${pyavsrc}
 
-pyav: ${VENV} ${pyavsrc}
+pyav: ${VENV} ${pyavsrc} ffmpeg
 		cd ${pyavsrc} && \
 		git checkout setup.py && \
 		sed -e "s/'avformat_open_input'/'avformat_open_input'/g" setup.py --> test.py && \
@@ -75,6 +77,7 @@ ${ffmpegsrc}:
 		mkdir ${ffmpegsrc}
 		tar -xf ffmpeg_3.3.4.orig.tar.xz ffmpeg-3.3.4
 		mv ffmpeg-3.3.4/* ${ffmpegsrc}
+		rm -r ffmpeg-3.3.4
 		rm ffmpeg_3.3.4.orig.tar.xz
 
 ffmpeg: ${ffmpegbuild}
@@ -101,7 +104,7 @@ ${yasmbuild}: ${yasmsrc}
 		cd ${yasmsrc} && \
 		./autogen.sh && \
 		./configure --prefix=${CURDIR}/${yasmbuild} && \
-		make yasm -j4 && \
+		make yasm && \
 		make install
 
 cleanyasm:
