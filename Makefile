@@ -23,9 +23,9 @@ compile-dependencies: opencv pyav edfread
 pyavsrc = ${installfolder}/build/src_pyav
 
 ${pyavsrc}:
-			git clone https://github.com/pupil-labs/PyAV ${pyavsrc}
+		git clone https://github.com/pupil-labs/PyAV ${pyavsrc}
 
-pyav: | ${VENV}
+pyav: ${VENV} ${pyavsrc}
 		cd ${pyavsrc} && \
 		git checkout setup.py && \
 		sed -e "s/'avformat_open_input'/'avformat_open_input'/g" setup.py --> test.py && \
@@ -54,7 +54,7 @@ opencv: ${opencvsrc}
 		mkdir ${opencvbuild}
 		mkdir ${opencvsrc}/build
 	  cd ${opencvsrc}/build && \
-	  cmake -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_TBB=ON -D WITH_TBB=ON -D WITH_CUDA=OFF -D BUILD_opencv_python2=OFF -DBUILD_opencv_python3=ON  -D CMAKE_INSTALL_PREFIX='../../build-opencv' ../ && \
+	  cmake -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_TBB=ON -D WITH_TBB=ON -D WITH_CUDA=OFF -D BUILD_opencv_python2=OFF -DBUILD_opencv_python3=ON  -D CMAKE_INSTALL_PREFIX='../../build_opencv' ../ && \
 	  make -j4 && \
 	  make install
 		# now add opencv to python
