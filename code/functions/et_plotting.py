@@ -27,7 +27,7 @@ def plot_trace(pupil):
 
 
 
-def plotTraces(et,x='td',y = 'gx',query = ''):
+def plotTraces(et,x='td',y = 'gx',query = '',showplot = True,width=1400,height=800):
     from bokeh.plotting import figure,show
     from bokeh.models import Span, CrosshairTool, HoverTool, ResetTool, PanTool, BoxZoomTool,WheelZoomTool
     from bokeh.transform import factor_cmap
@@ -54,10 +54,11 @@ def plotTraces(et,x='td',y = 'gx',query = ''):
             #plt.figure()
     if tmp.empty:
         raise 'Warning: No element left to plot'
-    p = figure(width=1400,tools=TOOLS)
-    p.circle(x=x,y=y,source = tmp,legend='group',color=factor_cmap('group',factors=['0','1'], palette=Spectral6))
-    show(p)        
-
+    p = figure(width=width,tools=TOOLS,height=height)
+    p.circle(x=x,y=y,source = tmp,legend='group',color=factor_cmap('group',factors=['0','1','2','3','4'], palette=Spectral6))
+    if showplot:
+        show(p)        
+    return(p)
 #%%
   
 
