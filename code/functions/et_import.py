@@ -9,8 +9,9 @@ import time
 
 import os,sys,inspect
 
-from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 import os
+import matplotlib.pyplot as plt
+from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 import functions.nbp_pupilhelper as nbp_pl
 import functions.etcomp_parse as parse
 #import functions.pl_surface as pl_surface
@@ -84,9 +85,10 @@ def preprocess_pl(subject, recalculate=True, save=False, date=time.strftime, dat
         # sort according to smpl_time
         pldata.sort_values('smpl_time',inplace=True)
         
-        # set pa values that are 0 to NaN
-        pldata.loc[pldata['pa'] == 0,'pa'] = np.nan
-    
+        # TODO setting pa to Nan if 0 will be done in remove_bad samples
+#        # set pa values that are 0 to NaN
+#        pldata.loc[pldata['pa'] == 0,'pa'] = np.nan
+#    
         plsamples = make_samples_df(pldata)
         
     
@@ -168,7 +170,7 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
         ix_left = elsamples.gx_left  != -32768 
         ix_right = elsamples.gx_right != -32768
     
-        
+        # TODO: use bad sample removal first, as we need NaN info to set pa
         # take the pupil area pa of the recorded eye
         # set pa to NaN instead of 0  or -32768
         elsamples.loc[elsamples['pa_right'] == 0,'pa_right'] = np.nan
@@ -219,6 +221,7 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
         
         # "select" relevant columns
         elsamples = make_samples_df(elsamples)
+                
         
         # Parse EL msg
         elmsgs = elnotes.apply(parse.parse_message,axis=1)
@@ -257,28 +260,78 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
     
 #%% Detect bad samples
     
-def remove_bad_samples(etsamples):
-    # Idea: logical indexing
+def mark_bad_samples(etsamples):
+    # adds columns for bad samples (out of monitor, pa==0) 
     # TODO: is or correct??
     
+    # Gaze Position
+    # is out of the range of the monitor
+    # The monitor has a size of 1920 x 1080 pixels
+    # Idea: logical indexing
+    ix_outside_samples = (etsamples.gx < -500) | (etsamples.gx > 2420) | (etsamples.gy < -500) | (etsamples.gy > 1580)
+    percentage_outside = np.mean(ix_outside_samples)*100
+    print("Caution: %.2f%% samples got removed as the calculated gazeposition is outside the monitor"%(percentage_outside))
+    
+    if (percentage_outside > 0.4):
+        raise NameError('More than 40% of the data got removed because the gaze is outside the monitor.') 
+    
+    marked_samples = pd.DataFrame()
+    marked_samples['outside'] = ix_outside_samples
     
     
-    ix_badsamples = (etsamples.gx < -500) | (etsamples.gx > 2420) | (etsamples.gy < -500) | (etsamples.gy > 1580)
-    number_bad_samples = np.mean(ix_badsamples)
+    # Sampling Frequency
+    # check how many samples there are with a fs worse than 120 Hz
+    tmp = pd.DataFrame()
+    tmp['fs'] = etsamples.smpl_time.diff()
+    ix_bad_freq = tmp.fs > (1./120.)
+    percentage_bad_freq = np.mean(ix_bad_freq)*100
+    print("Report: %.2f%% samples have a sampling frequency worse than 120 Hz"%(percentage_bad_freq))
     
-    print("Caution: {} samples got removed as the calculated gazeposition is outside the monitor".format(number_bad_samples))
     
-    if (number_bad_samples > 0.4):
-        raise NameError('More than 40% of the data got removed')
+    # Pupil Area
+    # If pa is 0
+    # ToDo check this
+    etsamples.loc[etsamples['pa'] == 0,'pa'] = np.nan
+    
+    
+    
+    
+    # TODO : we dropped this cause pa mostly look good after removing pa == 0 
+    # check pa / diameter large values inga_3 end
+    # Pupil Area is unreasonably large
+    # As there will be very different absolute pa sizes, we will do outlier detection ? 
+#    # keep only the ones that are within +3 to -3 standard deviations
+#    marked_samples['too_large_pa'] = np.abs(etsamples.pa-np.nanmean(etsamples.pa))>(3* (np.nanstd(etsamples.pa)))
+#    
+#    # add columns to the samples df
+#    marked_samples = pd.concat([etsamples, marked_samples], axis=1)
+#
+#    plt.figure()
+#    plt.plot(etsamples['smpl_time'], etsamples['pa'], 'x', color='b')
+#    plt.plot(marked_samples.query('too_large_pa==1')['smpl_time'], marked_samples.query('too_large_pa==1')['pa'], 'o', color='r')
+#    etsamples['pa'].describe()
+    
 
-    cleaned_samples = etsamples.loc[~ix_badsamples]
+
+    return marked_samples
+
+
+#%% Remove bad samples
+    
+def remove_bad_samples(marked_samples):
+    # Input:      samples df that has coulmns that mark bad samples with 'True'
+    # Output:     cleaned sample df where rows th
     
     
-    #TODO  check diameter large values inga_3 end
+    # TODO: This function might not even be necessary
     
+    # check if columns that mark bad samples exist
+   assert('outside' in marked_samples)
     
-    
-    return cleaned_samples
+   # cleaned_samples = marked_samples.loc[~ix_badsamples]
+   
+   #return cleaned_samples
+
 
 #%% MAKE EPOCHS
 

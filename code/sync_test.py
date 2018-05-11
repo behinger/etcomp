@@ -32,10 +32,10 @@ subject = 'inga_3'
 
 
 # preprocess pl_pldata to get 2 dataframes: samples, msgs
-plsamples, plmsgs = load.preprocess_pl(subject, date='2018-05-07', recalculate=False)
+plsamples, plmsgs = load.preprocess_pl(subject, date='2018-05-11', recalculate=False)
 
 # load **preprocessed** el data as 2 dataframes: samples msgs
-elsamples, elmsgs = load.preprocess_el(subject, date='2018-05-07', recalculate=False)
+elsamples, elmsgs = load.preprocess_el(subject, date='2018-05-11', recalculate=False)
 
 
 # TODO
@@ -121,12 +121,12 @@ etplot.plotTraces(elepochs, y='pa', query='condition=="DILATION" & block==1 & lu
 
 # Detect Saccades
 
-plsaccades = detect_events.detect_saccades_engbert_mergenthaler(plsamples,fs=240)
+plsaccades = detect_events.detect_saccades_engbert_mergenthaler(plsamples,fs=240, subject= 'inga_3', recalculate=True, save=True, date='2018-05-11')
 elsaccades = detect_events.detect_saccades_engbert_mergenthaler(elsamples)
 
-plsaccades.head()
-plsaccades.columns
-plsaccades.describe()
+elsaccades.head()
+elsaccades.columns
+elsaccades.describe()
 
 
 #%%

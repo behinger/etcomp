@@ -12,65 +12,110 @@ import pandas as pd
 import numpy.linalg as LA
 import time
 
+import os
+
 #%% WRAPPER TO DETECT SACCADES   (IN THE CASE OF PL INTERPOLATE SAMPLES FIRST)
 
-def detect_saccades_engbert_mergenthaler(etsamples,fs = None):
-    # Input: 
-    # Output:     
+def detect_saccades_engbert_mergenthaler(etsamples,fs = None, subject=None, recalculate=True, save=True, date='2018-05-11'):
+    # Input:      etsamples
+    #             fs:   sampling frequency
+    # Output:     saccades (df) with expanded / raw
+    #             amplitude, duration, start_time, end_time, peak_velocity
+    
+    # if you specify a sampling frequency, the samples get interpolated
+    # to have regular sampled data in order to apply the saccade detection algorithm
     if fs:
-        interpgaze = interpolate_gaze(etsamples,fs=fs)
+        interpgaze = interpolate_gaze(etsamples, subject=subject, fs=fs, recalculate=recalculate, save=save, date=date)
     else:
          # Eyelink is already interpolated
          interpgaze = etsamples
          fs = 500
          
-         
+    # apply the saccade detection algorithm     
     saccades = apply_engbert_mergenthaler(xy_data = interpgaze[['gx','gy']],vel_data = None,sample_rate=fs)
     sacsave = saccades.copy()
     saccades = sacsave
+    
     # convert samples of data back to sample time
     for fn in ['raw_start_time','raw_end_time']:
         saccades[fn]=np.array(interpgaze.smpl_time.iloc[np.array(saccades[fn])])
         
-        
-    
+    # TODO  what does it mean to use brackets here?
     return(saccades)
 
 
 #%% INTERPOLATE
 
-def interpolate_gaze(etsamples,fs=None, recalculate=None, save=None, date=time.strftime, datapath='/net/store/nbp/projects/etcomp/pilot'): 
-    #TODO implement recalculate / save
-    # Input: 
-    # Output: 
+def interpolate_gaze(etsamples, fs=None, subject=None, recalculate=True, save=False, date=time.strftime, datapath='/net/store/nbp/projects/etcomp/pilot'): 
+    # TODO implement recalculate / save
+    # Input:         etsamples
+    # Output:        gazeInt (df)
 
-    print('Start.... Interpolating Samples')
+    # filepath for preprocessed folder
+    preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
     
-    #find the time range
-    fromT = etsamples.smpl_time.iloc[0] #find the first sample
-    toT   = etsamples.smpl_time.iloc[-1] #find the last sample
-    # We find the new index
-    timeIX = np.linspace(np.floor(fromT),np.ceil(toT),np.ceil(toT-fromT)*fs+1)
+
+    if recalculate:
     
-    def interp(x,y):
-        f = PchipInterpolator(x,y)    
-        return(f(timeIX))
+        print('Start.... Interpolating Samples')
+            
+        # find the time range
+        fromT = etsamples.smpl_time.iloc[0]    # find the first sample
+        toT   = etsamples.smpl_time.iloc[-1]   # find the last sample
+        # we find the new index
+        timeIX = np.linspace(np.floor(fromT),np.ceil(toT),np.ceil(toT-fromT)*fs+1)
+        
+        def interp(x,y):
+            f = PchipInterpolator(x,y)    
+            return(f(timeIX))
+        
+        
+        #GazeInt for GazeInterpolated
+        gazeInt = pd.DataFrame()
+        gazeInt['smpl_time']  = timeIX
+        gazeInt['gx']  = interp(etsamples.smpl_time,etsamples.gx)
+        gazeInt['gy']  = interp(etsamples.smpl_time,etsamples.gy)
+        
+        print('Done.... Interpolating Samples')
+        
+        # save interpolated samples into csv files
+        if save:
+            print('Saving.... Interpolated Samples')
+            # create new folder if there is none
+            if not os.path.exists(preprocessed_path):
+                os.makedirs(preprocessed_path)
     
-    
-    #GazeInt for GazeInterpolated
-    gazeInt = pd.DataFrame()
-    gazeInt['smpl_time']  = timeIX
-    gazeInt['gx']  = interp(etsamples.smpl_time,etsamples.gx)
-    gazeInt['gy']  = interp(etsamples.smpl_time,etsamples.gy)
-    
-    print('Done.... Interpolating Samples')
-    return(gazeInt)
+            # dump interpolated_samples df in csv
+            if 'confidence' in etsamples:
+                filename_interp = str(time.strftime("%Y-%m-%d")) + '_interpolated_plsamples.csv'
+            else:
+                filename_interp = str(time.strftime("%Y-%m-%d")) + '_interpolated_elsamples.csv'
+            
+            gazeInt.to_csv(os.path.join(preprocessed_path, filename_interp), index=False)
+        
+        return gazeInt
+        
+    # load preprocessed data from csv file
+    # (from folder preprocessed)
+    else:
+        try:
+            if 'confidence' in etsamples:
+                filename_interp = str(date) + '_interpolated_plsamples.csv'
+            else:
+                filename_interp = str(date) + '_interpolated_elsamples.csv'
+            
+            gazeInt = pd.read_csv(os.path.join(preprocessed_path,filename_interp))
+        except FileNotFoundError as e:
+            print(e)
+            raise('Error: Could not read file')
+        
+        return gazeInt
 
 
 #%%  SACCADE DETECTION ALGORITHM
 
 
-def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_rate = 1000.0, minimum_saccade_duration = 0.0075):
+def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_rate=None, minimum_saccade_duration = 0.0075):
     """Uses the engbert & mergenthaler algorithm (PNAS 2006) to detect saccades.
     
     This function expects a sequence (N x 2) of xy gaze position or velocity data. 
@@ -91,7 +136,7 @@ def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_ra
         ValueError: If neither xy_data and vel_data were passed to the function.
     
     """
-    #TODO: expanded means: ...
+    #TODO: expanded means: taking more sampls as looking at accelartion values as well
     
     print('Start.... Detecting Saccades')
     
@@ -116,6 +161,9 @@ def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_ra
         vel_data[1:] = np.diff(xy_data, axis = 0)
     else:
         vel_data = np.array(vel_data)
+        
+    inspect_vel = pd.DataFrame(vel_data)
+    inspect_vel.describe()
 
     # median-based standard deviation, for x and y separately
     med = np.nanmedian(vel_data, axis = 0)
