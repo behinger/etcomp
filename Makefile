@@ -12,11 +12,11 @@ install:${VENV} python-reqs compile-dependencies
 ${VENV}:
 	python3 -m venv --system-site-packages ${VENV}
 
-python-reqs: compile-dependencies requirements.pip | ${VENV}
+python-reqs: requirements.pip | ${VENV}
 	pip install --upgrade -r requirements.pip
 
 
-compile-dependencies: opencv pyav edfread
+compile-dependencies: pyav edfread opencv
 		echo 'done'
 
 
