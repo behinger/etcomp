@@ -6,11 +6,14 @@ export VIRTUAL_ENV := $(abspath ${VENV})
 export PATH := ${VIRTUAL_ENV}/bin:${PATH}
 
 
-install:${VENV} python-reqs compile-dependencies
+install: git-reqs ${VENV} python-reqs compile-dependencies
 		echo 'installation done, whew.. you should be very happy that this worked ;)'
 
+git-reqs:
+			git submodule update --init
+			
 ${VENV}:
-	virtualenv --system-site-packages ${VENV}
+	virtualenv -p python3 --system-site-packages ${VENV}
 	#python3 -m venv --system-site-packages ${VENV}#
 
 
