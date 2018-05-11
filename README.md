@@ -59,6 +59,7 @@ This one was difficult
 - you likely need yasm, but its straight forward to build
     - `git clone https://github.com/yasm/yasm`
     - `cd yasm`
+    - `sh autoconfig.sh`
     - `./configure --prefix=../yasm-build` # or cmake?
     - `make yasm`
     - `make install`
