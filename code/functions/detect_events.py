@@ -296,5 +296,7 @@ def apply_engbert_mergenthaler(xy_data = None, vel_data = None, l = 5, sample_ra
         saccades.append(this_saccade)
 
     # shell()
+    
     print('Done... Detecting Saccades')
+    
     return pd.DataFrame(saccades)

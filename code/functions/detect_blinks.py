@@ -10,12 +10,19 @@ from scipy.signal import fftconvolve
 import numpy as np
 import pandas as pd
 
+
 def pupil_detect_blinks(plsamples):
+    # Input:           pupillabs sample dataframe 
+    # Output:          two columns df (is_blink, blink_id) with same index as samples
+    
+    # we will call the confidence level of pupillabs 'activity'
     activity = plsamples.confidence
     
+    # total time
     total_time = plsamples.smpl_time.iloc[-1] - plsamples.smpl_time.iloc[1]
     
-    windowsize = 0.2# windowsize in second 
+    # create filter
+    windowsize = 0.2 # windowsize in second 
     
     filter_size = 2*int(round(plsamples.shape[0] * windowsize/ total_time/2))
     blink_filter = np.ones(filter_size) / filter_size
@@ -30,17 +37,22 @@ def pupil_detect_blinks(plsamples):
     # Response of +-0.45 seems sufficient for a confidence of 1.
     filter_response = fftconvolve(activity, blink_filter, 'same') / 0.45
     
+    # TODO specify
     onsets = filter_response > 0.1
     offsets = filter_response < -0.1
     
+    # TODO
     response_classification = np.zeros(filter_response.shape)
     response_classification[onsets] = 1.
     response_classification[offsets] = -1.
             
+    # TODO
     state = 'no blink'
     pd_blinks = np.empty(response_classification.shape[0])
     pd_blinks[:] = np.nan
     blink_id = 1
+    
+    # TODO
     for idx, classification in enumerate(response_classification):
                 if state == 'no blink' and classification > 0:
                     state = 'blink started'
@@ -60,9 +72,10 @@ def pupil_detect_blinks(plsamples):
                          startidx = idx
                     else:
                         state = 'no blink'
-                        
+    
+    # create pandas df               
     output = pd.DataFrame()
     output['is_blink'] = ~np.isnan(pd_blinks)*1
     output['blink_id'] = pd_blinks
     
-    return(output)
+    return output

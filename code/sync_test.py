@@ -50,7 +50,6 @@ plepochs = load.make_epochs(plsamples, plmsgs.query(condquery))
 elepochs = load.make_epochs(elsamples, elmsgs.query(condquery))
 
 
-
 #%%
 
 # We are going to have 5 types of Dataframes:
@@ -146,6 +145,8 @@ plt.plot(plsamples2.smpl_time, plsamples2.confidence, 'o')
 plt.plot(plsamples2.query(query)['smpl_time'], plsamples2.query(query)['confidence'], 'o')
 
 # TODO: and for el we are going to use SMI blink detection?  -- elevents look at blink
+
+
 
 #%%
 
