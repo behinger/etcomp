@@ -1,0 +1,13 @@
+pip==9.0.1
+scipy
+pyopengl
+patsy
+pandas
+numpy
+ipython
+h5py
+cython
+numexpr
+psutil
+pyzmq
+msgpack_python
