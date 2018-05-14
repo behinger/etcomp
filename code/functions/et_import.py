@@ -9,12 +9,11 @@ import time
 
 import os,sys,inspect
 
-import os
 import matplotlib.pyplot as plt
 from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 import functions.nbp_pupilhelper as nbp_pl
 import functions.etcomp_parse as parse
-#import functions.pl_surface as pl_surface
+# import functions.pl_surface as pl_surface
 
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
@@ -157,7 +156,30 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
         # elevents:   contains fixation and saccade definitions
         # elnotes:    contains notes (meta data) associated with each trial
         elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
-      
+        
+        # detect Blink Samples
+        # use blink column in elevents to mark all samples that are recorded during blink
+        # filter all rows where blink==True
+        ix_blink = elevents.blink==True
+        df_only_blinks = elevents.loc[ix_blink]
+        # we are only interested in when the blink started and ended
+        df_only_blinks = df_only_blinks.loc[:, ['start', 'end', 'blink']]
+        
+        # create column blink (boolean) in elsamples
+        elsamples['blink'] = False
+        for bindex,brow in df_only_blinks.iterrows():
+            ix =  (elsamples.time>=(brow['start']-100)) & (elsamples.time<(brow['end']+100))
+            elsamples['blink'][ix] = True
+        
+        # create column blink_id (int) in elsamples
+        # elsamples['blink_id'] = -1
+        # blink_id = pd.Series()
+        
+        #TODO
+        
+        
+       
+        
         # Convert to same units
         # change to seconds to be the same as pupil
         elsamples['smpl_time'] = elsamples['time']/1000 
@@ -374,7 +396,7 @@ def make_samples_df(etsamples):
         return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence', 'pa']]
     
     elif 'pa_left' in etsamples.columns:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa']]
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa', 'blink', 'blink_id']]
 
     else:
         raise 'Error should not come here'
