@@ -153,7 +153,8 @@ plt.plot(plsamples2.query(query)['smpl_time'], plsamples2.query(query)['confiden
 # plto time against pupil area and mark blink samples
 plt.figure()
 plt.plot(elsamples.smpl_time, elsamples.pa, 'o')
-plt.plot(elsamples.query('blink==True')['smpl_time'], elsamples.query('blink==True')['pa'], 'o')
+plt.plot(elsamples.query('is_blink==True')['smpl_time'], elsamples.query('is_blink==True')['pa'], 'o')
+plt.plot(elsamples.query('is_blink==True')['smpl_time'], elsamples.query('is_blink==True')['blink_id'], 'o')
 
 
 #%%

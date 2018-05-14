@@ -11,6 +11,9 @@ import numpy as np
 import pandas as pd
 
 
+# Only por pupil labs!
+
+
 def pupil_detect_blinks(plsamples):
     # Input:           pupillabs sample dataframe 
     # Output:          two columns df (is_blink, blink_id) with same index as samples
@@ -50,7 +53,7 @@ def pupil_detect_blinks(plsamples):
     state = 'no blink'
     pd_blinks = np.empty(response_classification.shape[0])
     pd_blinks[:] = np.nan
-    blink_id = 1
+    blink_id = 0
     
     # TODO
     for idx, classification in enumerate(response_classification):

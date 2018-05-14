@@ -156,6 +156,15 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
         # elevents:   contains fixation and saccade definitions
         # elnotes:    contains notes (meta data) associated with each trial
         elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+  
+        # Convert to same units
+        # change to seconds to be the same as pupil
+        elsamples['smpl_time'] = elsamples['time']/1000 
+        elnotes['msg_time'] = elnotes['trialid_time']/1000
+        elnotes = elnotes.drop('trialid_time',axis=1)  
+        elevents['msg_time'] = elevents['time']/1000
+        elevents['start'] = elevents['start']/1000     
+        elevents['end'] = elevents['end']/1000             
         
         # detect Blink Samples
         # use blink column in elevents to mark all samples that are recorded during blink
@@ -166,27 +175,23 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
         df_only_blinks = df_only_blinks.loc[:, ['start', 'end', 'blink']]
         
         # create column blink (boolean) in elsamples
-        elsamples['blink'] = False
+        elsamples['is_blink'] = False
         for bindex,brow in df_only_blinks.iterrows():
-            ix =  (elsamples.time>=(brow['start']-100)) & (elsamples.time<(brow['end']+100))
-            elsamples['blink'][ix] = True
+            # get index of all samples that are +- 100 ms of a detected blink
+            ix =  (elsamples.smpl_time>=(brow['start']-float(0.1))) & (elsamples.smpl_time<(brow['end']+float(0.1)))
+            # mark them as blink
+            elsamples.loc[ix, 'is_blink'] = True
         
         # create column blink_id (int) in elsamples
-        # elsamples['blink_id'] = -1
-        # blink_id = pd.Series()
+        elsamples['blink_id'] = elsamples['is_blink'].copy()
+ 
+        # TODO check for correctness
+        # counts up the blink_id
+        # Pure Magic
+        elsamples['blink_id'] = elsamples['blink_id'] * (elsamples['blink_id'] != elsamples['blink_id'].shift()).cumsum()
+          
         
-        #TODO
-        
-        
-       
-        
-        # Convert to same units
-        # change to seconds to be the same as pupil
-        elsamples['smpl_time'] = elsamples['time']/1000 
-        elnotes['msg_time'] = elnotes['trialid_time']/1000
-        elnotes = elnotes.drop('trialid_time',axis=1)  
-        elevents['msg_time'] = elevents['time']/1000
-    
+     
         # for horizontal gaze component
         # Idea: Logical indexing
         ix_left = elsamples.gx_left  != -32768 
@@ -396,7 +401,7 @@ def make_samples_df(etsamples):
         return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence', 'pa']]
     
     elif 'pa_left' in etsamples.columns:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa', 'blink', 'blink_id']]
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa', 'is_blink', 'blink_id']]
 
     else:
         raise 'Error should not come here'
