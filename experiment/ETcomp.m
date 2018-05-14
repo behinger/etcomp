@@ -4,7 +4,12 @@
 sca
 clear all
 %open screen
-debug=true;
+debug=false;
+
+%setup eyetracker
+eyetracking=~debug;
+requester = ~debug;
+
 if debug
     fprintf('!!!!!!DEBUG MODE ON!!!!!!!\n');
     commandwindow;
@@ -32,9 +37,7 @@ while dobeep
 end
 
 %% Eyetracking setup
-%setup eyetracker
-eyetracking=0;
-requester = false;
+
 
 if eyetracking == 1
     % Eyelink
@@ -63,7 +66,7 @@ if eyetracking == 1
     requester = int32(requester);
     el.requester =requester;
     % Setup Eyelink
-    Eyelink('StartSetup')
+    Eyelink('StartSetup');
     
     
     % Start recording
@@ -78,11 +81,15 @@ if eyetracking == 1
 end
 
 %%
+% Make the inital arangements
+fprintf('\n ################# \n Make the inital arangements, no need to calibrate yet\n ##############\nc     ')
+local_EyelinkDoTrackerSetup(el)
+
 sendETNotifications(eyetracking,requester,sprintf('R etc_s%03u',cfg.subject_id));
 showInstruction('BEGINNING',cfg.screen,requester,eyetracking,0)
 
 
-for block = 1:2
+for block = 1:6
     tic
     rand_block = select_randomization(cfg.rand, cfg.subject_id, block);
     
@@ -147,6 +154,7 @@ sendETNotifications(eyetracking,requester,'Finished Experiment');
 
 DrawFormattedText(cfg.screen.win, 'The experiment is complete! Thank you very much for your participation!', 'center', 'center',0, 60);
 Screen('Flip', cfg.screen.win)
+save(sprintf('data/etc_s%03u.mat',cfg.subject_id), 'cfg')
 
 % save eyetracking data
 if eyetracking==1 
@@ -155,13 +163,15 @@ if eyetracking==1
     zmq_request('close');
     
     % eyelink
+    Eyelink('StopRecording')
     fulledffile = sprintf('data/etc_s%03u.EDF',cfg.subject_id);
     Eyelink('CloseFile');
     Eyelink('WaitForModeReady', 500);
     Eyelink('ReceiveFile',sprintf('etc_s%03u.EDF',cfg.subject_id),fulledffile);
     Eyelink('WaitForModeReady', 500);
+
+    
     Eyelink('Shutdown')
-    Eyelink('StopRecording')
 
 
 end
@@ -171,7 +181,6 @@ KbQueueRelease(cfg.keyboardIndex);
 Screen('Close') %cleans up all textures
 
 %% Save Datastructure
-save(sprintf('data/etc_s%03u.mat',cfg.subject_id), 'cfg')
 
 sca
 
