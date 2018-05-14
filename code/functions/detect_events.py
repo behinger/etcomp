@@ -24,6 +24,14 @@ def detect_saccades_engbert_mergenthaler(etsamples,fs = None, subject=None, reca
     
     # if you specify a sampling frequency, the samples get interpolated
     # to have regular sampled data in order to apply the saccade detection algorithm
+    etsamples = etsamples.copy()
+    print('removing blink-samples for saccade detection')
+    etsamples.loc[etsamples['blink'],'gx'] = np.nan
+    etsamples.loc[etsamples['blink'],'gy'] = np.nan
+
+    
+    print('TODO: removing bad-samples for saccade detection')
+    
     if fs:
         interpgaze = interpolate_gaze(etsamples, subject=subject, fs=fs, recalculate=recalculate, save=save, date=date)
     else:
@@ -33,8 +41,8 @@ def detect_saccades_engbert_mergenthaler(etsamples,fs = None, subject=None, reca
          
     # apply the saccade detection algorithm     
     saccades = apply_engbert_mergenthaler(xy_data = interpgaze[['gx','gy']],vel_data = None,sample_rate=fs)
-    sacsave = saccades.copy()
-    saccades = sacsave
+    #sacsave = saccades.copy()
+    #saccades = sacsave
     
     # convert samples of data back to sample time
     for fn in ['raw_start_time','raw_end_time']:

@@ -21,7 +21,6 @@ from pyedfread import edf
 from functions import nbp_recalib
 
 #%%
-
 # load and preprocess et data
 
 # specify subject
@@ -35,7 +34,7 @@ subject = 'inga_3'
 plsamples, plmsgs = load.preprocess_pl(subject, date='2018-05-11', recalculate=False)
 
 # load **preprocessed** el data as 2 dataframes: samples msgs
-elsamples, elmsgs = load.preprocess_el(subject, date='2018-05-11', recalculate=False)
+elsamples, elmsgs = load.preprocess_el(subject, date='2018-05-11', recalculate=True)
 
 
 # TODO
@@ -130,7 +129,7 @@ elsaccades.describe()
 
 #%%
 
-# Detect Blinks
+# Detect Blinks   PL
 
 plblinks = detect_blinks.pupil_detect_blinks(plsamples)
 
@@ -144,8 +143,17 @@ query='is_blink==1'
 plt.plot(plsamples2.smpl_time, plsamples2.confidence, 'o')
 plt.plot(plsamples2.query(query)['smpl_time'], plsamples2.query(query)['confidence'], 'o')
 
-# TODO: and for el we are going to use SMI blink detection?  -- elevents look at blink
 
+
+#%%
+
+# Detect Blinks
+# We use Blink detection from EL events +- 100 ms
+
+# plto time against pupil area and mark blink samples
+plt.figure()
+plt.plot(elsamples.smpl_time, elsamples.pa, 'o')
+plt.plot(elsamples.query('blink==True')['smpl_time'], elsamples.query('blink==True')['pa'], 'o')
 
 
 #%%
