@@ -4,7 +4,7 @@ showInstruction('DILATION',screen,requester,eyetracking, block);
 dilation.win = screen.win;
 sendETNotifications(eyetracking,requester,sprintf('DILATION start, block %d',block));
 
-for color_id = 1:25
+for color_id = 1:length(randomization)
     dilation.background_color = randomization(color_id);
 
     Screen('FillRect', screen.win, [randomization(color_id) randomization(color_id) randomization(color_id)]);

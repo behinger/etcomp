@@ -18,7 +18,7 @@ beepPauseTime = 1.5 - beepLengthSecs;
 
 devs = PsychPortAudio('GetDevices');
 devid = find(cellfun(@(x)~isempty(x),strfind({devs.DeviceName},'USB')),1);
-pahandle = PsychPortAudio('Open',  devid, 1, 1, freq, nrchannels);
+pahandle = PsychPortAudio('Open',  devs(devid).DeviceIndex, 1, 1, freq, nrchannels);
 
 PsychPortAudio('Volume', pahandle, 1);
 basefreq  = 300;
@@ -32,13 +32,13 @@ PsychPortAudio('FillBuffer', pahandle, [myBeep; myBeep]);
 for beep = 1:blink_number
     PsychPortAudio('Start', pahandle, repetitions, startCue, waitForDeviceStart);
     [actualStartTime, ~, ~, estStopTime] = PsychPortAudio('Stop', pahandle, 1, 1);
-    sendETNotifications(eyetracking,requester,sprintf('BLINK beep %d block %d',beep,block))
+   % sendETNotifications(eyetracking,requester,sprintf('BLINK beep %d block %d',beep,block))
       
     % Compute new start time for follow-up beep, beepPauseTime after end of
     % previous one
-    jitter =rand(1)*0.2 - 0.1;
+    jitter =rand(1)*0.4 - 0.2;
     
-    startCue = estStopTime + beepPauseTime + jitter
+    startCue = estStopTime + beepPauseTime + jitter;
     
 end
 % Close the audio device
