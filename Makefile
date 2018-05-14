@@ -63,7 +63,7 @@ opencv: ${opencvsrc}
 	  make -j4 && \
 	  make install
 		# now add opencv to python
-		ln -s ${opencvbuild}/lib/python3.5/dist-packages/cv2.cpython-35m-x86_64-linux-gnu.so ${VENV}/lib/python3.5/site-packages/cv2.cpython-35m-x86_64-linux-gnu.so
+		cp ${opencvbuild}/lib/python3.5/dist-packages/cv2.cpython-35m-x86_64-linux-gnu.so ${VENV}/lib/python3.5/site-packages/cv2.cpython-35m-x86_64-linux-gnu.so
 
 cleanopencv:
 		rm -r ${opencvbuild}
