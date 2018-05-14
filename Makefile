@@ -21,8 +21,12 @@ python-reqs: ${VENV}
 	pip3 install --upgrade -r requirements.pip
 
 
-compile-dependencies: pyav edfread opencv glfw
+compile-dependencies: pyav edfread opencv glfw printexport
 		echo 'done'
+
+printexport:
+		echo 'use this command before starting python/spyder'
+		echo 'export LD_LIBRARY_PATH=${CURDIR}${ffmpegbuild}/lib/:${CURDIR}${glfwbuild}/lib/:$LD_LIBRARY_PATH'
 
 glfwsrc = ${installfolder}/build/src_glfw
 glfwbuild = ${installfolder}/build/build_glfw
