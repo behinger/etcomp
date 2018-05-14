@@ -33,17 +33,17 @@ for beep = 1:blink_number
     PsychPortAudio('Start', pahandle, repetitions, startCue, waitForDeviceStart);
     [actualStartTime, ~, ~, estStopTime] = PsychPortAudio('Stop', pahandle, 1, 1);
    % sendETNotifications(eyetracking,requester,sprintf('BLINK beep %d block %d',beep,block))
-      
+
     % Compute new start time for follow-up beep, beepPauseTime after end of
     % previous one
     jitter =rand(1)*0.4 - 0.2;
-    
+
     startCue = estStopTime + beepPauseTime + jitter;
-    
+
 end
+WaitSecs(2)
 % Close the audio device
 PsychPortAudio('Close', pahandle);
 sendETNotifications(eyetracking,requester,sprintf('BLINK stop, block %d', block))
 
 LastFlip = flip_screen(screen);
-
