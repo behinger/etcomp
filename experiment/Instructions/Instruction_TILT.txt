@@ -1,7 +1,6 @@
-Tilt \n 
+Tilt \n
 
-In the next condition you will see a a line and a fix cross in the center, please tilt your head so that your eyes are aligned with the line fixate the target. Once you fixate it press SPACE to lock the position. Then the next line will appear. \n
+In the next condition you will see a a line and a fixation target at the center of the screen, please tilt your head (in other words: rotate one ear to the shoulder) so that your eyes are aligned with the line, while fixating the target. Once your eyes are aligned with the line, press SPACE to continue to the next line \n
 
 Before the condition starts you will be shown a green target. Please fixate it and press SPACE in order to start with the trial. \n \n
 Press SPACE to continue.
-

@@ -1,7 +1,6 @@
 Large Guided Viewing \n \n
 
-In the next condition you will see a target that you have to fixate. Once you fixate it press SPACE to lock the position. Then the next target will appear. \n
+In the next condition you will see a target moving around the screen. Once you look at the target (but not before!) and the eyes are not moving anymore, press space to select the next target and repeat. \n
 In total you will be shown 49 targets. \n
 Before the condition starts you will be shown a green target. Please fixate it and press SPACE in order to start with the trial. \n \n
 Press SPACE to continue.
-

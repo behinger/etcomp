@@ -1,8 +1,8 @@
 Contrast Variation \n
 
 In the next condition you will be shown a fixation target in the center of the screen. Please fixate it and remain fixated until it disappears. \n
-The background lumination will vary across the trial.
+
+The background lumination will vary across the trial. You can ignore this, please keep fixating on the fixation dot. \n
 
 Before the condition starts you will be shown a green target. Please fixate it and press SPACE in order to start with the trial. \n \n
 Press SPACE to continue.
-
