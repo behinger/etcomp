@@ -70,11 +70,11 @@ plt.plot(df_only_blinks.end, df_only_blinks.blink, 'o')
 # plan: lege an samples eine Spalte fuer blinks an, die True ist wenn smpl_time zwischen start und end liegt
 # lege weitere Spalte an, die die Blink id hochzaehlt
 
-# for each row of df_only_blinks?
-for bindex, brow in df_only_blinks.iterrows():
-    for sindex, srow in elsamples.iterrows():
-        print(sindex)
-        elsamples['blink'] = bool(srow['time']>=brow['start'] and srow['time']<=brow['end'])
+elsamples['blink'] = False
+for bindex,brow in df_only_blinks.iterrows():
+    ix =  (elsamples.time>=(brow['start']+100)) & (elsamples.time<(brow['end']+100))
+    elsamples['blink'][ix] = True
+    
 
 
 elsamples['blink'].describe()
