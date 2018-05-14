@@ -19,6 +19,7 @@ ${VENV}:
 
 python-reqs: ${VENV}
 	pip3 install --upgrade -r requirements.pip
+	pip3 install git+https://github.com/pupil-labs/pyglui
 
 
 compile-dependencies: pyav edfread opencv glfw printexport
@@ -26,7 +27,7 @@ compile-dependencies: pyav edfread opencv glfw printexport
 
 printexport:
 		echo 'use this command before starting python/spyder'
-		echo 'export LD_LIBRARY_PATH=${CURDIR}${ffmpegbuild}/lib/:${CURDIR}${glfwbuild}/lib/:$LD_LIBRARY_PATH'
+		echo 'export LD_LIBRARY_PATH=${CURDIR}/${ffmpegbuild}/lib/:${CURDIR}/${glfwbuild}/lib/:$$LD_LIBRARY_PATH'
 
 glfwsrc = ${installfolder}/build/src_glfw
 glfwbuild = ${installfolder}/build/build_glfw
@@ -39,7 +40,7 @@ ${glfwsrc}:
 ${glfwbuild}:
 		mkdir ${glfwsrc}/build
 		cd ${glfwsrc}/build && \
-		cmake -DCMAKE_INSTALL_PREFIX='../../build_glfw' ../ &&\
+		cmake -DCMAKE_INSTALL_PREFIX='../../build_glfw' -DBUILD_SHARED_LIBS=ON ../ &&\
 		make -j && \
 		make install
 
