@@ -10,7 +10,7 @@ for color_id = 1:25
     Screen('FillRect', screen.win, [randomization(color_id) randomization(color_id) randomization(color_id)]);
     drawTarget(screen.screen_width/2, screen.screen_height/2,dilation,20,'fixbulleye');
     LastFlip = flip_screen(screen, 0);
-    flip_screen(screen, LastFlip + 2.5);
+    flip_screen(screen, LastFlip + 5);
 
     sendETNotifications(eyetracking,requester,sprintf('DILATION lum %d block %d',randomization(color_id),block))
     

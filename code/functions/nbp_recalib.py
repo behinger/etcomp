@@ -55,7 +55,7 @@ def nbp_recalib(pupil,calibration_mode='2d',eyeID=None):
         if calib_idx < len(calib_data)-1:
             next_calib = calib_data[calib_idx+1] 
             ts_nextCalib = [p['timestamp'] for p in next_calib['pupil_list']] # not sure which timestamp to use..
-            idx = idx & (tsPupil > np.max(ts_nextCalib))
+            idx = idx & (tsPupil < np.max(ts_nextCalib))
             print('recalibrating for %.2fs, %i samples'%(np.max(ts_nextCalib) - np.max(tsCalib),sum(idx)))
         else:
             print('recalibrating for %.2fs, %i samples'%(pupil['pupil_positions'][-1]['timestamp'] - np.max(tsCalib),sum(idx)))

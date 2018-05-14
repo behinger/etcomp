@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 
 
-
 def parse_message(msg):
     # Input: message to be parsed
     #        (e.g. notification from pldata['notifications'])
@@ -47,7 +46,7 @@ def parse_message(msg):
                 exp_event = split[1])
         
         # buttonpress is an exp_event with no additional information
-        
+               
         if split[1] == 'element':
             #print(split)
             parsedmsg.update(dict(
@@ -61,6 +60,7 @@ def parse_message(msg):
         #TODO did you mean this with grid_small_before
         # but how do i know if it is before or after ??
         elif split[1] == 'element' and split[8] == '13':
+            #print(split)
             parsedmsg.update(dict(
                     exp_event = 'small_grid_before',
                     element = int(split[2]),
@@ -71,12 +71,13 @@ def parse_message(msg):
                     ))            
 
         elif split[1] == 'start':
+            #print(split)
             parsedmsg.update(dict(
-                    block = split[3]))
+                    block = int(split[3])))
 
         elif split[1] == 'stop':
             parsedmsg.update(dict(
-                    block = split[2]))
+                    block = int(split[3])))
 
     
     # label "DILATION"
@@ -86,7 +87,6 @@ def parse_message(msg):
     # block:    block of experiment
 
     if split[0] == 'DILATION':
-        print(split)
         parsedmsg = dict(
               msg_time = msg_time,  
               exp_event = split[1])
@@ -133,7 +133,7 @@ def parse_message(msg):
     # exp_event:  experimental event of SMOOTH PURSUIT (trialstart, trialend, stop)
         # for "trialstart":
         # vel:        velocity of stimulus
-        # angl:       angle of moving stim in reference to ?vertical line? ?where 3 oclock equals 90 degrees? 0 <= angle <= 360
+        # angle:       angle of moving stim in reference to ?vertical line? ?where 3 oclock equals 90 degrees? 0 <= angle <= 360
         # trial:      trial number
         # block:      block of experiment
         
@@ -150,7 +150,7 @@ def parse_message(msg):
         if split[2] == 'trialstart':
             parsedmsg.update(dict(
                 vel = int(split[4]),
-                angl = int(split[6]),
+                angle = int(split[6]),
                 trial = int(split[8]),
                 block = int(split[10])
                 ))
@@ -222,8 +222,7 @@ def parse_message(msg):
     if split[0] == 'starting' and split[1] == 'ET':
         parsedmsg = dict(
               msg_time = msg_time,
-              block = split[4],
-              )
+              block = int(split[4]))
         split[0] = 'startingET'
 
 
@@ -232,7 +231,6 @@ def parse_message(msg):
     # exp_event:        True when Experiment is finished  ??
 
     if split[0] == 'Finished':
-        print(split)
         parsedmsg = dict(
               msg_time = msg_time,                
               exp_event = 'exp_finished')
@@ -244,11 +242,17 @@ def parse_message(msg):
     # block:            block of experiment
   
     if split[0] == 'Instruction':
+        
+        #LARGEGG in LARGEGRID umbennen
+        if split[2] == "LARGEGG":
+            split[2] = "LARGEGRID"
+        if split[2] == "SMALLGG":
+            split[2] = "SMALLGRID"
+
         parsedmsg = dict(
               msg_time = msg_time,                
               exp_event = str(split[2]) + '_' + str(split[3]),
-              block = split[5]
-              )
+              block = int(split[5]))
 
 
     # label "SHAKE"
@@ -266,7 +270,7 @@ def parse_message(msg):
                 shake_x = int(split[4]),
                 shake_y = int(split[6]),
                 block = int(split[2]),
-                exp_event = 'shake_point'
+                exp_event = 'SHAKE_point'
                 ))
 
         if split[1] == 'start' or split[1] == 'stop':
@@ -298,7 +302,7 @@ def parse_message(msg):
     
         if split[1] == 'angle':
             parsedmsg.update(dict(
-                angl = int(split[2]),
+                angle = int(split[2]),
                 block = int(split[4])
                 ))
 
@@ -307,10 +311,7 @@ def parse_message(msg):
                 block = int(split[3])
                 ))
 
-
-    # TODO: check if parsed for everything
-    #labels.add(split[0])
-    
+ 
     # add column for condition
     parsedmsg['condition'] = split[0] 
 

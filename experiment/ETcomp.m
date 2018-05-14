@@ -135,14 +135,14 @@ for block = 1:6
     expPupilDilation(cfg.screen,rand_block.pupildilation, eyetracking, requester, block)
     toc
     %% Small Grid Before
-    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking);
+    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking,'before');
     toc
     %% Condition shake/tilt
     expRotation(rand_block.firstmovement,cfg.screen, eyetracking, requester,rand_block, block); % give the whole randomization because it needs tilt + shake
     toc
     %
     %% Small Grid After
-    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
+    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking,'after');
     toc
     %
     %%
