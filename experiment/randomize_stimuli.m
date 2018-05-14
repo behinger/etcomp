@@ -7,9 +7,9 @@ numberimagesperblock = 3;
 randomization = load('randomization_larger_grid.mat');
 rand_grid_large=randomization.ix;
 
-monitorluminanceLookup = [0,64,128,192,255];
+monitorluminanceLookup = [0,64,192,255];
 % 1.5s per value => 7.5s, in 30s => 5 repetitions
-monitorluminance = repmat(1:length(monitorluminanceLookup),1,5);
+monitorluminance = repmat(1:length(monitorluminanceLookup),1,1);
 
 %smooth pursuit
 smooth_angle = 0:15:360 - 15;
@@ -48,16 +48,12 @@ for subject = subjectlist
         rand.smallAfter        = [rand.smallAfter  {randperm(13)}];
         rand.large             = [rand.large       {rand_grid_large(largeBlockPerm(block),:)}];
         
-        % pupildilation
-        while true
-            % make sure no two following numbers are equal
-            ix = randperm(length(monitorluminance));
-            if all(diff(monitorluminance(ix))~=0)
-                break
-                
-            end
-        end
-        rand.pupildilation = [rand.pupildilation {monitorluminanceLookup(monitorluminance(ix))}];
+        
+        % every luminance interdisperced by gray
+        ix = randperm(length(monitorluminance));
+        lum = ones(length(monitorluminance)*2,1)*128;
+        lum(2:2:2*length(monitorluminance)) = monitorluminanceLookup(monitorluminance(ix));
+        rand.pupildilation = [rand.pupildilation {lum}];
         
         
         % smooth pursuit
