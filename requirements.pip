@@ -1,4 +1,5 @@
 pip==9.0.1
+spyder
 scipy
 pyopengl
 patsy
