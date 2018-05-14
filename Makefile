@@ -11,7 +11,7 @@ install: git-reqs ${VENV} python-reqs compile-dependencies
 
 git-reqs:
 			git submodule update --init
-			
+
 ${VENV}:
 	virtualenv -p python3 --system-site-packages ${VENV}
 	#python3 -m venv --system-site-packages ${VENV}#
@@ -21,8 +21,23 @@ python-reqs: ${VENV}
 	pip3 install --upgrade -r requirements.pip
 
 
-compile-dependencies: pyav edfread opencv
+compile-dependencies: pyav edfread opencv glfw
 		echo 'done'
+
+glfwsrc = ${installfolder}/build/src_glfw
+glfwbuild = ${installfolder}/build/build_glfw
+glfw: ${glfwsrc} ${glfwbuild}
+		echo 'done'
+
+${glfwsrc}:
+		git clone https://github.com/glfw/glfw ${glfwsrc}
+
+${glfwbuild}:
+		mkdir ${glfwsrc}/build
+		cd ${glfwsrc}/build && \
+		cmake -DCMAKE_INSTALL_PREFIX='../../build_glfw' ../ &&\
+		make -j && \
+		make install
 
 
 pyavsrc = ${installfolder}/build/src_pyav
@@ -63,7 +78,7 @@ opencv: ${opencvsrc}
 	  make -j4 && \
 	  make install
 		# now add opencv to python
-		cp ${opencvbuild}/lib/python3.5/dist-packages/cv2.cpython-35m-x86_64-linux-gnu.so ${VENV}/lib/python3.5/site-packages/cv2.cpython-35m-x86_64-linux-gnu.so
+		ln -s ${opencvbuild}/lib/python3.5/dist-packages/cv2.cpython-35m-x86_64-linux-gnu.so ${VENV}/lib/python3.5/site-packages/cv2.cpython-35m-x86_64-linux-gnu.so
 
 cleanopencv:
 		rm -r ${opencvbuild}
