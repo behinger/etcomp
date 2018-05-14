@@ -14,6 +14,25 @@ git submodule update --init
 The latter is necessary to get the files from pupillabs, which we partially will make use of.
 
 
+
+# NEW INSTALLATION
+
+We have a large list of dependencies. Easiest is to install using:
+
+``` make install ```
+
+You need these packages definitely instaleld:
+```
+libglew-dev/xenial,now 1.13.0-2 amd64 [installed,automatic]
+libglew1.13/xenial,now 1.13.0-2 amd64 [installed,automatic]
+libglewmx-dev/xenial,now 1.13.0-2 amd64 [installed]
+libglewmx1.13/xenial,now 1.13.0-2 amd64 [installed,automatic]
+```
+
+In principle you can also try to compile glew, but I could not manage properly.
+
+Pyedfread also needs a dependencie from SR-research (libedfapi.so), which is not publicly available. Checkout the Sr research forum!
+
 # Python EDFREAD
 
 
