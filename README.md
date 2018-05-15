@@ -1,3 +1,6 @@
+# ACUITY TE
+http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&distance=1&distanceUnits=meters&chartType=2&optoType=0&displayType=1&rowIndex=14&mirror=false&animate=false&crowd=false&nearFar=near&col1=#dedede&col2=#f10708&col3=#20e4fa&col4=#000000&mode3d=0
+
 # How to start the compiled binary of pupil player / capture locally under ubuntu:
 
 - Get the linux release zip file from https://github.com/pupil-labs/pupil/releases
