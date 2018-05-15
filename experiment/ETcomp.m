@@ -5,6 +5,11 @@ sca
 clear all
 %open screen
 debug=false;
+
+%setup eyetracker
+eyetracking=~debug;
+requester = ~debug;
+
 if debug
     fprintf('!!!!!!DEBUG MODE ON!!!!!!!\n');
     commandwindow;
@@ -14,8 +19,7 @@ end
 
 cfg = expConfigure();
 
-subject_id = input('\n subjectid: ');
-
+cfg.subject_id = input('\n subjectid: ');
 
 
 % Initialize Sounddriver
@@ -33,9 +37,7 @@ while dobeep
 end
 
 %% Eyetracking setup
-%setup eyetracker
-eyetracking=1;
-requester = false;
+
 
 if eyetracking == 1
     % Eyelink
@@ -45,8 +47,8 @@ if eyetracking == 1
     calibcoordinates = calibcoordinates([find(middlepoint);find(~middlepoint)],:);
     el = setup_eyelink(cfg.screen,calibcoordinates);
     %open log file
-    Eyelink('OpenFile', sprintf('etc_s%03u.EDF',subject_id));          %CHANGE file name ?
-    sessionInfo = sprintf('%s %s','SUBJECTINDEX',num2str(subject_id));
+    Eyelink('OpenFile', sprintf('etc_s%03u.EDF',cfg.subject_id));          %CHANGE file name ?
+    sessionInfo = sprintf('%s %s','SUBJECTINDEX',num2str(cfg.subject_id));
     Eyelink('message','METAEX %s',sessionInfo);
     
     % Pupillabs
@@ -64,7 +66,7 @@ if eyetracking == 1
     requester = int32(requester);
     el.requester =requester;
     % Setup Eyelink
-    Eyelink('StartSetup')
+    Eyelink('StartSetup');
     
     
     % Start recording
@@ -79,17 +81,21 @@ if eyetracking == 1
 end
 
 %%
+% Make the inital arangements
+fprintf('\n ################# \n Make the inital arangements, no need to calibrate yet\n ##############\nc     ')
+local_EyelinkDoTrackerSetup(el)
+
+sendETNotifications(eyetracking,requester,sprintf('R etc_s%03u',cfg.subject_id));
 showInstruction('BEGINNING',cfg.screen,requester,eyetracking,0)
 
 
-for block = 1:2
+for block = 1:6
     tic
-    rand_block = select_randomization(cfg.rand, subject_id, block);
+    rand_block = select_randomization(cfg.rand, cfg.subject_id, block);
     
     % at the beginni ng of each block : calibrate ADD pupil labs
     if eyetracking
         fprintf('\n\nEYETRACKING CALIBRATION...')
-        sendETNotifications(eyetracking,requester,sprintf('R etc_s%03u',subject_id));
     
     
         % we need to stop eyelink to record the calibration
@@ -129,14 +135,14 @@ for block = 1:2
     expPupilDilation(cfg.screen,rand_block.pupildilation, eyetracking, requester, block)
     toc
     %% Small Grid Before
-    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking);
+    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallBefore, block,requester,eyetracking,'before');
     toc
-    %% Condition shake/tild
-    expRotation(rand_block.firstmovement,cfg.screen, eyetracking, requester, block);
+    %% Condition shake/tilt
+    expRotation(rand_block.firstmovement,cfg.screen, eyetracking, requester,rand_block, block); % give the whole randomization because it needs tilt + shake
     toc
     %
     %% Small Grid After
-    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking);
+    expGuidedGrid(cfg.small_grid_coord,cfg.screen,rand_block.smallAfter, block,requester,eyetracking,'after');
     toc
     %
     %%
@@ -148,6 +154,7 @@ sendETNotifications(eyetracking,requester,'Finished Experiment');
 
 DrawFormattedText(cfg.screen.win, 'The experiment is complete! Thank you very much for your participation!', 'center', 'center',0, 60);
 Screen('Flip', cfg.screen.win)
+save(sprintf('data/etc_s%03u.mat',cfg.subject_id), 'cfg')
 
 % save eyetracking data
 if eyetracking==1 
@@ -156,13 +163,15 @@ if eyetracking==1
     zmq_request('close');
     
     % eyelink
-    fulledffile = sprintf('data/etc_s%03u.EDF',subject_id);
+    Eyelink('StopRecording')
+    fulledffile = sprintf('data/etc_s%03u.EDF',cfg.subject_id);
     Eyelink('CloseFile');
     Eyelink('WaitForModeReady', 500);
-    Eyelink('ReceiveFile',sprintf('etc_s%03u.EDF',subject_id),fulledffile);
+    Eyelink('ReceiveFile',sprintf('etc_s%03u.EDF',cfg.subject_id),fulledffile);
     Eyelink('WaitForModeReady', 500);
+
+    
     Eyelink('Shutdown')
-    Eyelink('StopRecording')
 
 
 end
@@ -170,5 +179,8 @@ end
 ShowCursor;
 KbQueueRelease(cfg.keyboardIndex);
 Screen('Close') %cleans up all textures
+
+%% Save Datastructure
+
 sca
 

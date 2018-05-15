@@ -54,7 +54,7 @@ for count= 1:length(directions)%size(pos,1)-1
 
     % get duration
     duration = random(trunc_dist)/1000; % in s
-    duration = 0;
+    %duration = 0;
     
     drawTarget(xCenter, yCenter,screen,20,'fixbulleye');
     LastFlip =  flip_screen(screen);
@@ -72,12 +72,13 @@ for count= 1:length(directions)%size(pos,1)-1
     
     time0 = GetSecs;
     while ((GetSecs - time0+ifi) < (10+0.2*v)/v)
-
-        newPos = (newPos + stepsize);
+        dt = GetSecs - time0;
+        pos = newPos + dt.* [vx, vy];
+%         newPos = (newPos + stepsize);
         
-        drawTarget(round(newPos(1)),round(newPos(2)),screen,1,'fixbulleye');
+        drawTarget(round(pos(1)),round(pos(2)),screen,1,'fixbulleye');
         
-        LastFlip = flip_screen(screen, LastFlip + (1 - 0.5) * ifi); % image_fixcross_time = 0.5s
+        LastFlip = flip_screen(screen, 0); % image_fixcross_time = 0.5s
         
 
     end

@@ -21,8 +21,8 @@ if strcmp(which_target, 'fixcross') == 1
     ppd = pi * (rect(3)-rect(1)) / atan(width/ dist/2) / 360; % pixel per degree
     
     Screen('FillOval', screen.win, colorOval, [x-d1/2 * ppd, y-d1/2 * ppd, x+d1/2 * ppd, y+d1/2 * ppd], d1 * ppd);
-    Screen('DrawLine', screen.win, colorCross, x-d1/2 * ppd, y, x+d1/2 * ppd, y, d2 * ppd);
-    Screen('DrawLine', screen.win, colorCross, x, y-d1/2 * ppd, x, y+d1/2 * ppd, d2 * ppd);
+    Screen('DrawLine', screen.win, colorCross, x-d1/2 * ppd, y, x+d1/2 * ppd, y, min(d2 * ppd,10));
+    Screen('DrawLine', screen.win, colorCross, x, y-d1/2 * ppd, x, y+d1/2 * ppd, min(d2 * ppd,10));
     Screen('FillOval', screen.win, colorOval, [x-d2/2 * ppd, y-d2/2 * ppd, x+d2/2 * ppd, y+d2/2 * ppd], d2 * ppd);
     
     

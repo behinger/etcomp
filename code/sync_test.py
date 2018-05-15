@@ -3,150 +3,175 @@
 import functions.add_path
 import numpy as np
 import pandas as pd
+import os,sys,inspect
 
 from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 import os
 import matplotlib.pyplot as plt
 import functions.nbp_pupilhelper as nbp_pl
+import functions.etcomp_parse as parse
+import functions.et_plotting as etplot
+import functions.et_import as load
+import functions.detect_events as detect_events
+import functions.detect_blinks as detect_blinks
+
+# parses SR research EDF data files into pandas df
 from pyedfread import edf
 
 from functions import nbp_recalib
 
 #%%
-datapath = '/net/store/nbp/projects/etcomp/pilot'
-subject = 'inga'
+# load and preprocess et data
+
+# specify subject
+subject = 'inga_3'
+
+# load pl data
+# original_pldata = load.raw_pl_data(subject)
 
 
-filename = os.path.join(datapath,subject,'raw')
+# preprocess pl_pldata to get 2 dataframes: samples, msgs
+plsamples, plmsgs = load.preprocess_pl(subject, date='2018-05-11', recalculate=False)
+
+# load **preprocessed** el data as 2 dataframes: samples msgs
+elsamples, elmsgs = load.preprocess_el(subject, date='2018-05-11', recalculate=True)
 
 
-pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'))
-
-def plot_trace(pupil):
-    t = [p['timestamp'] for p in pupil]
-    x = [p['norm_pos'][0] for p in pupil]
-    plt.plot(t,x,'o')
-    
-plot_trace(pldata['gaze_positions'])
-plot_trace(pldata['gaze_positions2'])
-plot_trace(pldata['gaze_positions3'])
+# TODO
+# remove bad_samples (gaze outside monitor)
+# plsamples = load.remove_bad_samples(plsamples)
+# elsamples = load.remove_bad_samples(elsamples)
 
 
-plot_trace([p for p in pldata['pupil_positions'] if p['id'] == 0])
+# epoch etdata according to query
+condquery = 'condition == "DILATION" & exp_event=="lum"'
+plepochs = load.make_epochs(plsamples, plmsgs.query(condquery))
+elepochs = load.make_epochs(elsamples, elmsgs.query(condquery))
 
-plot_trace([p for p in pldata['pupil_positions'] if p['id'] == 1])
-
-pldata['gaze_positions3'] = nbp_recalib.nbp_recalib(pldata,eyeID = 0)
-#%%
-def parse_message(msg):
-    
-    #print(msg)
-    try:
-        time = msg['time']
-        string = msg['trialid '] # space on purpose
-        
-    except:
-        try:
-            time = msg['timestamp']
-            string = msg['label']
-        except:
-                return(np.nan)
-    
-    split = string.split(' ')    
-    parsedmsg = pd.DataFrame()
-    if split[0] == 'GRID' and split[1] == 'element':
-        parsedmsg = dict(
-              time = time,  
-              id=int(split[2]),
-             posx = float(split[4]),
-             posy = float(split[6]),
-             total = int(split[8]),
-             block = int(split[10])
-                )
-    return(pd.Series(parsedmsg))
-    
-    
-    
-def match_data(et,msgs,td=2):
-    # Input: et(DataFrame) input data of the eyetracker
-    #        msgs(DataFrame) already parsed input messages e.g. 'GRID element 5 pos-x 123 ...' defining experimental events
-    # Output: Data.frame for each notification, find all samples that are in the range of +- td (default 2 s)
-    pd_matched_data = pd.DataFrame()
-    for idx,msg in msgs.iterrows():
-        print(idx)
-        ix = abs(et['time'] - msg['time'])<td # ix is a boolean (0 / 1, false / true)
-        tmp= et.loc[ix]
-        tmp = tmp.assign(td=tmp.time-msg['time'])
-    
-        
-        msg_tmp = pd.concat([msg.to_frame()]*tmp.shape[0],axis=1).T
-        msg_tmp.index = tmp.index
-        
-        
-        tmp = pd.concat([tmp,msg_tmp],axis=1)
-        pd_matched_data = pd_matched_data.append(tmp)
-    return(pd_matched_data)
-    
-def findFile(path,ftype):
-    out = [edf for edf in os.listdir(path) if edf.endswith(ftype)]
-    return(out)
-
-def plotTraces(et,query = 'posx == 960',figure = True):
-    if type(et) != list:
-        et = [et]
-    for dat in et:
-        tmp = dat.query(query)
-        if figure:
-            plt.figure()
-        plt.plot(tmp.td,tmp.gx,'o')
-    
-
-#%%    
-
-gridnotes = [note for note in pldata['notifications'] if 'label' in note.keys() and 'GRID' in note['label']]
-
-pd_plmsgs = pd.DataFrame();
-for note in gridnotes:
-    msg = parse_message(note)
-    if not msg.empty:
-        pd_plmsgs = pd_plmsgs.append(msg, ignore_index=True)
-
-
-pd_pldata = nbp_pl.gaze_to_pandas(pldata['gaze_positions'])
-pd_pldata.sort_values('time',inplace=True)
-
-pd_pl_matched_data = match_data(pd_pldata,pd_plmsgs)
 
 #%%
 
+# We are going to have 5 types of Dataframes:
+# sample, msgs, events, epochs und for each condition a df FULL for pl and el respectively 
+# for more details please have a look at the "overview dataframes pdf"
 
-    
+# have a look at the data
+
+# samples df
+plsamples.info()
+plsamples.describe()
+elsamples.info()
+elsamples.describe()
+
+
+# msgs df
+plmsgs.info()
+plmsgs.describe()
+elmsgs.info()
+elmsgs.describe()
+
+# TODO: Why do we find a missmatch here?
+elmsgs.condition.value_counts()
+plmsgs.condition.value_counts()
+
+
+# epochs df
+elepochs.info()
+elepochs.describe()
+plepochs.info()
+plepochs.describe()
+
+
+# look how many samples that can be used for each condition
+plepochs.condition.value_counts()
+elepochs.condition.value_counts()
+
+   
+#%% SANITY CHECKS
+
+# msgs EL
+elmsgs.info()
+set(elmsgs['pic_id'].unique()) - set(plmsgs['pic_id'].unique()) 
+
 
 #%%
-elsamples, elevents,elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
-# change to seconds to be the same as pupil
-elsamples['time'] = elsamples['time']/1000
-elnotes['time'] = elnotes['trialid_time']/1000
-elnotes = elnotes.drop('trialid_time',axis=1)
-elevents['time'] = elevents['time']/1000
 
-# if more than 90% of samples are on the the left, assume everything was recorded left
-elsamples['gx']  = elsamples.gx_left if np.mean(elsamples.gx_left != -32768)>0.9 else elsamples.gx_right
+# Looking at dilation data
 
-#
-pd_elmsgs = elnotes.apply(parse_message,axis=1)
-pd_elmsgs = pd_elmsgs.dropna()
-pd_el_matched_data = match_data(elsamples,pd_elmsgs)
+elepochs.lum.unique()
+
+
+# TODO something is still wrong with dilation
+
+# EL
+etplot.plot_diam(elepochs,query='condition=="DILATION" & block==1 & lum==255')
+
+# PL
+etplot.plot_diam(plepochs, query='condition=="DILATION" & block==1 & lum==64')
+
+
+
+etplot.plotTraces(plepochs, y='pa', query='condition=="DILATION" & lum==64')
+etplot.plotTraces(elepochs, y='pa', query='condition=="DILATION" & block==1 & lum==255')
+
+
 #%%
-pd_pl_matched_data.gx = pd_pl_matched_data.gx*1960
+
+# Detect Saccades
+
+plsaccades = detect_events.detect_saccades_engbert_mergenthaler(plsamples,fs=240, subject= 'inga_3', recalculate=True, save=True, date='2018-05-11')
+elsaccades = detect_events.detect_saccades_engbert_mergenthaler(elsamples)
+
+elsaccades.head()
+elsaccades.columns
+elsaccades.describe()
+
+
 #%%
-plotTraces([pd_pl_matched_data,pd_el_matched_data],query = 'posx==960')
 
-plotTraces([pd_pl_matched_data,pd_el_matched_data],query = 'id == 15 & block == 1',figure=False)
-    
+# Detect Blinks   PL
+
+plblinks = detect_blinks.pupil_detect_blinks(plsamples)
+
+# add blinks to plsamples df 
+plsamples2 = pd.concat([plsamples, plblinks], axis=1)
+
+query='is_blink==1'
+
+
+# plot to check
+plt.plot(plsamples2.smpl_time, plsamples2.confidence, 'o')
+plt.plot(plsamples2.query(query)['smpl_time'], plsamples2.query(query)['confidence'], 'o')
 
 
 
+#%%
+
+# Detect Blinks
+# We use Blink detection from EL events +- 100 ms
+
+# plto time against pupil area and mark blink samples
+plt.figure()
+plt.plot(elsamples.smpl_time, elsamples.pa, 'o')
+plt.plot(elsamples.query('is_blink==True')['smpl_time'], elsamples.query('is_blink==True')['pa'], 'o')
+plt.plot(elsamples.query('is_blink==True')['smpl_time'], elsamples.query('is_blink==True')['blink_id'], 'o')
+
+
+#%%
+
+#%%
+
+#%%   
+
+# Plotting
+
+# plot pl against el
+# if fixationcross presented at posx==960
+# x-axis: td time 
+# y-axis: horiz. component of gaze 
+etplot.plotTraces([plepochs,elepochs],query = 'posx==960')
+
+etplot.plotTraces([plepochs,elepochs],query = 'element == 15 & block == 1',figure=False)
 
 
 #%% ---- Have a look at the surface CSV files
@@ -166,5 +191,11 @@ plt.plot(pldata_surface['gaze_timestamp'],pldata_surface['x_norm'])
 
 plt.figure
 plt.plot(pldata_surface['x_norm'],pldata_surface['y_norm'],'o')
+
+
+#%%
+
+# convert pl gaze data to same scale as EL  :   Is it correct?
+pl_matched_data.gx = pl_matched_data.gx*1920
 
 

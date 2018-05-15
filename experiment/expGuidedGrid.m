@@ -1,4 +1,4 @@
-function []= expGuidedGrid(coords,screen,randomization, block,requester,eyetracking)
+function []= expGuidedGrid(coords,screen,randomization, block,requester,eyetracking,smallgg_before_after)
 display_pos = coords(randomization,:)';
 %%
 targetKey    ='Space';
@@ -7,6 +7,7 @@ if total_elements == 49
     condition = 'LARGEGG';
 else 
     condition = 'SMALLGG';
+    condition = [condition '_' smallgg_before_after];
 end
 lastflip = showInstruction(condition,screen,requester,eyetracking, block);
 
@@ -46,7 +47,7 @@ drawTarget(screen.screen_width/2, screen.screen_height/2,screen,20,'fixcross');
 %[time]=Screen('Flip', win);
 time =  flip_screen(screen, lastflip);
 
-sendETNotifications(eyetracking,requester,sprintf('GRID stop %d',block))
+sendETNotifications(eyetracking,requester,sprintf('GRID stop block %d',block))
 
 
 grid_buttonpress(targetKey,time,requester,eyetracking);

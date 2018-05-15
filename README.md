@@ -14,6 +14,36 @@ git submodule update --init
 The latter is necessary to get the files from pupillabs, which we partially will make use of.
 
 
+
+# NEW INSTALLATION
+
+We have a large list of dependencies. Easiest is to install using:
+
+``` make install ```
+
+Then run 
+``` make export-paths```
+
+and everytime before running spider or python, you need to run these to add some dependencies for python to use.
+
+You can put these in your `~./bashrc` so that everytime you run a terminal, you will also have the paths automatically (highly recommend)
+
+
+You need these packages definitely installed (there might be more):
+```
+libglew-dev/xenial,now 1.13.0-2 amd64 [installed,automatic]
+libglew1.13/xenial,now 1.13.0-2 amd64 [installed,automatic]
+libglewmx-dev/xenial,now 1.13.0-2 amd64 [installed]
+libglewmx1.13/xenial,now 1.13.0-2 amd64 [installed,automatic]
+```
+
+In principle you can also try to compile glew, but I could not manage properly.
+
+Pyedfread also needs a dependencie from SR-research (libedfapi.so), which is not publicly available. Checkout the Sr research forum!
+
+
+
+# What follows now is old installation instruction, they were merged to make install
 # Python EDFREAD
 
 
@@ -40,7 +70,17 @@ pyedfread==0.1
 scipy==0.19.1
 spyder==3.2.8
 ```
-
+# install opencv
+- compile opencv3 as pupil-labs
+```
+  git clone https://github.com/itseez/opencv
+  cd opencv
+  mkdir build &&  cd build
+  cmake -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_TBB=ON -D WITH_TBB=ON -D WITH_CUDA=OFF -D BUILD_opencv_python2=OFF -DBUILD_opencv_python3=ON  -D CMAKE_INSTALL_PREFIX='XXX/opencv-build'
+  make -j4
+  make install
+  
+  ```
 # isntalling pyav under linux
 This one was difficult
 - get ffmpeg3 (only v.2 is installed by defaul)
@@ -49,7 +89,8 @@ This one was difficult
 - you likely need yasm, but its straight forward to build
     - `git clone https://github.com/yasm/yasm`
     - `cd yasm`
-    - `--prefix=../yasm-build`
+    - `sh autoconfig.sh`
+    - `./configure --prefix=../yasm-build` # or cmake?
     - `make yasm`
     - `make install`
     - `export PATH=$PATH:/net/store/nbp/users/behinger/tmp/pupil_src_test/yasm-build/bin`
