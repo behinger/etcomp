@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 import functions.nbp_pupilhelper as nbp_pl
 import functions.etcomp_parse as parse
+import functions.detect_events as events
 #import functions.pl_surface as pl_surface
 
 # parses SR research EDF data files into pandas df
@@ -50,31 +51,51 @@ filename = os.path.join(datapath,subject,'raw')
 elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
 
   
+#%% Checking blink_id
+
+
+
+# Probably not very interesting
+elevents = events.el_make_events(subject)
+
+plt.figure()
+plt.plot(elevents.index, elevents.start, 'x', color='b')
+plt.plot(elevents.index, elevents.end, 'x', color='b')
+
+plt.plot(elevents.query("type=='blink'").index, elevents.query("type=='blink'").start, 'x', color='r')
+plt.plot(elevents.query("type=='blink'").index, elevents.query("type=='blink'").end, 'x', color='r')
+
+plt.plot(elevents.query("type=='fixation'").index, elevents.query("type=='fixation'").start, 'x', color='g')
+plt.plot(elevents.query("type=='fixation'").index, elevents.query("type=='fixation'").end, 'x', color='g')
+
+plt.plot(elevents.query("type=='saccade'").index, elevents.query("type=='saccade'").start, 'x', color='y')
+plt.plot(elevents.query("type=='saccade'").index, elevents.query("type=='saccade'").end, 'x', color='y')
+
+
+  
 #%% 
 
-# el events has column blink (booleans)
-elevents.columns
-
-
-# filter all rows where blink==True
-ix_blink = elevents.blink==True
-df_only_blinks = elevents.loc[ix_blink]
-# we are only interested in when the blink started and ended
-df_only_blinks = df_only_blinks.loc[:, ['start', 'end', 'blink']]
-
-# we can plot to see if on and offset are reasonable
-plt.plot(elsamples.time, elsamples.pa_right, 'o')
-plt.plot(df_only_blinks.start, df_only_blinks.blink, 'o')
-plt.plot(df_only_blinks.end, df_only_blinks.blink, 'o')
-
-# plan: lege an samples eine Spalte fuer blinks an, die True ist wenn smpl_time zwischen start und end liegt
-# lege weitere Spalte an, die die Blink id hochzaehlt
-
-elsamples['blink'] = False
-for bindex,brow in df_only_blinks.iterrows():
-    ix =  (elsamples.time>=(brow['start']+100)) & (elsamples.time<(brow['end']+100))
-    elsamples['blink'][ix] = True
+   # remove to large pa    
+    # TODO : we dropped this cause pa mostly look good after removing pa == 0 
+    # check pa / diameter large values inga_3 end
+    # Pupil Area is unreasonably large
+    # As there will be very different absolute pa sizes, we will do outlier detection ? 
+#    # keep only the ones that are within +3 to -3 standard deviations
+#    marked_samples['too_large_pa'] = np.abs(etsamples.pa-np.nanmean(etsamples.pa))>(3* (np.nanstd(etsamples.pa)))
+#    
+#    # add columns to the samples df
+#    marked_samples = pd.concat([etsamples, marked_samples], axis=1)
+#
+#    plt.figure()
+#    plt.plot(etsamples['smpl_time'], etsamples['pa'], 'x', color='b')
+#    plt.plot(marked_samples.query('too_large_pa==1')['smpl_time'], marked_samples.query('too_large_pa==1')['pa'], 'o', color='r')
+#    etsamples['pa'].describe()
     
 
 
-elsamples['blink'].describe()
+
+  
+#%% 
+
+
+

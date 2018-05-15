@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 import functions.nbp_pupilhelper as nbp_pl
 import functions.etcomp_parse as parse
+import functions.pl_detect_blinks as pl_detect_blinks
 # import functions.pl_surface as pl_surface
 
 # parses SR research EDF data files into pandas df
@@ -84,11 +85,11 @@ def preprocess_pl(subject, recalculate=True, save=False, date=time.strftime, dat
         # sort according to smpl_time
         pldata.sort_values('smpl_time',inplace=True)
         
-        # TODO setting pa to Nan if 0 will be done in remove_bad samples
-#        # set pa values that are 0 to NaN
-#        pldata.loc[pldata['pa'] == 0,'pa'] = np.nan
-#    
-        plsamples = make_samples_df(pldata)
+        # add Blink information to pldata
+        pldata_blink = pl_detect_blinks.pupil_detect_blinks(pldata)
+
+        # get the nice samples df
+        plsamples = make_samples_df(pldata_blink) # XXX extended_samples
         
     
         # Get msgs df      
@@ -175,22 +176,19 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
         df_only_blinks = df_only_blinks.loc[:, ['start', 'end', 'blink']]
         
         # create column blink (boolean) in elsamples
-        elsamples['is_blink'] = False
+        elsamples['is_blink'] = int(False)
         for bindex,brow in df_only_blinks.iterrows():
             # get index of all samples that are +- 100 ms of a detected blink
             ix =  (elsamples.smpl_time>=(brow['start']-float(0.1))) & (elsamples.smpl_time<(brow['end']+float(0.1)))
             # mark them as blink
-            elsamples.loc[ix, 'is_blink'] = True
+            elsamples.loc[ix, 'is_blink'] = int(True)
         
-        # create column blink_id (int) in elsamples
-        elsamples['blink_id'] = elsamples['is_blink'].copy()
  
-        # TODO check for correctness
         # counts up the blink_id
         # Pure Magic
-        elsamples['blink_id'] = elsamples['blink_id'] * (elsamples['blink_id'] != elsamples['blink_id'].shift()).cumsum()
-          
-        
+        elsamples['blink_id'] = (elsamples['is_blink'] * (elsamples['is_blink'].diff()==1).cumsum())
+
+
      
         # for horizontal gaze component
         # Idea: Logical indexing
@@ -318,27 +316,9 @@ def mark_bad_samples(etsamples):
     # Pupil Area
     # If pa is 0
     # ToDo check this
-    etsamples.loc[etsamples['pa'] == 0,'pa'] = np.nan
+    etsamples.loc[etsamples['pa'] == 0,'zero_pa'] = True     
     
-    
-    
-    
-    # TODO : we dropped this cause pa mostly look good after removing pa == 0 
-    # check pa / diameter large values inga_3 end
-    # Pupil Area is unreasonably large
-    # As there will be very different absolute pa sizes, we will do outlier detection ? 
-#    # keep only the ones that are within +3 to -3 standard deviations
-#    marked_samples['too_large_pa'] = np.abs(etsamples.pa-np.nanmean(etsamples.pa))>(3* (np.nanstd(etsamples.pa)))
-#    
-#    # add columns to the samples df
-#    marked_samples = pd.concat([etsamples, marked_samples], axis=1)
-#
-#    plt.figure()
-#    plt.plot(etsamples['smpl_time'], etsamples['pa'], 'x', color='b')
-#    plt.plot(marked_samples.query('too_large_pa==1')['smpl_time'], marked_samples.query('too_large_pa==1')['pa'], 'o', color='r')
-#    etsamples['pa'].describe()
-    
-
+ 
 
     return marked_samples
 
@@ -348,16 +328,15 @@ def mark_bad_samples(etsamples):
 def remove_bad_samples(marked_samples):
     # Input:      samples df that has coulmns that mark bad samples with 'True'
     # Output:     cleaned sample df where rows th
-    
-    
-    # TODO: This function might not even be necessary
-    
-    # check if columns that mark bad samples exist
+       
+   # check if columns that mark bad samples exist
    assert('outside' in marked_samples)
+   assert('is_blink' in marked_samples)
+   assert('pa' in marked_samples)
     
-   # cleaned_samples = marked_samples.loc[~ix_badsamples]
+   cleaned_samples = marked_samples[marked_samples['is_blink']==False]
    
-   #return cleaned_samples
+   return cleaned_samples
 
 
 #%% MAKE EPOCHS
@@ -396,9 +375,13 @@ def make_epochs(et,msgs,td=[-2,2]):
 
 # samples df 
 def make_samples_df(etsamples):
-    # function to get samples df
+    # function to check if all needed columns exist and get samples df
+    assert('blink_id' in etsamples)
+    assert('is_blink' in etsamples)
+    assert('pa' in etsamples)
+    
     if 'confidence' in etsamples:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence', 'pa']]
+        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence', 'pa', 'is_blink', 'blink_id', 'type']]
     
     elif 'pa_left' in etsamples.columns:
         return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa', 'is_blink', 'blink_id']]
@@ -406,18 +389,8 @@ def make_samples_df(etsamples):
     else:
         raise 'Error should not come here'
 
-
-    
-# events df
-# TODO
-def make_events(etsamples):
-    # is this conceptually correct?
-    etevents = make_events(etsamples)
-    # return etevents
-    pass
-
-
-
+   
+#%% 
 # FULL df
 # TODO
 def make_full_df(etmsgs, etevents, condition):
