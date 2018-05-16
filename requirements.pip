@@ -12,3 +12,6 @@ numexpr
 psutil
 pyzmq
 msgpack_python
+glfw
+matplotlib
+pyav
