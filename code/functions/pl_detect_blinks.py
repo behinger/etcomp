@@ -18,6 +18,8 @@ def pupil_detect_blinks(plsamples):
     # Input:           pupillabs sample dataframe 
     # Output:          two columns df (is_blink, blink_id) with same index as samples
     
+    print('Detecting blinks for pupillabs ...')
+    
     # we will call the confidence level of pupillabs 'activity'
     activity = plsamples.confidence
     
@@ -77,8 +79,30 @@ def pupil_detect_blinks(plsamples):
                         state = 'no blink'
     
     # create pandas df               
-    output = pd.DataFrame()
-    output['is_blink'] = ~np.isnan(pd_blinks)*1
-    output['blink_id'] = pd_blinks
+    df_blink = pd.DataFrame()
+    df_blink['is_blink'] = ~np.isnan(pd_blinks)*1
+    df_blink.loc[df_blink['is_blink'] == True, 'type'] = "blink"
     
-    return output
+    # add blink columns to plsamples df 
+    df_blink.index = plsamples.index
+    plsamples_blink = pd.concat([plsamples, df_blink], axis=1)
+    #df_blink['blink_id'] = pd_blinks
+    
+    
+    blinkOnsets  = np.where(plsamples_blink.is_blink.diff() == 1)[0]
+    blinkOffsets = np.where(plsamples_blink.is_blink.diff() == -1)[0]
+    
+    for startIdx,endIdx in zip(blinkOnsets,blinkOffsets):
+        starttime = plsamples_blink.iloc[startIdx].smpl_time 
+        endtime   = plsamples_blink.iloc[endIdx].smpl_time 
+
+        ix = (plsamples_blink.smpl_time >= (starttime-0.1)) & (plsamples_blink.smpl_time < (endtime +0.1))
+        plsamples_blink.loc[ix,'is_blink'] = 1
+        
+    # TODO documentation        
+    plsamples_blink['blink_id'] = (plsamples_blink['is_blink'] * (plsamples_blink['is_blink'].diff()==1).cumsum())  
+    
+    
+    print('Done ... detecting blinks for pupillabs ...')    
+
+    return plsamples_blink
