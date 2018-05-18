@@ -36,11 +36,9 @@ subject = 'inga_3'
 original_pldata = load.raw_pl_data(subject)
 
 plsamplesuncal, plmsgsuncal = load.preprocess_pl(subject, recalib=False,surfaceMap=False)
+plsamples, plmsgs = load.preprocess_pl(subject, recalib=True,surfaceMap=False)
+plsamples, plmsgs = load.preprocess_pl(subject, recalib=False,surfaceMap=True)
 
-plsamples, plmsgs = load.preprocess_pl(subject, recalib=True,surfaceMap=True)
-# approx only
-plsamples.gx = plsamples.gx*(1920 - 2*18) # minus white border of marker
-plsamples.gy = plsamples.gy*(1080- 2*18)
 
 
 elsamples, elmsgs = load.preprocess_el(subject)
