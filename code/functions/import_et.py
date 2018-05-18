@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import functions.add_path
+
 import numpy as np
 import pandas as pd
-import math
 import time
 
-import os,sys,inspect
+import os
 
-import matplotlib.pyplot as plt
 from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
-import functions.nbp_pupilhelper as nbp_pl
+from functions.et_helper import findFile,gaze_to_pandas
 import functions.etcomp_parse as parse
-import functions.pl_detect_blinks as pl_detect_blinks
-# import functions.pl_surface as pl_surface
+import functions.make_df as df
+#import functions.pl_surface as pl_surface
 
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
@@ -49,7 +47,7 @@ def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/pilot'):
     return original_pldata
 
 
-def preprocess_pl(subject, recalculate=True, save=False, date=time.strftime, datapath='/net/store/nbp/projects/etcomp/pilot', recalib=False, surfaceMap = False):
+def import_pl(subject, recalculate=True, save=False, date=time.strftime, datapath='/net/store/nbp/projects/etcomp/pilot', recalib=False, surfaceMap = False):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
     #           recalculate      (boolean) if False, then take the csv file and take them as dfs 
@@ -78,18 +76,21 @@ def preprocess_pl(subject, recalculate=True, save=False, date=time.strftime, dat
             tracker = pl_surface.map_surface(folder)   
             gaze_on_srf  = pl_surface.surface_map_data(tracker,original_pldata['gaze_positions'])
             original_pldata['gaze_positions'] = gaze_on_srf
-            
     
         # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time, diameter)
-        pldata = nbp_pl.gaze_to_pandas(original_pldata['gaze_positions'])
+        pldata = gaze_to_pandas(original_pldata['gaze_positions'])
+        
+        if surfaceMap:   
+            pldata.gx = pldata.gx*(1920 - 2*(75+18))+(75+18) # minus white border of marker & marker
+            pldata.gy = pldata.gy*(1080- 2*(75+18))+(75+18)
+            print('Mapped Surface to ScreenSize 1920 & 1080 (minus markers)')
+ 
         # sort according to smpl_time
         pldata.sort_values('smpl_time',inplace=True)
         
-        # add Blink information to pldata
-        pldata_blink = pl_detect_blinks.pupil_detect_blinks(pldata)
 
         # get the nice samples df
-        plsamples = make_samples_df(pldata_blink) # XXX extended_samples
+        plsamples = df.make_samples_df(pldata) #
         
     
         # Get msgs df      
@@ -101,7 +102,7 @@ def preprocess_pl(subject, recalculate=True, save=False, date=time.strftime, dat
             if not msg.empty:
                 plmsgs = plmsgs.append(msg, ignore_index=True)
         
-        
+        plevents = pd.DataFrame()
         # save preprocessed dataframes into csv files
         if save:
             # create new folder if there is none
@@ -114,7 +115,8 @@ def preprocess_pl(subject, recalculate=True, save=False, date=time.strftime, dat
             plsamples.to_csv(os.path.join(preprocessed_path, filename_plsamples), index=False)
             plmsgs.to_csv(os.path.join(preprocessed_path, filename_plmsgs), index=False)
         
-        return plsamples, plmsgs
+        
+        return plsamples, plmsgs,plevents
     
     
     # load preprocessed data from csv file
@@ -128,7 +130,9 @@ def preprocess_pl(subject, recalculate=True, save=False, date=time.strftime, dat
         except FileNotFoundError as e:
             print(e)
             raise('Error: Could not read file')
-        return plsamples, plmsgs
+        
+        plevents = pd.DataFrame()
+        return plsamples, plmsgs,plevents
 
 
 
@@ -137,7 +141,7 @@ def preprocess_pl(subject, recalculate=True, save=False, date=time.strftime, dat
   
 #%% EYELINK
 
-def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-%m-%d"), datapath='/net/store/nbp/projects/etcomp/pilot'):
+def import_el(subject, recalculate=True, save=False, date=time.strftime("%Y-%m-%d"), datapath='/net/store/nbp/projects/etcomp/pilot'):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
     # Output:   Returns list of 2 el df (elsamples, elmsgs)
@@ -163,32 +167,11 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
         elsamples['smpl_time'] = elsamples['time']/1000 
         elnotes['msg_time'] = elnotes['trialid_time']/1000
         elnotes = elnotes.drop('trialid_time',axis=1)  
-        elevents['msg_time'] = elevents['time']/1000
         elevents['start'] = elevents['start']/1000     
         elevents['end'] = elevents['end']/1000             
         
-        # detect Blink Samples
-        # use blink column in elevents to mark all samples that are recorded during blink
-        # filter all rows where blink==True
-        ix_blink = elevents.blink==True
-        df_only_blinks = elevents.loc[ix_blink]
-        # we are only interested in when the blink started and ended
-        df_only_blinks = df_only_blinks.loc[:, ['start', 'end', 'blink']]
-        
-        # create column blink (boolean) in elsamples
-        elsamples['is_blink'] = int(False)
-        for bindex,brow in df_only_blinks.iterrows():
-            # get index of all samples that are +- 100 ms of a detected blink
-            ix =  (elsamples.smpl_time>=(brow['start']-float(0.1))) & (elsamples.smpl_time<(brow['end']+float(0.1)))
-            # mark them as blink
-            elsamples.loc[ix, 'is_blink'] = int(True)
-        
- 
-        # counts up the blink_id
-        # Pure Magic
-        elsamples['blink_id'] = (elsamples['is_blink'] * (elsamples['is_blink'].diff()==1).cumsum())
-
-
+         
+        # TODO what parts should I put in bad samples
      
         # for horizontal gaze component
         # Idea: Logical indexing
@@ -245,7 +228,7 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
         
         
         # "select" relevant columns
-        elsamples = make_samples_df(elsamples)
+        elsamples = df.make_samples_df(elsamples)
                 
         
         # Parse EL msg
@@ -264,7 +247,7 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
             elsamples.to_csv(os.path.join(preprocessed_path, filename_elsamples), index=False)
             elmsgs.to_csv(os.path.join(preprocessed_path, filename_elmsgs), index=False)
         
-        return elsamples, elmsgs
+        return elsamples, elmsgs,elevents
     
     # load preprocessed data from csv file
     # (from folder preprocessed)
@@ -281,136 +264,5 @@ def preprocess_el(subject, recalculate=True, save=False, date=time.strftime("%Y-
 
 
 
-    
-    
-#%% Detect bad samples
-    
-def mark_bad_samples(etsamples):
-    # adds columns for bad samples (out of monitor, pa==0) 
-    # TODO: is or correct??
-    
-    # Gaze Position
-    # is out of the range of the monitor
-    # The monitor has a size of 1920 x 1080 pixels
-    # Idea: logical indexing
-    ix_outside_samples = (etsamples.gx < -500) | (etsamples.gx > 2420) | (etsamples.gy < -500) | (etsamples.gy > 1580)
-    percentage_outside = np.mean(ix_outside_samples)*100
-    print("Caution: %.2f%% samples got removed as the calculated gazeposition is outside the monitor"%(percentage_outside))
-    
-    if (percentage_outside > 0.4):
-        raise NameError('More than 40% of the data got removed because the gaze is outside the monitor.') 
-    
-    marked_samples = pd.DataFrame()
-    marked_samples['outside'] = ix_outside_samples
-    
-    
-    # Sampling Frequency
-    # check how many samples there are with a fs worse than 120 Hz
-    tmp = pd.DataFrame()
-    tmp['fs'] = etsamples.smpl_time.diff()
-    ix_bad_freq = tmp.fs > (1./120.)
-    percentage_bad_freq = np.mean(ix_bad_freq)*100
-    print("Report: %.2f%% samples have a sampling frequency worse than 120 Hz"%(percentage_bad_freq))
-    
-    
-    # Pupil Area
-    # If pa is 0
-    # ToDo check this
-    etsamples.loc[etsamples['pa'] == 0,'zero_pa'] = True     
-    
- 
 
-    return marked_samples
-
-
-#%% Remove bad samples
     
-def remove_bad_samples(marked_samples):
-    # Input:      samples df that has coulmns that mark bad samples with 'True'
-    # Output:     cleaned sample df where rows th
-       
-   # check if columns that mark bad samples exist
-   assert('outside' in marked_samples)
-   assert('is_blink' in marked_samples)
-   assert('pa' in marked_samples)
-    
-   cleaned_samples = marked_samples[marked_samples['is_blink']==False]
-   
-   return cleaned_samples
-
-
-#%% MAKE EPOCHS
-
-def make_epochs(et,msgs,td=[-2,2]):
-    # formally called match_data
-
-    # Input:    et(DataFrame)      input data of the eyetracker (has column smpl_time)
-    #           msgs(DataFrame)    already parsed input messages    e.g. 'GRID element 5 pos-x 123 ...' defining experimental events (has column msg_time)
-    # Output:   df for each notification,
-    #           find all samples that are in the range of +-td (default timediff 2 s)
-    
-    epoched_data = pd.DataFrame()
-    
-    for idx,msg in msgs.iterrows():
-        print(idx)
-        ix = ((et['smpl_time'] - msg['msg_time'])>td[0]) & ((et['smpl_time'] - msg['msg_time'])<td[1]) # ix is a boolean (0 / 1, false / true) (this way we find all samples +-td)
-        if np.sum(ix) == 0:
-            print('warning, no sample found for msg %i'%(idx))
-            print(msg)
-            continue
-        tmp= et.loc[ix]
-        tmp = tmp.assign(td=tmp.smpl_time-msg['msg_time'])
-    
-        msg_tmp = pd.concat([msg.to_frame()]*tmp.shape[0],axis=1).T
-        msg_tmp.index = tmp.index
-                
-        tmp = pd.concat([tmp,msg_tmp],axis=1)
-        epoched_data = epoched_data.append(tmp)
-                 
-    return(epoched_data)
-    
- 
-#%% GET nice DATAFRAMES
- 
-
-# samples df 
-def make_samples_df(etsamples):
-    # function to check if all needed columns exist and get samples df
-    assert('blink_id' in etsamples)
-    assert('is_blink' in etsamples)
-    assert('pa' in etsamples)
-    
-    if 'confidence' in etsamples:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'confidence', 'pa', 'is_blink', 'blink_id', 'type']]
-    
-    elif 'pa_left' in etsamples.columns:
-        return etsamples.loc[:, ['smpl_time', 'gx', 'gy', 'gx_vel', 'gy_vel', 'pa', 'is_blink', 'blink_id']]
-
-    else:
-        raise 'Error should not come here'
-
-   
-#%% 
-# FULL df
-# TODO
-def make_full_df(etmsgs, etevents, condition):
-    # Input:
-    # Output:    
-    full_df = pd.DataFrame()
-    # search for start message of condition in **etmsgs**
-    
-    # search for first saccade / fixation / blink after msg_time in **etevents**
-    
-    return full_df
-
-   
-#%% HELPERS
-    
-def findFile(path,ftype):
-    # finds file for el edf
-    out = [edf for edf in os.listdir(path) if edf.endswith(ftype)]
-    return(out)
-
-
- 
-        

@@ -5,14 +5,19 @@ Created on Wed May  9 17:06:02 2018
 
 @author: pupil-labs/pupil
          https://github.com/pupil-labs/pupil/blob/0f4b329212c930346fb8e3b29440e08b7a27e7a3/pupil_src/shared_modules/blink_detection.py
+         
+         
+Blink detection algorithm (used only for pupil labs!)
+         
 """
+
 from scipy.signal import fftconvolve
 import numpy as np
 import pandas as pd
 
 
-# Only por pupil labs!
 
+#%% 
 
 def pupil_detect_blinks(plsamples):
     # Input:           pupillabs sample dataframe 

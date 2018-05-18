@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri May 18 19:01:13 2018
+
+@author: kgross
+"""
+import pandas as pd
+import numpy as np
+#%% Detect bad samples
+    
+def detect_bad_samples(etsamples):
+    # adds columns for bad samples (out of monitor, sampling frequency)
+    print("Removing bad samples ...")
+    
+    
+    # Gaze Position
+    # is out of the range of the monitor
+    # The monitor has a size of 1920 x 1080 pixels
+    # Idea: logical indexing
+    ix_outside_samples = (etsamples.gx < -500) | (etsamples.gx > 2420) | (etsamples.gy < -500) | (etsamples.gy > 1580)
+    percentage_outside = np.mean(ix_outside_samples)*100
+    print("Caution: %.2f%% samples got marked as the calculated gazeposition is outside the monitor"%(percentage_outside))
+    
+    if (percentage_outside > 40):
+        raise NameError('More than 40% of the data got marked because the gaze is outside the monitor.') 
+    
+    marked_samples = pd.DataFrame()
+    marked_samples['outside'] = ix_outside_samples
+    
+    
+    # Sampling Frequency
+    # check how many samples there are with a fs worse than 120 Hz
+    tmp = pd.DataFrame()
+    tmp['fs'] = etsamples.smpl_time.diff()
+    ix_bad_freq = tmp.fs > (1./120.)
+    percentage_bad_freq = np.mean(ix_bad_freq)*100
+    print("Report: %.2f%% samples have a sampling frequency worse than 120 Hz"%(percentage_bad_freq))
+    
+    
+    # Pupil Area is NaN
+    ix_zero_pa = np.isnan(etsamples.pa)
+    percentage_zero_pa = np.mean(ix_zero_pa)*100
+    print("Caution: %.2f%% samples got marked as the pupil area is NaN in the samples"%(percentage_zero_pa))
+    
+    if (percentage_zero_pa > 10):
+        raise NameError('More than 10% of the data got marked because the gaze is outside the monitor.') 
+    
+    marked_samples['zero_pa'] = ix_zero_pa
+    
+
+    # Negative sample time    
+    ix_neg_time = (etsamples.smpl_time < 0)
+    #TODO
+    
+    
+    # concatenate bad sample column(s)
+    marked_samples.index = etsamples.index
+    annotated_samples = pd.concat([etsamples, marked_samples], axis=1)
+    
+    return annotated_samples
+
+
+#%% Remove bad samples
+    
+def remove_bad_samples(marked_samples):
+    # Input:      samples df that has coulmns that mark bad samples with 'True'
+    # Output:     cleaned sample df where rows th
+    
+    # check if columns that mark bad samples exist
+    assert('outside' in marked_samples)
+    cleaned_samples = marked_samples[marked_samples['outside']==False]
+
+    
+    assert('type' in marked_samples)   
+    cleaned_samples = marked_samples[marked_samples['type']=='blink']
+
+    assert('zero_pa' in marked_samples)    
+    cleaned_samples = marked_samples[marked_samples['zero_pa']==False]
+
+
+   
+    return cleaned_samples
+
+
+
+

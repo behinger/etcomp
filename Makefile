@@ -2,8 +2,9 @@
 
 installfolder = local
 VENV = ${installfolder}/etcompvenv
-export VIRTUAL_ENV := $(abspath ${VENV})
-export PATH := ${VIRTUAL_ENV}/bin:${PATH}
+
+#export VIRTUAL_ENV := $(abspath ${VENV})
+#export PATH := ${VIRTUAL_ENV}/bin:${PATH}
 
 
 install: git-reqs ${VENV} python-reqs compile-dependencies
@@ -18,8 +19,11 @@ ${VENV}:
 
 
 python-reqs: ${VENV}
-	pip3 install --upgrade -r requirements.pip
-	pip3 install git+https://github.com/pupil-labs/pyglui
+	( \
+	. ${VENV}/bin/activate; \
+	pip3 install --upgrade -r requirements.pip;\
+	pip3 install git+https://github.com/pupil-labs/pyglui;\
+	)
 
 
 compile-dependencies: pyav edfread opencv glfw printexport

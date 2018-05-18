@@ -96,6 +96,6 @@ def plot_diam(etepochs, query = 'condition=="DILATION" & block==1 & lum==64'):
     print(dilation_data_subset.head()) 
 
     plt.figure()
-    plt.plot(dilation_data_subset['td'],dilation_data_subset['pa'])
+    plt.plot(dilation_data_subset['td'],dilation_data_subset['pa'], 'o')
     
 
