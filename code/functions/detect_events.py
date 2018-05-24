@@ -6,12 +6,14 @@ Created on Tue May  8 16:42:55 2018
 
 """
 import functions.detect_saccades as saccades
+import functions.et_helper as et_helper
 import pandas as pd
+import numpy as np
 import os
 
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
-from functions.pl_detect_blinks import pupil_detect_blinks
+from functions.pl_detect_blinks import pl_detect_blinks
 
 #%% PL Events df
 
@@ -19,11 +21,15 @@ def make_blinks(etsamples,etevents,et):
     if et == 'pl':
         print('Detecting Pupillabs Blinks')
         # add Blink information to pldata
-        etsamples = pupil_detect_blinks(etsamples)
+
+        etsamples = pl_detect_blinks(etsamples)
+        etsamples['blink_id'] = (1*(etsamples['is_blink']==1)) * ((1*(etsamples['is_blink']==1)).diff()==1).cumsum()
+
         blinkevents = pl_make_blink_events(etsamples)        
+        etsamples = etsamples.drop('is_blink',axis=1)
         
         # etevents is empty
-        etevents= pd.concat([etevents, blinkevents], axis=0)
+        etevents= pd.concat([etevents, blinkevents], axis=0,sort=False)
     
     elif et == 'el':
         print('eyelink blink events are already in etevents')
@@ -35,17 +41,17 @@ def make_blinks(etsamples,etevents,et):
     
     return(etsamples,etevents)
 
+
+
 def make_saccades(etsamples,etevents,et):
-        
+    #TODO hier laeuft was falsch!   thresholds anpassen!    
     saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et)
 
-    # select only interesting columns
-
-    #keep only the raw
+    # select only interesting columns: keep only the raw
     keepcolumns = [s for s in saccadeevents.columns if "raw" in s]
     saccadeevents = saccadeevents[keepcolumns]
     
-    # remove the raw
+    # remove the part of the string that says raw in order to be consistent
     newname = [s.replace('raw_','') for s in saccadeevents.columns if "raw" in s]
     
     saccadeevents = saccadeevents.rename(columns=dict(zip(keepcolumns,newname)))
@@ -53,29 +59,83 @@ def make_saccades(etsamples,etevents,et):
     # add the type    
     saccadeevents['type'] = 'saccade'
     
+    # concatenate to original event df
+    etevents= pd.concat([etevents, saccadeevents], axis=0,sort=False)
     
-    etevents= pd.concat([etevents, saccadeevents], axis=0)
-    return(etsamples,etevents)
+    return etsamples, etevents
 
     
-def make_fixations(etsamples,etevents,et):
-    print('DId not do anything! ')
-    return(etsamples,etevents)
+def make_fixations(etsamples, etevents,et):
+    # this happened already:  
+    # etsamples, etevents = make_blinks(etsamples, etevents, et)
+    # etsamples, etevents = make_saccades(etsamples, etevents, et)
+       
+    # add labels blink and saccade information from the event df  to sample df
+    etsamples = et_helper.add_events_to_samples(etsamples, etevents)
+     
+    # get all nan index (not a blink neither a saccade)
+    ix_fix = pd.isnull(etsamples.type)
+    # mark them as fixations
+    etsamples.loc[ix_fix, 'type'] = 'fixation'
+    
+    # this is bad
+    etsamples['tmp_fix'] = ((1*(etsamples['type'] == 'fixation')).diff())
+    etsamples.loc[0, 'tmp_fix'] = 1
+    etsamples['tmp_fix'] = etsamples['tmp_fix'].astype(int)
+    
+    
+    
+    start_times_list = list(etsamples.loc[etsamples['tmp_fix'] == 1, 'smpl_time'].astype(float))
+    end_times_list   = list(etsamples.loc[etsamples['tmp_fix'] == -1, 'smpl_time'].astype(float))
+    
+            
+    fixationevents = pd.DataFrame([start_times_list, end_times_list], ['start_time', 'end_time']).T
+
+    # add the type    
+    fixationevents['type'] = 'fixation'
+    # fixationevents['mean_gx'] = 
+    # fixationevents['mean_gy'] = 
+    fixationevents['duration'] = fixationevents['end_time'] - fixationevents['start_time']
+    
+    for ix,row in fixationevents.iterrows():
+        # TODO: check could we make thatfaster somehow?
+        # take the mean gx/gy position over all samples that belong to that fixation
+        ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time)
+        fixationevents.loc[ix, 'mean_gx'] =  np.mean(etsamples.loc[ix_fix, 'gx'])    
+        fixationevents.loc[ix, 'mean_gy'] =  np.mean(etsamples.loc[ix_fix, 'gy'])
+
+
+    # Sanity checks
+    # check if negative duration:
+    if (fixationevents.duration < 0).any():
+        print("something is wrong" )    
+    # TODO : check for short fixation durations
+    if (fixationevents.duration < 0.1).any():
+        print("There are some really short fixations" )
+    
+    
+    # concatenate to original event df    
+    etevents= pd.concat([etevents, fixationevents], axis=0,sort=False)
+     
+    return etsamples, etevents
+
 #%%
-# TODO for pl: return all events in same format as eyelink
-def pl_make_events(plsamples):
-    raise ('old')
     
-    assert('blink_id' in plsamples)
-    assert('is_blink' in plsamples)
-    
-    pl_blink_events = pl_make_blink_events(plsamples)
-    pl_sacc_events  = pl_make_sacc_events(plsamples)
-    pl_fix_events   = pl_make_fix_events(plsamples)    
-    plevents = pl_blink_events.append(pl_sacc_events, ignore_index=True)
-    
-    return plevents
-
+#    
+## TODO for pl: return all events in same format as eyelink
+#def pl_make_events(plsamples):
+#    raise ('old')
+#    
+#    assert('blink_id' in plsamples)
+#    assert('is_blink' in plsamples)
+#    
+#    pl_blink_events = pl_make_blink_events(plsamples)
+#    pl_sacc_events  = pl_make_sacc_events(plsamples)
+#    pl_fix_events   = pl_make_fix_events(plsamples)    
+#    plevents = pl_blink_events.append(pl_sacc_events, ignore_index=True)
+#    
+#    return plevents
+#
 
 
 def pl_make_blink_events(pl_extended_samples):
@@ -115,10 +175,10 @@ def pl_make_blink_events(pl_extended_samples):
      
 
 #TODO
-def pl_make_fix_events(pl_extended_samples):
-    # detects Blink events for pupillabs
-    
-    #return pl_fix_events      
-    pass
-
+#def pl_make_fix_events(pl_extended_samples):
+#    # detects Blink events for pupillabs
+#    
+#    #return pl_fix_events      
+#    pass
+#
 
