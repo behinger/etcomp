@@ -12,6 +12,7 @@ import numpy as np
 import time
 
 import os
+import av # important to load this library before pupil-library! (even though we dont use it...)
 
 from lib.pupil.pupil_src.shared_modules import offline_surface_tracker
 

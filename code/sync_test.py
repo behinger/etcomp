@@ -6,60 +6,60 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 import functions.et_plotting as etplot
-import functions.preprocess as preprocess
+import functions.preprocess_et as preprocess
 import functions.make_df as df
 import functions.detect_events as events
 import functions.detect_saccades as saccades
 import functions.pl_detect_blinks as pl_blinks
 
+from functions.detect_events import make_blinks,make_saccades,make_fixations
 
-#%%
-# load and preprocess et data
+
+
+
+#%% LOAD DATA and preprocess RAW data
+
 
 # specify subject
-subject = 'inga_3'
+subject = 'VP1'
 
-#############  PL
 # load pl data
-# original_pldata = load.raw_pl_data(subject)
-
-# preprocess pl_pldata to get 2 dataframes: samples, msgs
-plsamples, plmsgs = preprocess.preprocess_pl(subject, date='2018-05-18', recalculate=True,save=False)
-plsamples.type.unique()
+plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
 
-#############  EL
-# load **preprocessed** el data as 2 dataframes: samples msgs
-elsamples, elmsgs = preprocess.preprocess_el(subject, date='2018-05-18', recalculate=True,save=False)
+# load el data
+elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
 
 
+#%% LOAD preprocessed DATA from csv file
 
-#%% BAD SAMPLES
+plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=True)
+elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
 
-# remove bad_samples (gaze outside monitor, bad frequency)
-orig_elsamples = preprocess.mark_bad_samples(elsamples)
+#%%  
 
-####events = make_events
-####orig_elsamples= add_sacc_fix_labels(orig_elsamples,events)
+#%% Figure to examine which samples we exclude
 
-
-cleaned_elsamples = preprocess.remove_bad_samples(orig_elsamples)
-
-
-
-####return cleaned_elsamples,elevents,elmsgs
-
-# TODO look at this sample and think if this is possible
-orig_elsamples.iloc[918689, :]
+from functions.detect_bad_samples import detect_bad_samples,remove_bad_samples
+etsamples_orig = elsamples
+etsamples_clean = remove_bad_samples(etsamples_orig)
+etsamples = etsamples_clean
+    
 
 
+plt.figure()
+plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
 
-# remove bad_samples (gaze outside monitor, bad frequency)
-orig_plsamples = preprocess.mark_bad_samples(plsamples)
-cleaned_plsamples = preprocess.remove_bad_samples(orig_plsamples)
+plt.plot(etsamples.query('type=="blink"')['smpl_time'],etsamples.query('type=="blink"')['gx'],'o')
+plt.plot(etsamples.query('type=="saccade"')['smpl_time'],etsamples.query('type=="saccade"')['gx'],'o')
+plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=="fixation"')['gx'],'o')
 
 
+
+plt.plot(etsamples.query('neg_time==True')['smpl_time'],etsamples.query('neg_time==True')['gx'],'o')
+plt.plot(etsamples.query('outside==True')['smpl_time'],etsamples.query('outside==True')['gx'],'o')
+plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa==True')['gx'],'o')
 
 #%%  EVENTS
 
@@ -152,6 +152,10 @@ def plot_timeseries(etsamples,etsaccades,etsaccades2):
     plt.plot(etsamples.smpl_time, etsamples.gx, 'o')
     plt.plot(etsamples.query('type=="saccade"')['smpl_time'], etsamples.query('type=="saccade"')['gx'], 'o')
     plt.plot(etsamples.query('type=="blink"')['smpl_time'], etsamples.query('type=="blink"')['gx'], 'o')
+    
+    plt.plot(etsamples.smpl_time, etsamples.gy, 'o')
+    plt.plot(etsamples.query('type=="saccade"')['smpl_time'], etsamples.query('type=="saccade"')['gy'], 'o')
+    plt.plot(etsamples.query('type=="blink"')['smpl_time'], etsamples.query('type=="blink"')['gy'], 'o')
 
 plot_timeseries(elsamples[0:-700000],elsaccades,elsacc)
 
@@ -166,7 +170,7 @@ elsaccades.describe()
 # Plot Blinks PL
 
 plt.plot(plsamples.smpl_time, plsamples.confidence, 'o')
-plt.plot(plsamples.query('is_blink==1')['smpl_time'], plsamples.query('is_blink==1')['confidence']+0.01, 'o')
+plt.plot(plsamples.query('type=="blink"')['smpl_time'], plsamples.query('type=="blink"')['confidence']+0.01, 'o')
 plt.plot(plsamples['smpl_time'], plsamples['blink_id'], 'o')
 
 

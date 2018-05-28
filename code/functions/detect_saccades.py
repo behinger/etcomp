@@ -44,10 +44,11 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents,et = None):
     
     
     
-    
+    # for pl the gaze needs to be interpolated first
     if et == 'pl':
         fs = 240
         interpgaze = interpolate_gaze(etsamples, fs=fs)
+        
     elif et == 'el':
          # Eyelink is already interpolated
          interpgaze = etsamples
@@ -58,15 +59,16 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents,et = None):
          
     # apply the saccade detection algorithm     
     saccades = apply_engbert_mergenthaler(xy_data = interpgaze[['gx','gy']],is_blink = interpgaze['is_blink'], vel_data = None,sample_rate=fs)
+    
     #sacsave = saccades.copy()
     #saccades = sacsave
     
     # convert samples of data back to sample time
     for fn in ['raw_start_time','raw_end_time','expanded_start_time','expanded_end_time']:
         saccades[fn]=np.array(interpgaze.smpl_time.iloc[np.array(saccades[fn])])
-        
-    # TODO  what does it mean to use brackets here?
-    return(saccades)
+
+
+    return saccades
 
 
   
@@ -94,8 +96,7 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
         ValueError: If neither xy_data and vel_data were passed to the function.
     
     """
-    #TODO: expanded means: taking more sampls as looking at accelartion values as well
-    
+   
     print('Start.... Detecting Saccades')
     
     # If xy_data and vel_data are both None, function can't continue
@@ -212,6 +213,7 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
         
         try:
             this_saccade = {
+                # expanded means: taking more sampls as looking at accelartion values as well    
                 'expanded_start_time': expanded_saccade_start,
                 'expanded_end_time': expanded_saccade_end,
                 'expanded_duration': (expanded_saccade_end - expanded_saccade_start)*1./sample_rate,

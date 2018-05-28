@@ -38,9 +38,20 @@ def make_samples_df(etsamples):
 
 
    
-#TODO  select only interesting columns
-#def make_events_df(etevents)
-#elevents = elevents.loc[:, ['start', 'end', 'type']]
+#TODO  never checked if this does the right thing  select only interesting columns
+def make_events_df(etevents):
+    fields_to_keep = set(['blink_id', 'end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'start_point', 'vector', 'mean_gx', 'mean_gy'])
+        
+    fields_to_fillin = fields_to_keep - set(etevents.columns)
+    fields_to_copy =  fields_to_keep - fields_to_fillin
+    
+    etevents_reduced = etevents.loc[:,fields_to_copy]
+    
+    for fieldname in fields_to_fillin:
+        etevents_reduced.loc[:,fieldname] = np.nan
+    
+    return(etevents_reduced)
+    
 #%% MAKE EPOCHS
 
 def make_epochs(et,msgs,td=[-2,2]):
