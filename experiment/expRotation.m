@@ -70,7 +70,6 @@ end
 %         angles = [5 -5 10 -10 15 -15];
 %         angles = [angles angles];
         
-        fprintf('expRotation: TODO XXX to randomization!')
 %         angles = angles(randperm(length(angles)));
         lineLength = 400; % length of the line
         sendETNotifications(eyetracking,requester,sprintf('TILT start block %d',block))
