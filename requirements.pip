@@ -1,4 +1,5 @@
 pip==9.0.1
+glfw
 spyder
 scipy
 pyopengl
@@ -6,6 +7,7 @@ patsy
 pandas
 numpy
 ipython
+matplotlib
 h5py
 cython
 numexpr
@@ -15,3 +17,4 @@ msgpack_python
 glfw
 matplotlib
 pyav
+bokeh

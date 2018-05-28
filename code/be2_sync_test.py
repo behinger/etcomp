@@ -35,8 +35,6 @@ subject = 'inga_5'
 # load pl data
 original_pldata = load.raw_pl_data(subject)
 
-plsamples, plmsgs = load.preprocess_pl(subject, recalib=False,surfaceMap=True)
-
 plsamples, plmsgs = load.preprocess_pl(subject, recalib=True,surfaceMap=True,save=True,recalculate=True)
 # approx only
 plsamples.gx = plsamples.gx*(1920 - 2*18) # minus white border of marker

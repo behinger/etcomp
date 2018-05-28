@@ -3,66 +3,76 @@
 import functions.add_path
 import numpy as np
 import pandas as pd
-import os,sys,inspect
-
-from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
-import os
 import matplotlib.pyplot as plt
-import functions.nbp_pupilhelper as nbp_pl
-import functions.etcomp_parse as parse
+
 import functions.et_plotting as etplot
-import functions.et_import as load
+import functions.preprocess_et as preprocess
+import functions.make_df as df
 import functions.detect_events as events
-import functions.pl_detect_blinks as detect_blinks
+import functions.detect_saccades as saccades
+import functions.pl_detect_blinks as pl_blinks
 
-# parses SR research EDF data files into pandas df
-from pyedfread import edf
+from functions.detect_events import make_blinks,make_saccades,make_fixations
 
-from functions import nbp_recalib
 
-#%%
-# load and preprocess et data
+
+
+#%% LOAD DATA and preprocess RAW data
+
 
 # specify subject
-subject = 'inga_3'
+subject = 'VP1'
 
-#############  PL
 # load pl data
-# original_pldata = load.raw_pl_data(subject)
-
-# preprocess pl_pldata to get 2 dataframes: samples, msgs
-plsamples, plmsgs = load.preprocess_pl(subject, date='2018-05-11', recalculate=True)
-plsamples.type.unique()
-
-#############  EL
-# load **preprocessed** el data as 2 dataframes: samples msgs
-elsamples, elmsgs = load.preprocess_el(subject, date='2018-05-11', recalculate=True)
+plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
 
-#%% 
-# TODO
-# remove bad_samples (gaze outside monitor)
-# plsamples = load.remove_bad_samples(plsamples)
-# elsamples = load.remove_bad_samples(elsamples)
+# load el data
+elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
 
+
+#%% LOAD preprocessed DATA from csv file
+
+plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=True)
+elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
+
+#%%  
+
+#%% Figure to examine which samples we exclude
+
+from functions.detect_bad_samples import detect_bad_samples,remove_bad_samples
+etsamples_orig = elsamples
+etsamples_clean = remove_bad_samples(etsamples_orig)
+etsamples = etsamples_clean
+    
+
+
+plt.figure()
+plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
+
+plt.plot(etsamples.query('type=="blink"')['smpl_time'],etsamples.query('type=="blink"')['gx'],'o')
+plt.plot(etsamples.query('type=="saccade"')['smpl_time'],etsamples.query('type=="saccade"')['gx'],'o')
+plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=="fixation"')['gx'],'o')
+
+
+
+plt.plot(etsamples.query('neg_time==True')['smpl_time'],etsamples.query('neg_time==True')['gx'],'o')
+plt.plot(etsamples.query('outside==True')['smpl_time'],etsamples.query('outside==True')['gx'],'o')
+plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa==True')['gx'],'o')
 
 #%%  EVENTS
 
 #############  PL
-# TODO: lets discuss if this is a smart way to do it
-# see file detect_events
-plevents = events.pl_make_events(plsamples)
+plevents = events.pl_make_events(cleaned_plsamples)
 
 # or
-plblinkevents = events.pl_make_blink_events(plsamples)
-plsaccades = events.detect_saccades_engbert_mergenthaler(plsamples,fs=240)
+plblinkevents = events.pl_make_blink_events(cleaned_plsamples)
+plsaccades = events.detect_saccades_engbert_mergenthaler(cleaned_plsamples,fs=240)
 
 
 
 #############  EL
-# TODO: why is time zero???
-# well mybe because we dont use el messages?
 elevents = events.el_make_events(subject)
 
 # have a look at how many saccades, blinks, fixations
@@ -71,15 +81,20 @@ elevents['type'].value_counts().plot(kind='bar')
 
 plt.figure()
 elsacc = elevents.query('type=="saccade"')
-elsacc['duration'] = (elsacc['end'] - elsacc['start']).round(2)
-elsacc.duration.value_counts().plot(kind='bar')
+elsacc['duration'] = (elsacc['end'] - elsacc['start'])
+#elsacc.duration.round(3).value_counts().plot(kind='bar')
 
-# Sieht ziemlich anders aus?!?!
+
 
 # Saccades from Engbert
-elsaccades = events.detect_saccades_engbert_mergenthaler(elsamples)
+elsaccades = events.detect_saccades_engbert_mergenthaler(orig_elsamples)
+
 plt.figure()
-elsaccades.expanded_duration.value_counts().plot(kind='bar')
+plt.hist(elsacc.duration,bins=np.linspace(0,0.4,100),fc=(0, 1, 0, 0.5))
+plt.hist(elsaccades.expanded_duration,bins=np.linspace(0,0.4,100),fc=(0, 0, 1, 0.5))
+plt.hist(elsaccades.raw_duration,bins=np.linspace(0,0.4,100),fc=(1, 0, 0, 0.5))
+plt.legend(['engbert','eyelink'])
+# Sieht ziemlich anders aus?!?!
 
 
 
@@ -88,8 +103,8 @@ elsaccades.expanded_duration.value_counts().plot(kind='bar')
 
 # epoch etdata according to query
 condquery = 'condition == "DILATION" & exp_event=="lum"'
-plepochs = load.make_epochs(plsamples, plmsgs.query(condquery))
-elepochs = load.make_epochs(elsamples, elmsgs.query(condquery))
+plepochs = df.make_epochs(plsamples, plmsgs.query(condquery))
+elepochs = df.make_epochs(elsamples, elmsgs.query(condquery))
 
 
 #%%
@@ -98,43 +113,6 @@ elepochs = load.make_epochs(elsamples, elmsgs.query(condquery))
 # sample, msgs, events, epochs und for each condition a df FULL for pl and el respectively 
 # for more details please have a look at the "overview dataframes pdf"
 
-# have a look at the data
-
-# samples df
-plsamples.info()
-plsamples.describe()
-elsamples.info()
-elsamples.describe()
-
-
-# msgs df
-plmsgs.info()
-plmsgs.describe()
-elmsgs.info()
-elmsgs.describe()
-
-# TODO: Why do we find a missmatch here?
-elmsgs.condition.value_counts()
-plmsgs.condition.value_counts()
-
-
-# epochs df
-elepochs.info()
-elepochs.describe()
-plepochs.info()
-plepochs.describe()
-
-
-# look how many samples that can be used for each condition
-plepochs.condition.value_counts()
-elepochs.condition.value_counts()
-
-   
-#%% SANITY CHECKS
-
-# msgs EL
-elmsgs.info()
-set(elmsgs['pic_id'].unique()) - set(plmsgs['pic_id'].unique()) 
 
 
 #%% PUPIL DILATION
@@ -162,30 +140,24 @@ etplot.plotTraces(elepochs, y='pa', query='condition=="DILATION" & block==1 & lu
 
 # Detect Saccades
 
-plsaccades3 = events.detect_saccades_engbert_mergenthaler(plsamples,fs=240)
-elsaccades = events.detect_saccades_engbert_mergenthaler(elsamples)
+plsaccades = saccades.detect_saccades_engbert_mergenthaler(cleaned_plsamples,fs=240)
+elsaccades = saccades.detect_saccades_engbert_mergenthaler(cleaned_elsamples)
 
 
 
-# For plotting only
-plsamples['is_saccade'] = False
-plsamples['is_saccade_ext'] = False
-for bindex,brow in plsaccades3.iterrows():
-    # get index of all samples that are +- 100 ms of a detected blink
-    ix =  (plsamples.smpl_time>=(brow['raw_start_time'])) & (plsamples.smpl_time<(brow['raw_end_time']))
-    # mark them as blink
-    plsamples.loc[ix, 'is_saccade'] = True
+def plot_timeseries(etsamples,etsaccades,etsaccades2):
+
+    print('plotting')
+    plt.figure()
+    plt.plot(etsamples.smpl_time, etsamples.gx, 'o')
+    plt.plot(etsamples.query('type=="saccade"')['smpl_time'], etsamples.query('type=="saccade"')['gx'], 'o')
+    plt.plot(etsamples.query('type=="blink"')['smpl_time'], etsamples.query('type=="blink"')['gx'], 'o')
     
-    ix =  (plsamples.smpl_time>=(brow['expanded_start_time'])) & (plsamples.smpl_time<(brow['expanded_end_time']))
-    # mark them as blink
-    plsamples.loc[ix, 'is_saccade_ext'] = True
+    plt.plot(etsamples.smpl_time, etsamples.gy, 'o')
+    plt.plot(etsamples.query('type=="saccade"')['smpl_time'], etsamples.query('type=="saccade"')['gy'], 'o')
+    plt.plot(etsamples.query('type=="blink"')['smpl_time'], etsamples.query('type=="blink"')['gy'], 'o')
 
-plt.figure()
-plt.plot(plsamples.smpl_time, plsamples.gx, 'o')
-plt.plot(plsamples.query('is_saccade_ext==1')['smpl_time'], plsamples.query('is_saccade_ext==1')['gx']+0.01, 'o')
-plt.plot(plsamples.query('is_saccade==1')['smpl_time'], plsamples.query('is_saccade==1')['gx']+0.02, 'o')
-plt.plot(plsamples.query('is_blink==1')['smpl_time'], plsamples.query('is_blink==1')['gx']+0.03, 'o')
-
+plot_timeseries(elsamples[0:-700000],elsaccades,elsacc)
 
 
 elsaccades.head()
@@ -198,7 +170,7 @@ elsaccades.describe()
 # Plot Blinks PL
 
 plt.plot(plsamples.smpl_time, plsamples.confidence, 'o')
-plt.plot(plsamples.query('is_blink==1')['smpl_time'], plsamples.query('is_blink==1')['confidence']+0.01, 'o')
+plt.plot(plsamples.query('type=="blink"')['smpl_time'], plsamples.query('type=="blink"')['confidence']+0.01, 'o')
 plt.plot(plsamples['smpl_time'], plsamples['blink_id'], 'o')
 
 
@@ -237,11 +209,5 @@ plt.plot(pldata_surface['gaze_timestamp'],pldata_surface['x_norm'])
 
 plt.figure
 plt.plot(pldata_surface['x_norm'],pldata_surface['y_norm'],'o')
-
-
-#%%
-
-# convert pl gaze data to same scale as EL  :   Is it correct?
-pl_matched_data.gx = pl_matched_data.gx*1920
 
 

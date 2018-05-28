@@ -50,6 +50,9 @@ filename = os.path.join(datapath,subject,'raw')
 # elnotes:    contains notes (meta data) associated with each trial
 elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
 
+
+elevents.time.unique()
+
   
 #%% Checking blink_id
 
@@ -96,6 +99,46 @@ plt.plot(elevents.query("type=='saccade'").index, elevents.query("type=='saccade
 
   
 #%% 
+
+# have a look at the data
+
+# samples df
+plsamples.info()
+plsamples.describe()
+elsamples.info()
+elsamples.describe()
+
+
+# msgs df
+plmsgs.info()
+plmsgs.describe()
+elmsgs.info()
+elmsgs.describe()
+
+# TODO: Why do we find a missmatch here?
+elmsgs.condition.value_counts()
+plmsgs.condition.value_counts()
+
+
+# epochs df
+elepochs.info()
+elepochs.describe()
+plepochs.info()
+plepochs.describe()
+
+
+# look how many samples that can be used for each condition
+plepochs.condition.value_counts()
+elepochs.condition.value_counts()
+
+
+
+   
+#%% SANITY CHECKS
+
+# msgs EL
+elmsgs.info()
+set(elmsgs['pic_id'].unique()) - set(plmsgs['pic_id'].unique()) 
 
 
 
