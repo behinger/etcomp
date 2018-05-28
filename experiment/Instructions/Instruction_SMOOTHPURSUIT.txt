@@ -1,6 +1,6 @@
 Smooth Pursuit \n \n
 
-In the next condition you will see a target in the center that you have to fixate. Once you fixate it press SPACE to start the moevement. Then the target will move across the screen. Try to follow the target with your eyes as long as possible. \n \n
+In the next condition you will see a target in the center that you have to fixate. Once you fixate it press SPACE to start the movement. Then the target will move across the screen. Try to follow the target with your eyes as long as possible. \n \n
 
 After the movement the next target will appear in the center of the screen. Please again fixate it and press enter to start the next movement.\n
 In total you will be shown 20 targets.
