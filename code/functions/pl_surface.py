@@ -102,7 +102,7 @@ def map_surface(folder,loadCache = True,loadSurface = True):
             usable_markers = [m for m in tracker.cache[ix] if m['id_confidence'] >= 0.8]
             if len(usable_markers) == 16:
                 break
-        ix +=ix
+        ix +=1
         
     # Step 3
     # This dissables pupil-labs functionality. They ask for 90 frames with the markers. but because we know there will be 16 markers, we dont need it (toitoitoi)
