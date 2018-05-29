@@ -11,7 +11,12 @@ from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 from functions.et_helper import findFile,gaze_to_pandas
 import functions.et_parse as parse
 import functions.make_df as df
-import functions.pl_surface as pl_surface
+try:
+    import functions.pl_surface as pl_surface
+except ImportError:
+    print('Could not import pl_surface')
+    
+
 
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
