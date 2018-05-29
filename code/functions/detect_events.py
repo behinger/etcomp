@@ -78,29 +78,35 @@ def make_fixations(etsamples, etevents,et):
     # mark them as fixations
     etsamples.loc[ix_fix, 'type'] = 'fixation'
     
-    # this is bad
+    # TODO: chack and write comments
+    # use magic to get start and end times of fixations in a temporary column
     etsamples['tmp_fix'] = ((1*(etsamples['type'] == 'fixation')).diff())
+    # assume that we always start with a fixation
     etsamples.loc[0, 'tmp_fix'] = 1
     etsamples['tmp_fix'] = etsamples['tmp_fix'].astype(int)
-    
-    
-    
+        
+    # make a list of the start and end times
     start_times_list = list(etsamples.loc[etsamples['tmp_fix'] == 1, 'smpl_time'].astype(float))
     end_times_list   = list(etsamples.loc[etsamples['tmp_fix'] == -1, 'smpl_time'].astype(float))
     
-            
+    # drop the temporary column
+    etsamples.drop('tmp_fix', axis=1, inplace=True)
+    
+    # add them as columns to a fixationevent df
     fixationevents = pd.DataFrame([start_times_list, end_times_list], ['start_time', 'end_time']).T
+
+    # delete event if start or end is NaN
+    fixationevents.dropna(subset=['start_time', 'end_time'], inplace=True)
 
     # add the type    
     fixationevents['type'] = 'fixation'
-    # fixationevents['mean_gx'] = 
-    # fixationevents['mean_gy'] = 
     fixationevents['duration'] = fixationevents['end_time'] - fixationevents['start_time']
     
     for ix,row in fixationevents.iterrows():
         # TODO: check could we make thatfaster somehow?
         # take the mean gx/gy position over all samples that belong to that fixation
-        ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time)
+        # removed bad samples explicitly
+        ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time) & (etsamples.outside==False) & (etsamples.zero_pa==False)  & (etsamples.neg_time==False)
         fixationevents.loc[ix, 'mean_gx'] =  np.mean(etsamples.loc[ix_fix, 'gx'])    
         fixationevents.loc[ix, 'mean_gy'] =  np.mean(etsamples.loc[ix_fix, 'gy'])
 

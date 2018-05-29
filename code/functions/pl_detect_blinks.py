@@ -19,7 +19,7 @@ import pandas as pd
 
 #%% 
 
-def pupil_detect_blinks(plsamples):
+def pl_detect_blinks(plsamples):
     # Input:           pupillabs sample dataframe 
     # Output:          two columns df (is_blink, blink_id) with same index as samples
     
