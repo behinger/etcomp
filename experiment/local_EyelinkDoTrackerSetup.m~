@@ -126,7 +126,6 @@ while stop==0 && bitand(Eyelink( 'CurrentMode'), el.IN_SETUP_MODE)
                     calibmode = '';   
                 end
                     else
-%                     fprintf('XXX todo, make accuracy test start on validation')
                         sendETNotifications(1,el.requester,'c');
                     end
 
