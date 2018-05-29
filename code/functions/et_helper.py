@@ -99,6 +99,8 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     ranges = [list(range(s,e)) for s,e in zip(startix,endix)]
     flat_ranges = [item for sublist in ranges for item in sublist]
     
+    
+    flat_ranges = np.intersect1d(flat_ranges,etsamples.index)
     # all etsamples with ix in ranges , will the eventype in the column type
     etsamples.loc[flat_ranges, 'type'] = eventtype
 

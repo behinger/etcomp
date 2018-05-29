@@ -41,13 +41,13 @@ def parse_message(msg):
         # grid_size:     49=large Grid ; 13=calibration Grid
 
     if split[0] == 'GRID':
-        #print(split)
+        # print(split)
         parsedmsg = dict(
                 msg_time = msg_time,
                 exp_event = split[1])
         
-        # buttonpress is an exp_event with no additional information
-               
+        # buttonpress is an exp_event with no additional information at  split[1]
+
         if split[1] == 'element':
             #print(split)
             parsedmsg.update(dict(
@@ -60,7 +60,7 @@ def parse_message(msg):
             
         #TODO did you mean this with grid_small_before
         # but how do i know if it is before or after ??
-        elif split[1] == 'element' and split[8] == '13':
+        if split[1] == 'element' and split[8] == '13':
             #print(split)
             parsedmsg.update(dict(
                     exp_event = 'small_grid_before',
@@ -243,10 +243,11 @@ def parse_message(msg):
     # block:            block of experiment
   
     if split[0] == 'Instruction':
-        
+        #print(split)
         #LARGEGG in LARGEGRID umbennen
         if split[2] == "LARGEGG":
             split[2] = "LARGEGRID"
+        #TODO why doesnt this work?    
         if split[2] == "SMALLGG":
             split[2] = "SMALLGRID"
 
