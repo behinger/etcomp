@@ -1,7 +1,7 @@
 function rand = randomize_stimuli()
 rng(1)
 subjectlist = 1:40;
-max_block = 8;
+max_block = 6 ;
 numberimagesperblock = 3;
 
 randomization = load('randomization_larger_grid.mat');
