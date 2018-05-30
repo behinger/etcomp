@@ -272,11 +272,8 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
 #%% INTERPOLATE GAZE DATA from PL
 
 def interpolate_gaze(etsamples, fs=None): 
-    # TODO implement recalculate / save
     # Input:         etsamples
     # Output:        gazeInt (df)
-
-
 
     print('Start.... Interpolating Samples')
         
@@ -287,7 +284,7 @@ def interpolate_gaze(etsamples, fs=None):
     timeIX = np.linspace(np.floor(fromT),np.ceil(toT),np.ceil(toT-fromT)*fs+1)
     
     def interp(x,y):
-        f = PchipInterpolator(x,y)    
+        f = PchipInterpolator(x,y,extrapolate = False)    
         return(f(timeIX))
     
     

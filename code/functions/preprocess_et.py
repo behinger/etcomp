@@ -32,12 +32,14 @@ logger.setLevel(logging.DEBUG)
 
 if False:
     subject = 'inga_3'
-    datapath='/net/store/nbp/projects/etcomp/pilot'
+    subject = 'VP1'
+    datapath='/net/store/nbp/projects/etcomp/'
 
     # filepath for preprocessed folder
     preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
 
     et = 'el'
+    et = 'pl'
 
 #%%
     
