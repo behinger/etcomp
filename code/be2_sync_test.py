@@ -9,110 +9,73 @@ Created on Thu May  3 16:32:16 2018
 import functions.add_path
 import numpy as np
 import pandas as pd
-import os,sys
- 
-from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 import matplotlib.pyplot as plt
-import functions.nbp_pupilhelper as nbp_pl
-import functions.etcomp_parse as parse
+
 import functions.et_plotting as etplot
-import functions.et_import as load
-from functions.et_import import make_epochs
-from functions.detect_blinks import pupil_detect_blinks
+import functions.preprocess_et as preprocess
+import functions.make_df as df
+import functions.detect_events as events
+import functions.detect_saccades as saccades
+import functions.pl_detect_blinks as pl_blinks
 
-# parses SR research EDF data files into pandas df
-from pyedfread import edf
+import functions.detect_bad_samples as detect_bad_samples
 
-from functions import nbp_recalib
+from functions.detect_events import make_blinks,make_saccades,make_fixations
 
+from functions.make_df import make_epochs
+
+from plotnine import *
 #%%
 
 # load and preprocess et data
 
 # specify subject
-subject = 'inga_5'
+subject = 'VP1'
 
 # load pl data
-original_pldata = load.raw_pl_data(subject)
 
-plsamples, plmsgs = load.preprocess_pl(subject, recalib=True,surfaceMap=True,save=True,recalculate=True)
-# approx only
-plsamples.gx = plsamples.gx*(1920 - 2*18) # minus white border of marker
-plsamples.gy = plsamples.gy*(1080- 2*18)
+plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=True)
+elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
 
+elsamples = detect_bad_samples.remove_bad_samples(elsamples)
+plsamples = detect_bad_samples.remove_bad_samples(plsamples)
 
-elsamples, elmsgs = load.preprocess_el(subject)
-elsamples.loc[elsamples.gx>5000,:] = np.nan
-
+#%%
 condquery = 'condition == "DILATION" & exp_event=="lum"'
-condquery = 'condition == "FREEVIEW" & exp_event=="trial"'
-
-condquery = 'condition == "SMOOTH" & exp_event=="trialstart"'
-
-td = [-1, 1]
-elepochs = make_epochs(elsamples,elmsgs.query(condquery), td=td)
-plepochs = make_epochs(plsamples,plmsgs.query(condquery), td=td)
-
-
-etplot.plotTraces([plepochs,elepochs], y='gx',query='posx==722')
-
-etplot.plotTraces([plepochs,elepochs], y='gx',query='block == 6')
-
-etplot.plotTraces([plepochs], x='gx',y='gy',query='')
-
-
-etplot.plotTraces([plepochs], y='pa',query='lum>0')
-
-
-etplot.plotTraces([plepochs.query('prevlum==128'),plepochs.query('prevlum==0'),plepochs.query('prevlum==255')], y='pa')
-
-
-# Do the 5x5 grid
-condquery = 'condition == "DILATION" & exp_event=="lum"'
-
-td = [-1, 3]
-elepochs = make_epochs(elsamples,elmsgs.query(condquery), td=td)
-plepochs = make_epochs(plsamples,plmsgs.query(condquery), td=td)
+td = [-1, 15]
+elepochs_pa = make_epochs(elsamples,elmsgs.query(condquery), td=td)
+plepochs_pa = make_epochs(plsamples,plmsgs.query(condquery), td=td)
 
 
 
-def add_prevlum(data):
-    prevlum = 128
-    currlum = 128
-    prevlumlist = []
-    for k in range(data.shape[0]):
-        if not data.lum.iloc[k]== currlum:
-            prevlum = currlum
-            currlum = data.lum.iloc[k]
+#normalize by SD division. Could be made better e.g. by quantile division
+elepochs_pa['pa_norm'] = elepochs_pa.pa/np.std(elepochs_pa.pa)
+plepochs_pa['pa_norm'] = plepochs_pa.pa/np.std(plepochs_pa.pa)
+
+# Concatenate for easy ggplotting
+etepochs_pa = pd.concat([elepochs_pa.assign(eyetracker='eyelink'),plepochs_pa.assign(eyetracker='pupillabs')],ignore_index=True)
+
+# every 10th sample is enough
+ggplot(etepochs_pa.query('lum>0').iloc[::10, :],aes(x='td',y='pa_norm',color='lum'))+\
+            geom_point() +\
+            geom_vline(xintercept=[0,3,10] )+\
+            facet_wrap('~eyetracker') 
+
+
+#%%
             
-        prevlumlist.append(prevlum)
-        
-    data['prevlum'] = prevlumlist
-    return(data)
-
-elepochs = add_prevlum(elepochs)
-plepochs = add_prevlum(plepochs)
-
-from bokeh.models import Range1d
-
-p = []
-
-for lum in np.sort(plepochs.lum.unique()):
-    for lumprev in np.sort(plepochs.prevlum.unique()):
-        try:
-            pl =etplot.plotTraces([plepochs,  elepochs], width=400,height=400,y='pa',query='prevlum==%i&lum==%i'%(lumprev,lum),showplot=False)
-            pl.y_range=Range1d(0,400)
-            p.append(pl)
-        except:
-            p.append(None)
-    
-from bokeh.layouts import gridplot
-from bokeh.plotting import figure,show
-
-pl = gridplot(p,ncols=5)
-show(pl)
+condquery = 'condition == "SMOOTH" & exp_event=="trialstart"'
+td = [-0.2, 1]
+elepochs_smooth = make_epochs(elsamples,elmsgs.query(condquery), td=td)
+plepochs_smooth = make_epochs(plsamples,plmsgs.query(condquery), td=td)
 
 
+# Concatenate for easy ggplotting
+etepochs_smooth = pd.concat([elepochs_smooth.assign(eyetracker='eyelink'),plepochs_smooth.assign(eyetracker='pupillabs')],ignore_index=True)
 
-
-etplot.plotTraces([elepochs.query('prevlum==0'),elepochs.query('prevlum==255')], width=400,height=400,y='pa',query='lum==%i'%(255))
+# every 10th sample is enough
+ggplot(etepochs_smooth,aes(x='td',y='gx',color='angle'))+\
+            geom_point() +\
+            geom_vline(xintercept=[0,0.2]) +\
+            facet_wrap('~eyetracker') # split up by 
+            
