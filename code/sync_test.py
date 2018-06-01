@@ -16,20 +16,22 @@ import functions.pl_detect_blinks as pl_blinks
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
 
+from plotnine import *
+
 
 
 #%% LOAD DATA and preprocess RAW data
 
 
 # specify subject
-subject = 'VP2'
+subject = 'VP1'
 
 # load pl data
-plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations))
+plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
 
 # load el data
-elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations))
+elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
 
 
@@ -39,18 +41,26 @@ plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=True)
 elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
 
 
+
+
 import functions.detect_bad_samples as detect_bad_samples
 
 #%% LOOK at GRID condition
 # Only first block and only large Grid
 
-etsamples = plsamples
-etmsgs = plmsgs
-etevents = plevents
+etsamples = elsamples
+etmsgs = elmsgs
+etevents = elevents
 
 
 # remove bad samples
 clean_etsamples = detect_bad_samples.remove_bad_samples(etsamples)
+
+
+# have a look at time and gx
+plt.figure()
+plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
+
 
 # find out start and end  time of the large Grid condition
 select = 'block == 1 & condition == "GRID" & grid_size == 49'
@@ -85,7 +95,6 @@ axarr[0, 0].plot(x_grid_elements, y_grid_elements,'o')
 # use all samples that are within 2 sec of a msg and that are labeled as fixations
 axarr[0, 1].set_title('Gaze block 1 using all samples (only fixations)')
 axarr[0, 1].plot(reduced_clean_etsamples.gx, reduced_clean_etsamples.gy,'o')
-axarr[0, 1].plot(reduced_clean_etsamples.gx, reduced_clean_etsamples.gy,'o')
 
 
 # plot the mean fixation positions of all fixations during the grid condition
@@ -93,7 +102,6 @@ axarr[1, 0].set_title('Gaze block 1 using events')
 
 # get indices of event df that are within the time window and that are fixations
 ix_grid_fix = ((etevents.start_time > gridstart_time) & (etevents.end_time < gridend_time)) & (etevents.type == 'fixation')
-
 axarr[1, 0].plot(etevents.loc[ix_grid_fix, 'mean_gx'], etevents.loc[ix_grid_fix, 'mean_gy'],'o')
 
 
@@ -104,11 +112,47 @@ axarr[1, 1].plot(etevents.loc[ix_grid_fix, 'mean_gx'], etevents.loc[ix_grid_fix,
 
 
 
+#%% Trying to do the same with plotnine
+
+grid_elements = pd.DataFrame(data=[etmsgs.query(select).groupby('element').first()['posx'].values, etmsgs.query(select).groupby('element').first()['posy'].values]).T
+grid_elements.columns = ['posx_elem', 'posy_elem']
+
+
+from plotnine import *
+from plotnine.data import *
+
+# Show stimulus Grid points
+ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) + geom_point() + ggtitle("Grid points")
+
+# Show all cleaned samples that are in selected condition and fixations
+ggplot(reduced_clean_etsamples, aes(x='gx', y='gy')) + geom_point() + ggtitle('Gaze block 1 using all samples (only fixations)')
+
+
+# Make a plot of the gridpoints and the data samples  (for block1)
+ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) +\
+        geom_point()+\
+        geom_point(aes(x='gx', y='gy'), color='red',data = reduced_clean_etsamples)+\
+        ggtitle('Gaze block 1 using all samples (only fixations)')
+
+
+# maybe try to do this without querying for blocks but using facets
+
+
+
+
+# plot the mean fixation positions of all fixations during the grid condition
+# get indices of event df that are within the time window and that are fixations
+ix_grid_fix = ((etevents.start_time > gridstart_time) & (etevents.end_time < gridend_time)) & (etevents.type == 'fixation')
+
+ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) +\
+        geom_point()+\
+        geom_point(aes(x='mean_gx', y='mean_gy'), color='red',data = etevents.loc[ix_grid_fix])+\
+        ggtitle('Gaze block 1 using events')
+
+
+
+
 #%% make a list of fixations between two stimuli
-
-#block 2 elem 12 13 seltsamer mean
-# and 13  14 
-
 
 # find out msg time for element 1 in block 1 Large Grid
 select = 'block == 2 & condition == "GRID" & grid_size == 49'
@@ -200,12 +244,6 @@ axarr[1, 1].plot(elevents.loc[ix_fix_events, 'mean_gx'], elevents.loc[ix_fix_eve
 
 
 #%% Figure to examine which samples we exclude
-
-from functions.detect_bad_samples import detect_bad_samples,remove_bad_samples
-etsamples_orig = elsamples
-etsamples_clean = remove_bad_samples(etsamples_orig)
-etsamples = etsamples_clean
-    
 
 
 plt.figure()
