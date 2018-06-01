@@ -121,6 +121,26 @@ def map_surface(folder,loadCache = True,loadSurface = True):
     
     print('Saving Surface')
     tracker.save_surface_definitions_to_file()
+    
+    print('Changing Permissions to Group Read')    
+    
+    def file_permissions_groupreadwrite(path):
+        try:
+            os.chmod(path , 0o770)
+            for root,dirs,_ in os.walk(path):
+                for d in dirs :
+                    try:
+                        os.chmod(os.path.join(root,d) , 0o770)
+                    except PermissionError:
+                        print('permission in subfolder denied')
+                        pass
+                            
+        except PermissionError:
+            print('permission in surface folder denied')
+            pass
+        
+    file_permissions_groupreadwrite(fake_gpool.rec_dir)
+    
     return(surface)
 
 def fake_gpool_surface(folder = None):
