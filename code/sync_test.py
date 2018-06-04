@@ -24,7 +24,7 @@ from plotnine import *
 
 
 # specify subject
-subject = 'VP1'
+subject = 'VP2'
 
 # load pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
@@ -40,27 +40,30 @@ elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,s
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=True)
 elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
 
-
-
-
-import functions.detect_bad_samples as detect_bad_samples
-
-#%% LOOK at GRID condition
-# Only first block and only large Grid
-
+# which et do you want to examine?
+etsamples = plsamples
+etmsgs = plmsgs
+etevents = plevents
+# or
 etsamples = elsamples
 etmsgs = elmsgs
 etevents = elevents
 
 
 # remove bad samples
+import functions.detect_bad_samples as detect_bad_samples
 clean_etsamples = detect_bad_samples.remove_bad_samples(etsamples)
 
+# Careful!! you overwrite samples !!
+etsamples = clean_etsamples
 
 # have a look at time and gx
 plt.figure()
 plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
 
+
+#%% LOOK at GRID condition
+# Only first block and only large Grid
 
 # find out start and end  time of the large Grid condition
 select = 'block == 1 & condition == "GRID" & grid_size == 49'
@@ -71,17 +74,9 @@ gridend_time = etmsgs.query(select + '& element == 49').msg_time.values[0]
 ix_fix = (clean_etsamples.type == 'fixation') & ((clean_etsamples.smpl_time > gridstart_time) & (clean_etsamples.smpl_time < gridend_time))
 reduced_clean_etsamples = clean_etsamples.loc[ix_fix,['gy', 'gx', 'smpl_time', 'type']]
 
-# debugging
-#plt.figure()
-#plt.plot(clean_etsamples.smpl_time,clean_etsamples.gx,'o')
-#
-#plt.plot(gridend_time,750,'o')
-#plt.plot(clean_etsamples.query('type=="fixation"').smpl_time, clean_etsamples.query('type=="fixation"').gx,'o')
-#plt.plot(clean_etsamples.query('type=="saccade"').smpl_time, clean_etsamples.query('type=="saccade"').gx,'o')
-#
 
 
-#%% Plot
+#%% Plot with MATPLOTLIB
 figure, axarr = plt.subplots(2, 2)
 
 # Show stimulus Grid points
@@ -114,19 +109,19 @@ axarr[1, 1].plot(etevents.loc[ix_grid_fix, 'mean_gx'], etevents.loc[ix_grid_fix,
 
 #%% Trying to do the same with plotnine
 
+from plotnine import *
+from plotnine.data import *
+
+# make a df that contains all grid element positions
 grid_elements = pd.DataFrame(data=[etmsgs.query(select).groupby('element').first()['posx'].values, etmsgs.query(select).groupby('element').first()['posy'].values]).T
 grid_elements.columns = ['posx_elem', 'posy_elem']
 
-
-from plotnine import *
-from plotnine.data import *
 
 # Show stimulus Grid points
 ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) + geom_point() + ggtitle("Grid points")
 
 # Show all cleaned samples that are in selected condition and fixations
 ggplot(reduced_clean_etsamples, aes(x='gx', y='gy')) + geom_point() + ggtitle('Gaze block 1 using all samples (only fixations)')
-
 
 # Make a plot of the gridpoints and the data samples  (for block1)
 ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) +\
@@ -135,19 +130,49 @@ ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) +\
         ggtitle('Gaze block 1 using all samples (only fixations)')
 
 
+
+# select large Grid condition
+select = 'condition == "GRID" & grid_size == 49'
+gridstart_time = etmsgs.query(select + '& element == 1')
+gridend_time = etmsgs.query(select + '& element == 49')
+
+# only focus on important columns and only consider samples that are labeled as fixations
+ix_fix = (clean_etsamples.type == 'fixation') 
+reduced_clean_etsamples = clean_etsamples.loc[ix_fix,['gy', 'gx', 'smpl_time', 'type']]
+
+
+# Make a plot of the gridpoints and the data samples  (for block1)
+ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) +\
+        geom_point()+\
+        geom_point(aes(x='gx', y='gy'), color='red',data = reduced_clean_etsamples)+\
+        facet_wrap('~block')+\
+        ggtitle('Gaze block 1 using all samples (only fixations)')
+
+
 # maybe try to do this without querying for blocks but using facets
-
-
 
 
 # plot the mean fixation positions of all fixations during the grid condition
 # get indices of event df that are within the time window and that are fixations
-ix_grid_fix = ((etevents.start_time > gridstart_time) & (etevents.end_time < gridend_time)) & (etevents.type == 'fixation')
+ix_grid_fix = (etevents.type == 'fixation')
 
 ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) +\
         geom_point()+\
         geom_point(aes(x='mean_gx', y='mean_gy'), color='red',data = etevents.loc[ix_grid_fix])+\
+        facet_wrap('~block')+\
         ggtitle('Gaze block 1 using events')
+
+
+# maybe try to do this without querying for blocks but using facets
+blockstarts   = etmsgs.query('condition=="startingET"')
+experimentend = etmsgs.query('condition=="Finished"')
+etevents['block']  = pd.cut(etevents.start_time,pd.concat([blockstarts.msg_time,experimentend.msg_time]),labels = blockstarts.block)
+
+#TODO: all the exp_events end in _start and _stop
+# Do i want the condition or the instruction??
+instructions_starts  = etmsgs.query('exp_event=="BEGINNING_start"')
+experiment_end        = etmsgs.query('exp_event=="BEGINNING_end"')
+etevents['condition']  = pd.cut(etevents.start_time,pd.concat([instructions_starts.msg_time,experiment_end.msg_time]),labels = instructions_starts.condition)
 
 
 

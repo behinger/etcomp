@@ -126,7 +126,22 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # elnotes:    contains notes (meta data) associated with each trial
     elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
     
-    elsamples = elsamples.loc[elsamples.time != 0]
+    
+    # We also delete Samples with interpolated pupil responses. In one dataset these were ~800samples.
+    print('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
+    print('Deleting %.4f%% due to other errors in the import process'%(100*np.mean((elsamples.errors !=8) & (elsamples.errors!=0))))
+    elsamples = elsamples.loc[elsamples.errors == 0]
+    # We had issues with samples with negative time
+    
+    print('Deleting %.4f%% samples due to time<=0'%(100*np.mean(elsamples.time<=0)))
+    elsamples = elsamples.loc[elsamples.time > 0]
+    
+    # Also at the end of the recording, we had time samples that were smaller than the first sample.
+    # Note that this assumes the samples are correctly ordered and the last samples actually 
+    # refer to artefacts. If you use %SYNCTIME% this might be problematic (don't know how nwilming's edfread incorporates synctime)
+    print('Deleting %.4f%% samples due to time being less than the starting time'%(100*np.mean(elsamples.time <= elsamples.time[0])))
+    elsamples = elsamples.loc[elsamples.time > elsamples.time[0]]
+    
     # Convert to same units
     # change to seconds to be the same as pupil
     elsamples['smpl_time'] = elsamples['time'] / 1000 
@@ -143,9 +158,9 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
 
     # take the pupil area pa of the recorded eye
     # set pa to NaN instead of 0  or -32768
-    elsamples.loc[elsamples['pa_right'] == 0,'pa_right'] = np.nan
+    elsamples.loc[elsamples['pa_right'] < 1e-20,'pa_right'] = np.nan
     elsamples.loc[~ix_right,'pa_right'] = np.nan
-    elsamples.loc[elsamples['pa_left'] == 0,'pa_left'] = np.nan
+    elsamples.loc[elsamples['pa_left'] < 1e-20,'pa_left'] = np.nan
     elsamples.loc[~ix_left,'pa_left'] = np.nan
     
     # add pa column that takes the value that is not NaN
@@ -192,7 +207,9 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # "select" relevant columns
     elsamples = df.make_samples_df(elsamples)
             
-    
+    if np.any(elsamples.smpl_time>1e10):
+        raise Exception('Error, found sampling time above 1*e100. This is clearly wrong. Investigate')
+        
     # Parse EL msg
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
     elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])

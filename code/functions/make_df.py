@@ -37,8 +37,7 @@ def make_samples_df(etsamples):
 
 
 
-   
-#TODO  never checked if this does the right thing  select only interesting columns
+  #TODO add rms error for fixation here? 
 def make_events_df(etevents):
     fields_to_keep = set(['blink_id', 'end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'start_point', 'vector', 'mean_gx', 'mean_gy'])
         

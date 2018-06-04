@@ -14,6 +14,7 @@ import os
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
 from functions.pl_detect_blinks import pl_detect_blinks
+from sklearn.metrics import mean_squared_error
 
 #%% PL Events df
 
@@ -82,7 +83,7 @@ def make_fixations(etsamples, etevents,et):
     # use magic to get start and end times of fixations in a temporary column
     etsamples['tmp_fix'] = ((1*(etsamples['type'] == 'fixation')).diff())
     # assume that we always start with a fixation
-    etsamples.loc[0, 'tmp_fix'] = 1
+    etsamples.iloc[0, etsamples.columns.get_loc('tmp_fix')] = 1
     etsamples['tmp_fix'] = etsamples['tmp_fix'].astype(int)
         
     # make a list of the start and end times
@@ -109,6 +110,13 @@ def make_fixations(etsamples, etevents,et):
         ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time) & (etsamples.outside==False) & (etsamples.zero_pa==False)  & (etsamples.neg_time==False)
         fixationevents.loc[ix, 'mean_gx'] =  np.mean(etsamples.loc[ix_fix, 'gx'])    
         fixationevents.loc[ix, 'mean_gy'] =  np.mean(etsamples.loc[ix_fix, 'gy'])
+        # TODO calculate rms error
+        # do i have to use a for loop here?
+#        for sample_ix in ix_fix:
+#            x_y   = (etsamples.loc[sample_ix, 'gx'], etsamples.loc[sample_ix, 'gy'])
+#            x_y_1 = (etsamples.loc[sample_ix + 1, 'gx'], etsamples.loc[sample_ix + 1, 'gy'])
+#            rms   = np.sqrt(((x_y - x_y_1) ** 2).mean())
+#        fixationevents.loc[ix, 'fix_rms'] = rms
 
 
     # Sanity checks
