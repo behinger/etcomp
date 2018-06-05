@@ -147,13 +147,15 @@ def save_file(data,et,subject,datapath):
     
     # dump data in csv
     filename_samples = str(et) + '_samples.csv'
+    filename_cleaned_samples = str(et) + '_cleaned_samples.csv'
     filename_msgs = str(et)  + '_msgs.csv'
     filename_events = str(et)  + '_events.csv'
     
     # make separate csv file for every df 
     data[0].to_csv(os.path.join(preprocessed_path, filename_samples), index=False)
-    data[1].to_csv(os.path.join(preprocessed_path, filename_msgs), index=False)
-    data[2].to_csv(os.path.join(preprocessed_path, filename_events), index=False)
+    data[1].to_csv(os.path.join(preprocessed_path, filename_cleaned_samples), index=False)
+    data[2].to_csv(os.path.join(preprocessed_path, filename_msgs), index=False)
+    data[3].to_csv(os.path.join(preprocessed_path, filename_events), index=False)
     
 
 

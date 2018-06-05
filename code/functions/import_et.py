@@ -18,6 +18,12 @@ except ImportError:
     
 
 
+
+import logging
+logger = logging.getLogger()
+
+
+
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
 
@@ -101,6 +107,7 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
             plmsgs = plmsgs.append(msg, ignore_index=True)
     
     plevents = pd.DataFrame()
+    plmsgs = fix_smallgrid_parser(plmsgs)
         
     return plsamples, plmsgs,plevents
 
@@ -124,7 +131,14 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # elsamples:  contains individual EL samples
     # elevents:   contains fixation and saccade definitions
     # elnotes:    contains notes (meta data) associated with each trial
+    
+    
     elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+    if np.any(elsamples.time>1e13):
+        logging.warning('Attention: Found sampling time above 1*e100. This is clearly wrong. Trying again,lets see whether we get an error (will check again later)')
+        elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+        
+        
     
     
     # We also delete Samples with interpolated pupil responses. In one dataset these were ~800samples.
@@ -150,7 +164,9 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     elevents['start']      = elevents['start'] / 1000     
     elevents['end']        = elevents['end'] / 1000             
     
- 
+    if np.any(elsamples.smpl_time>1e10):
+        raise Exception('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
+
     # for horizontal gaze component
     # Idea: Logical indexing
     ix_left = elsamples.gx_left  != -32768 
@@ -207,11 +223,24 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # "select" relevant columns
     elsamples = df.make_samples_df(elsamples)
             
-    if np.any(elsamples.smpl_time>1e10):
-        raise Exception('Error, found sampling time above 1*e100. This is clearly wrong. Investigate')
         
     # Parse EL msg
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
     elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
-    
+    elmsgs = fix_smallgrid_parser(elmsgs)
     return elsamples, elmsgs, elevents
+    
+
+
+
+def fix_smallgrid_parser(etmsgs):
+    replaceGrid = pd.Series([k for l in [13*['SMALLGRID_BEFORE'],13*['SMALLGRID_AFTER']]*6 for k in l])
+    ix = etmsgs.query('grid_size==13').index
+    if len(ix) is not  156:
+        raise RuntimeError('we need to have 156 small grid msgs')
+
+    replaceGrid.index = ix
+    etmsgs.loc[ix,'condition'] = replaceGrid
+    return(etmsgs)
+    
+    

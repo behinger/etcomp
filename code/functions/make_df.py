@@ -20,9 +20,7 @@ import pandas as pd
 #%% MAKE SAMPLES
 
 def make_samples_df(etsamples):
-    # function to check if all needed columns exist and get samples df
-    assert('pa' in etsamples)
-    
+   
     fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel'])
     
     fields_to_fillin = fields_to_keep - set(etsamples.columns)
@@ -37,9 +35,8 @@ def make_samples_df(etsamples):
 
 
 
-  #TODO add rms error for fixation here? 
 def make_events_df(etevents):
-    fields_to_keep = set(['blink_id', 'end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'start_point', 'vector', 'mean_gx', 'mean_gy'])
+    fields_to_keep = set(['blink_id', 'end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'start_point', 'vector', 'mean_gx', 'mean_gy', 'fix_rms'])
         
     fields_to_fillin = fields_to_keep - set(etevents.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin

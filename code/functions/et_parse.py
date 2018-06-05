@@ -41,11 +41,10 @@ def parse_message(msg):
         # grid_size:     49=large Grid ; 13=calibration Grid
 
     if split[0] == 'GRID':
-        # print(split)
+        #print(split)
         parsedmsg = dict(
                 msg_time = msg_time,
-                exp_event = split[1])
-        
+                exp_event = split[1])     
         # buttonpress is an exp_event with no additional information at  split[1]
 
         if split[1] == 'element':
@@ -57,19 +56,6 @@ def parse_message(msg):
                     grid_size = int(split[8]),
                     block = int(split[10])
                     ))
-            
-        #TODO did you mean this with grid_small_before
-        # but how do i know if it is before or after ??
-        if split[1] == 'element' and split[8] == '13':
-            #print(split)
-            parsedmsg.update(dict(
-                    exp_event = 'small_grid_before',
-                    element = int(split[2]),
-                    posx = float(split[4]),
-                    posy = float(split[6]),
-                    grid_size = int(split[8]),
-                    block = int(split[10])
-                    ))            
 
         elif split[1] == 'start':
             #print(split)
@@ -229,7 +215,7 @@ def parse_message(msg):
 
     # label "Finished"
     # msg_time:         timestamp when msg was sent
-    # exp_event:        True when Experiment is finished  ??
+    # exp_event:        True when Experiment is finished
 
     if split[0] == 'Finished':
         parsedmsg = dict(
@@ -263,6 +249,7 @@ def parse_message(msg):
     # block:            block of experiment
   
     if split[0] == 'SHAKE':
+        #print(split)
         parsedmsg = dict(
               msg_time = msg_time,
               exp_event = split[1])
@@ -280,15 +267,6 @@ def parse_message(msg):
                 block = int(split[3])
                 ))
 
-        elif split[3] == 'center':
-            parsedmsg.update(dict(
-                block = int(split[2]),
-                exp_event = 'shake_center',
-                # is it okay that i put (0,540) as center?
-                shake_x = 0,
-                shake_y = 540,
-                ))     
-        
         
     # label "TILT"
     # msg_time:         timestamp when msg was sent

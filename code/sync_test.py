@@ -4,6 +4,7 @@ import functions.add_path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from plotnine import *
 
 import functions.et_plotting as etplot
 import functions.preprocess_et as preprocess
@@ -16,15 +17,11 @@ import functions.pl_detect_blinks as pl_blinks
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
 
-from plotnine import *
-
-
-
 #%% LOAD DATA and preprocess RAW data
 
 
 # specify subject
-subject = 'VP2'
+subject = 'VP4'
 
 # load pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))

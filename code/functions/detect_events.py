@@ -14,7 +14,7 @@ import os
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
 from functions.pl_detect_blinks import pl_detect_blinks
-from sklearn.metrics import mean_squared_error
+#from sklearn.metrics import mean_squared_error
 
 #%% PL Events df
 
@@ -104,19 +104,16 @@ def make_fixations(etsamples, etevents,et):
     fixationevents['duration'] = fixationevents['end_time'] - fixationevents['start_time']
     
     for ix,row in fixationevents.iterrows():
-        # TODO: check could we make thatfaster somehow?
         # take the mean gx/gy position over all samples that belong to that fixation
         # removed bad samples explicitly
         ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time) & (etsamples.outside==False) & (etsamples.zero_pa==False)  & (etsamples.neg_time==False)
         fixationevents.loc[ix, 'mean_gx'] =  np.mean(etsamples.loc[ix_fix, 'gx'])    
         fixationevents.loc[ix, 'mean_gy'] =  np.mean(etsamples.loc[ix_fix, 'gy'])
-        # TODO calculate rms error
-        # do i have to use a for loop here?
-#        for sample_ix in ix_fix:
-#            x_y   = (etsamples.loc[sample_ix, 'gx'], etsamples.loc[sample_ix, 'gy'])
-#            x_y_1 = (etsamples.loc[sample_ix + 1, 'gx'], etsamples.loc[sample_ix + 1, 'gy'])
-#            rms   = np.sqrt(((x_y - x_y_1) ** 2).mean())
-#        fixationevents.loc[ix, 'fix_rms'] = rms
+        # calculate rms error (inter-sample distances)
+        # distances in pixels of temporally adjacent samples
+        fix_samples = etsamples.loc[ix_fix,['gx', 'gy']]
+        # take euclidean distance between adjacent samples
+        fixationevents.loc[ix, 'fix_rms'] = np.sqrt(fix_samples.diff().dropna().apply(np.square).sum(1).mean())
 
 
     # Sanity checks

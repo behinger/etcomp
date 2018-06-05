@@ -12,3 +12,4 @@ def kill_child_processes():
     
     for pid_str in ps_output.strip().split("\n")[1:]:
         os.kill(int(pid_str), signal.SIGTERM)
+np.sqrt(np.mean(np.square(np.diff(etsamples.loc[ix_fix, 'gx']))+np.square(np.diff(etsamples.loc[ix_fix, 'gy']))))

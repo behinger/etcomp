@@ -16,6 +16,7 @@ from functions.import_et import import_pl,import_el
 from functions.detect_bad_samples import detect_bad_samples,remove_bad_samples
 from functions.et_helper import add_events_to_samples
 from functions.et_helper import load_file, save_file
+from functions.make_df import make_events_df
 
 import os
 
@@ -76,25 +77,27 @@ def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=Fal
     for evtfunc in eventfunctions:
         logging.info('Events: calling %s',evtfunc.__name__)
         etsamples, etevents = evtfunc(etsamples, etevents, et)
+        
+    # Make a nice etevent df
+    etevents = make_events_df(etevents)
     
     # Each sample has a column 'type' (blink, saccade, fixation)
     # which is set according to the event df
     logging.info('Add events to each sample')
     etsamples = add_events_to_samples(etsamples,etevents)
-    
+       
     # Samples get removed from the samples df
     # because of outside monitor, pupilarea Nan, negative sample time
-    
-    #logging.info('Removing bad samples')
-    #etsamples = remove_bad_samples(etsamples)
+    logging.info('Removing bad samples')
+    cleaned_etsamples = remove_bad_samples(etsamples)
     
     
     # in case you want to save the calculated results
     if save:
-        save_file([etsamples,etmsgs,etevents],et,subject,datapath)
+        save_file([etsamples,cleaned_etsamples, etmsgs,etevents],et,subject,datapath)
         logging.debug('Done - saving')
     
     
-    return etsamples, etmsgs, etevents
+    return cleaned_etsamples, etmsgs, etevents
     
 
