@@ -41,7 +41,7 @@ def parse_message(msg):
         # grid_size:     49=large Grid ; 13=calibration Grid
 
     if split[0] == 'GRID':
-        #print(split)
+        # print(split)
         parsedmsg = dict(
                 msg_time = msg_time,
                 exp_event = split[1])     

@@ -16,6 +16,8 @@ GET nice DATAFRAMES
 import numpy as np
 import pandas as pd
 
+import functions.et_helper as  helper
+
 
 #%% MAKE SAMPLES
 
@@ -80,14 +82,17 @@ def make_epochs(et,msgs,td=[-2,2]):
  
    
 #%% 
-# FULL df
-# TODO
-def make_full_df(etmsgs, etevents, condition):
-    # Input:
-    # Output:    
-    full_df = pd.DataFrame()
-    # search for start message of condition in **etmsgs**
+
+def make_large_grid_df(merged_events):
+    # Input:    merged_events have info from msgs df AND event df
+    #           (see add_msg_to_event in et_helper)
     
-    # search for first saccade / fixation / blink after msg_time in **etevents**
+    # only large grid condition
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+
+    # only last fixation before new element
+    large_grid_df = helper.only_last_fix(large_grid_events, next_stim = ['block', 'element'])
+    large_grid_df.reset_index(level=['block', 'element'], inplace=True)
+
     
-    return full_df
+    return large_grid_df

@@ -10,7 +10,6 @@ import pandas as pd
 
 
 #%% 
-  
 
 def gaze_to_pandas(gaze):
         # Input: gaze data as dictionary
@@ -50,14 +49,35 @@ def gaze_to_pandas(gaze):
                            'diameter':list_diam,
                            'pa': list_pa
                            })
-        return(df)
+        return df
         
         
 def convert_diam_to_pa(axes1, axes2):
     return math.pi * float(axes1) * float(axes2) * 0.25
+
+
+#%% 
+
+
+
+
+def only_last_fix(merged_etevents, next_stim = ['block', 'element']):
+    # we group by  block and element and then take the last fixation
+    large_grid_df = merged_etevents.groupby(next_stim).last()
     
-   
-        
+    return large_grid_df
+
+#%%      
+
+def add_msg_to_event(etevents,etmsgs,timefield = 'start_time'):
+    # combine the event df with the msg df          
+    etevents = etevents.sort_values('start_time')
+    # make a merge on the msg time and the start time of the events
+    merged_etevents = pd.merge_asof(etevents,etmsgs,left_on='start_time',right_on='msg_time',direction='backward')
+    
+    return merged_etevents
+    
+
                 
 def add_events_to_samples(etsamples, etevents):
     # Calls append_eventtype_to_sample for each event
@@ -164,23 +184,9 @@ def findFile(path,ftype):
     # finds file for el edf
     out = [edf for edf in os.listdir(path) if edf.endswith(ftype)]
     return(out)
-
-
- 
-
     
-    #k = 0;
-    #for bindex,brow in etevents.loc[ix_event].iterrows():        
-    #    if k%100==0:
-    #        print('adding event',k,'from',np.sum(ix_event),'to etsamples')
-    #    
-    #    # get index of all samples that are +- timemargin ms of a detected event
-    #    ix =  (etsamples.smpl_time>=(brow['start_time']+float(timemargin[0]))) & (etsamples.smpl_time<(brow['end_time']+float(timemargin[1])))
-    #    
-    #    if eventtype not in 'blink':        
-    #        blinkSamplesInSaccade = etsamples.loc[ix,'type']=='blink'
-    #        if np.any(blinkSamplesInSaccade):
-    #            print(np.sum(blinkSamplesInSaccade),'blink samples detected in event')
-    #        
-    #    etsamples.loc[ix, 'type'] = eventtype
-    #    k +=1
+    
+    
+def get_subjectnames(datapath='/net/store/nbp/projects/etcomp/'):
+    return os.listdir(datapath)
+   

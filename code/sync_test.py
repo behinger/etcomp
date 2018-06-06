@@ -5,9 +5,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from plotnine import *
+from plotnine.data import *
+
 
 import functions.et_plotting as etplot
-import functions.preprocess_et as preprocess
+import functions.et_preprocess as preprocess
 import functions.make_df as df
 import functions.detect_events as events
 import functions.detect_saccades as saccades
@@ -19,23 +21,21 @@ from functions.detect_events import make_blinks,make_saccades,make_fixations
 
 #%% LOAD DATA and preprocess RAW data
 
-
 # specify subject
 subject = 'VP4'
 
 # load pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
-
 # load el data
 elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
-
 
 
 #%% LOAD preprocessed DATA from csv file
 
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=True)
 elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
+
 
 # which et do you want to examine?
 etsamples = plsamples
@@ -47,17 +47,9 @@ etmsgs = elmsgs
 etevents = elevents
 
 
-# remove bad samples
-import functions.detect_bad_samples as detect_bad_samples
-clean_etsamples = detect_bad_samples.remove_bad_samples(etsamples)
-
-# Careful!! you overwrite samples !!
-etsamples = clean_etsamples
-
 # have a look at time and gx
 plt.figure()
 plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
-
 
 #%% LOOK at GRID condition
 # Only first block and only large Grid
@@ -106,8 +98,6 @@ axarr[1, 1].plot(etevents.loc[ix_grid_fix, 'mean_gx'], etevents.loc[ix_grid_fix,
 
 #%% Trying to do the same with plotnine
 
-from plotnine import *
-from plotnine.data import *
 
 # make a df that contains all grid element positions
 grid_elements = pd.DataFrame(data=[etmsgs.query(select).groupby('element').first()['posx'].values, etmsgs.query(select).groupby('element').first()['posy'].values]).T
@@ -331,30 +321,17 @@ plepochs = df.make_epochs(plsamples, plmsgs.query(condquery))
 elepochs = df.make_epochs(elsamples, elmsgs.query(condquery))
 
 
-#%%
-
-# We are going to have 5 types of Dataframes:
-# sample, msgs, events, epochs und for each condition a df FULL for pl and el respectively 
-# for more details please have a look at the "overview dataframes pdf"
-
-
-
 #%% PUPIL DILATION
 
 # Looking at dilation data
 
 elepochs.lum.unique()
 
-
-# TODO something is still wrong with dilation
-
 # EL
 etplot.plot_diam(elepochs,query='condition=="DILATION" & block==1 & lum==255')
 
 # PL
 etplot.plot_diam(plepochs, query='condition=="DILATION" & block==1 & lum==64')
-
-
 
 etplot.plotTraces(plepochs, y='pa', query='condition=="DILATION" & lum==64')
 etplot.plotTraces(elepochs, y='pa', query='condition=="DILATION" & block==1 & lum==255')
@@ -401,20 +378,15 @@ plt.plot(plsamples['smpl_time'], plsamples['blink_id'], 'o')
 
 #%%
 
+    
+#    if len(np.intersect1d(etmsgs.columns,etevents.columns)) is not 0:
+#        raise Exception('Some fields of etmsgs are already defined in etevents')
+#            
+#    for col in etmsgs.columns:
+#        etevents[col] = pd.cut(etevents[timefield],[etmsgs.msg_time],labels=etmsgs.loc[1:-1,col])
+#  
+
 #%%
-
-#%%   
-
-# Plotting
-
-# plot pl against el
-# if fixationcross presented at posx==960
-# x-axis: td time 
-# y-axis: horiz. component of gaze 
-etplot.plotTraces([plepochs,elepochs],query = 'posx==960')
-
-etplot.plotTraces([plepochs,elepochs],query = 'element == 15 & block == 1',figure=False)
-
 
 #%% ---- Have a look at the surface CSV files
 # In the end they look super bad, the eyes are not fused properly.
