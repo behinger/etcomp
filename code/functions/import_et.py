@@ -11,6 +11,8 @@ from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 from functions.et_helper import findFile,gaze_to_pandas
 import functions.et_parse as parse
 import functions.make_df as df
+import functions.et_helper as  helper
+
 try:
     import functions.pl_surface as pl_surface
 except ImportError:
@@ -89,6 +91,7 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
         pldata.gy = pldata.gy*(1080- 2*(75+18))+(75+18)
         print('Mapped Surface to ScreenSize 1920 & 1080 (minus markers)')
         del tracker
+
     # sort according to smpl_time
     pldata.sort_values('smpl_time',inplace=True)
     

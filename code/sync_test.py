@@ -7,28 +7,49 @@ import matplotlib.pyplot as plt
 from plotnine import *
 from plotnine.data import *
 
-
 import functions.et_plotting as etplot
 import functions.et_preprocess as preprocess
 import functions.make_df as df
 import functions.detect_events as events
 import functions.detect_saccades as saccades
 import functions.pl_detect_blinks as pl_blinks
-
+import functions.et_helper as  helper
 
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
+#%% LOAD DATA and preprocess RAW data for ALL subjects
 
-#%% LOAD DATA and preprocess RAW data
+# loop over the foldernames (subjectnames)
+# restricted to subjects that we do not exclude from analysis
+# also loop over the et
+foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
+rejected_subjects = ['pilot', '007', 'VP8', 'VP7']
+subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
+ets               = ['pl', 'el']    
+
+# preprocess for all subjects
+for subject in subjectnames:
+    for et in ets:
+        print()
+        print()
+        print()
+        print()
+        print(et, subject)
+        print()
+        etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
+
+
+
+#%% LOAD DATA and preprocess RAW data for ONE subject
 
 # specify subject
 subject = 'VP4'
 
-# load pl data
+# preprocess pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
-# load el data
-elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
+# preprocess el data
+elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
 
 #%% LOAD preprocessed DATA from csv file
@@ -38,10 +59,12 @@ elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
 
 
 # which et do you want to examine?
+et_str = 'pl'
 etsamples = plsamples
 etmsgs = plmsgs
 etevents = plevents
 # or
+et_str = 'el'
 etsamples = elsamples
 etmsgs = elmsgs
 etevents = elevents
@@ -50,209 +73,6 @@ etevents = elevents
 # have a look at time and gx
 plt.figure()
 plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
-
-#%% LOOK at GRID condition
-# Only first block and only large Grid
-
-# find out start and end  time of the large Grid condition
-select = 'block == 1 & condition == "GRID" & grid_size == 49'
-gridstart_time = etmsgs.query(select + '& element == 1').msg_time.values[0]
-gridend_time = etmsgs.query(select + '& element == 49').msg_time.values[0]
-
-# only focus on important columns and only consider samples that are labeled as fixations
-ix_fix = (clean_etsamples.type == 'fixation') & ((clean_etsamples.smpl_time > gridstart_time) & (clean_etsamples.smpl_time < gridend_time))
-reduced_clean_etsamples = clean_etsamples.loc[ix_fix,['gy', 'gx', 'smpl_time', 'type']]
-
-
-
-#%% Plot with MATPLOTLIB
-figure, axarr = plt.subplots(2, 2)
-
-# Show stimulus Grid points
-axarr[0, 0].set_title('Grid that was shown in block 1')
-# get all gridpoints that were shown on the screen
-x_grid_elements = etmsgs.query(select).groupby('element').first()['posx']
-y_grid_elements = etmsgs.query(select).groupby('element').first()['posy']
-axarr[0, 0].plot(x_grid_elements, y_grid_elements,'o')
-
-
-# use all samples that are within 2 sec of a msg and that are labeled as fixations
-axarr[0, 1].set_title('Gaze block 1 using all samples (only fixations)')
-axarr[0, 1].plot(reduced_clean_etsamples.gx, reduced_clean_etsamples.gy,'o')
-
-
-# plot the mean fixation positions of all fixations during the grid condition
-axarr[1, 0].set_title('Gaze block 1 using events')
-
-# get indices of event df that are within the time window and that are fixations
-ix_grid_fix = ((etevents.start_time > gridstart_time) & (etevents.end_time < gridend_time)) & (etevents.type == 'fixation')
-axarr[1, 0].plot(etevents.loc[ix_grid_fix, 'mean_gx'], etevents.loc[ix_grid_fix, 'mean_gy'],'o')
-
-
-# plot the actual Grid and the recorded fixations in the same plot
-axarr[1, 1].set_title('Overlaid plot')
-axarr[1, 1].plot(x_grid_elements, y_grid_elements,'o')
-axarr[1, 1].plot(etevents.loc[ix_grid_fix, 'mean_gx'], etevents.loc[ix_grid_fix, 'mean_gy'],'o')
-
-
-
-#%% Trying to do the same with plotnine
-
-
-# make a df that contains all grid element positions
-grid_elements = pd.DataFrame(data=[etmsgs.query(select).groupby('element').first()['posx'].values, etmsgs.query(select).groupby('element').first()['posy'].values]).T
-grid_elements.columns = ['posx_elem', 'posy_elem']
-
-
-# Show stimulus Grid points
-ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) + geom_point() + ggtitle("Grid points")
-
-# Show all cleaned samples that are in selected condition and fixations
-ggplot(reduced_clean_etsamples, aes(x='gx', y='gy')) + geom_point() + ggtitle('Gaze block 1 using all samples (only fixations)')
-
-# Make a plot of the gridpoints and the data samples  (for block1)
-ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) +\
-        geom_point()+\
-        geom_point(aes(x='gx', y='gy'), color='red',data = reduced_clean_etsamples)+\
-        ggtitle('Gaze block 1 using all samples (only fixations)')
-
-
-
-# select large Grid condition
-select = 'condition == "GRID" & grid_size == 49'
-gridstart_time = etmsgs.query(select + '& element == 1')
-gridend_time = etmsgs.query(select + '& element == 49')
-
-# only focus on important columns and only consider samples that are labeled as fixations
-ix_fix = (clean_etsamples.type == 'fixation') 
-reduced_clean_etsamples = clean_etsamples.loc[ix_fix,['gy', 'gx', 'smpl_time', 'type']]
-
-
-# Make a plot of the gridpoints and the data samples  (for block1)
-ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) +\
-        geom_point()+\
-        geom_point(aes(x='gx', y='gy'), color='red',data = reduced_clean_etsamples)+\
-        facet_wrap('~block')+\
-        ggtitle('Gaze block 1 using all samples (only fixations)')
-
-
-# maybe try to do this without querying for blocks but using facets
-
-
-# plot the mean fixation positions of all fixations during the grid condition
-# get indices of event df that are within the time window and that are fixations
-ix_grid_fix = (etevents.type == 'fixation')
-
-ggplot(grid_elements, aes(x='posx_elem', y='posy_elem')) +\
-        geom_point()+\
-        geom_point(aes(x='mean_gx', y='mean_gy'), color='red',data = etevents.loc[ix_grid_fix])+\
-        facet_wrap('~block')+\
-        ggtitle('Gaze block 1 using events')
-
-
-# maybe try to do this without querying for blocks but using facets
-blockstarts   = etmsgs.query('condition=="startingET"')
-experimentend = etmsgs.query('condition=="Finished"')
-etevents['block']  = pd.cut(etevents.start_time,pd.concat([blockstarts.msg_time,experimentend.msg_time]),labels = blockstarts.block)
-
-#TODO: all the exp_events end in _start and _stop
-# Do i want the condition or the instruction??
-instructions_starts  = etmsgs.query('exp_event=="BEGINNING_start"')
-experiment_end        = etmsgs.query('exp_event=="BEGINNING_end"')
-etevents['condition']  = pd.cut(etevents.start_time,pd.concat([instructions_starts.msg_time,experiment_end.msg_time]),labels = instructions_starts.condition)
-
-
-
-
-#%% make a list of fixations between two stimuli
-
-# find out msg time for element 1 in block 1 Large Grid
-select = 'block == 2 & condition == "GRID" & grid_size == 49'
-elem1_time = etmsgs.query(select + '& element == 12').msg_time.values[0]
-elem2_time = etmsgs.query(select + '& element == 13').msg_time.values[0]
-elem1_posx = etmsgs.query(select + '& element == 12').posx.values[0]
-elem1_posy = etmsgs.query(select + '& element == 12').posy.values[0]
-
-elem_before_posx = etmsgs.query(select + '& element == 11').posx.values[0]
-elem_before_posy = etmsgs.query(select + '& element == 11').posy.values[0]
-
-
-elem_after_posx = etmsgs.query(select + '& element == 13').posx.values[0]
-elem_after_posy = etmsgs.query(select + '& element == 13').posy.values[0]
-
-
-# look at event df and select all fixations in the time window
-ix_fix = ((etevents.start_time > elem1_time) & (etevents.start_time <= elem2_time)) & (etevents.type == 'fixation')
-
-
-# plot results
-figure, axarr = plt.subplots(2, 2)
-
-# Show stimulus Grid points
-axarr[0, 0].set_title('Grid that was shown in block 1')
-# get all gridpoints that were shown on the screen
-x_grid_elements = etmsgs.query(select).groupby('element').first()['posx']
-y_grid_elements = etmsgs.query(select).groupby('element').first()['posy']
-axarr[0, 0].plot(x_grid_elements, y_grid_elements,'o')
-
-
-# Show mean position of the fixations
-axarr[1, 1].set_title('fixations')
-axarr[1, 1].plot(x_grid_elements, y_grid_elements,'o')
-axarr[1, 1].plot(elem_before_posx, elem_before_posy,'o')
-axarr[1, 1].plot(elem1_posx, elem1_posy,'o')
-axarr[1, 1].plot(elem_after_posx, elem_after_posy,'o')
-axarr[1, 1].plot(etevents.loc[ix_fix, 'mean_gx'], etevents.loc[ix_fix, 'mean_gy'],'o')
-# alle fixation samples reinplotten
-axarr[1, 1].plot(etsamples.query('smpl_time>%.4f & smpl_time<%.4f & type=="fixation"'%(elem1_time,elem2_time)).gx, etsamples.query('smpl_time>%.4f & smpl_time<%.4f & type=="fixation"'%(elem1_time,elem2_time)).gy, 'o')# noch alle samples reinhauen
-#und alle saccades
-axarr[1, 1].plot(etsamples.query('smpl_time>%.4f & smpl_time<%.4f & type=="saccade"'%(elem1_time,elem2_time)).gx, etsamples.query('smpl_time>%.4f & smpl_time<%.4f & type=="saccade"'%(elem1_time,elem2_time)).gy, 'x') 
-
-
-
-
-#%% trying to make it into the loop
-
-
-select = 'block == 1 & condition == "GRID" & grid_size == 49'
-elem1_time = etmsgs.query(select + '& element == 10').msg_time.values[0]
-elem2_time = etmsgs.query(select + '& element == 11').msg_time.values[0]
-elem1_posx = etmsgs.query(select + '& element == 10').posx.values[0]
-elem1_posy = etmsgs.query(select + '& element == 10').posy.values[0]
-
-
-
-# look at event df and select all fixations in the time window
-ix_fix_events = ((etevents.start_time > elem1_time) & (etevents.end_time <= elem2_time)) & (etevents.type == 'fixation')
-
-# get all samples that belong to the fixations
-fix_samples = pd.DataFrame()
-
-#for fix in range(sum(ix_fix_events)):
-#    fix_samples['fix_no'] =  fix + 1
-#    ix_fix_sample
-#    fix_samples['gx'] = etsamples.loc[] fix + 1
-#    
-#
-
-# plot results
-figure, axarr = plt.subplots(2, 2)
-
-# Show stimulus Grid points
-axarr[0, 0].set_title('Grid that was shown in block 1')
-# get all gridpoints that were shown on the screen
-x_grid_elements = etmsgs.query(select).groupby('element').first()['posx']
-y_grid_elements = etmsgs.query(select).groupby('element').first()['posy']
-axarr[0, 0].plot(x_grid_elements, y_grid_elements,'o')
-
-
-# Show mean position of the fixations
-axarr[0, 0].set_title('mean position of the fixations')
-axarr[1, 1].plot(x_grid_elements, y_grid_elements,'o')
-axarr[1, 1].plot(elem1_posx, elem1_posy,'o')
-axarr[1, 1].plot(elevents.loc[ix_fix_events, 'mean_gx'], elevents.loc[ix_fix_events, 'mean_gy'],'o')
-
-
 
 
 #%% Figure to examine which samples we exclude
@@ -265,14 +85,23 @@ plt.plot(etsamples.query('type=="blink"')['smpl_time'],etsamples.query('type=="b
 plt.plot(etsamples.query('type=="saccade"')['smpl_time'],etsamples.query('type=="saccade"')['gx'],'o')
 plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=="fixation"')['gx'],'o')
 
-
+plt.title('eyelink')
+plt.ylim([0,2500])
 
 plt.plot(etsamples.query('neg_time==True')['smpl_time'],etsamples.query('neg_time==True')['gx'],'o')
 plt.plot(etsamples.query('outside==True')['smpl_time'],etsamples.query('outside==True')['gx'],'o')
 plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa==True')['gx'],'o')
 
 
+#%%
 
+#%%
+
+#%%
+
+#%%
+
+#%%
 
 
 #%%  EVENTS
@@ -339,13 +168,6 @@ etplot.plotTraces(elepochs, y='pa', query='condition=="DILATION" & block==1 & lu
 
 #%%
 
-# Detect Saccades
-
-plsaccades = saccades.detect_saccades_engbert_mergenthaler(cleaned_plsamples,fs=240)
-elsaccades = saccades.detect_saccades_engbert_mergenthaler(cleaned_elsamples)
-
-
-
 def plot_timeseries(etsamples,etsaccades,etsaccades2):
 
     print('plotting')
@@ -359,11 +181,6 @@ def plot_timeseries(etsamples,etsaccades,etsaccades2):
     plt.plot(etsamples.query('type=="blink"')['smpl_time'], etsamples.query('type=="blink"')['gy'], 'o')
 
 plot_timeseries(elsamples[0:-700000],elsaccades,elsacc)
-
-
-elsaccades.head()
-elsaccades.columns
-elsaccades.describe()
 
 
 #%%

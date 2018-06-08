@@ -3,6 +3,8 @@
 import pandas as pd
 import numpy as np
 
+import functions.et_helper as  helper
+
 
 def parse_message(msg):
     # Input: message to be parsed
@@ -37,7 +39,7 @@ def parse_message(msg):
     # block:     block of experiment
         # for GRID element:    
         # element:   count of elements shown
-        # posx/posy: position of presented fixation point (ground truth) in pix on screen
+        # posx/posy: position of presented fixation point (ground truth) in visual degrees
         # grid_size:     49=large Grid ; 13=calibration Grid
 
     if split[0] == 'GRID':
@@ -51,8 +53,10 @@ def parse_message(msg):
             #print(split)
             parsedmsg.update(dict(
                     element = int(split[2]),
-                    posx = float(split[4]),
-                    posy = float(split[6]),
+                    # convert pixels into visual degrees
+                    # VD
+                    posx = helper.px2deg(float(split[4])),
+                    posy = helper.px2deg(float(split[6])),
                     grid_size = int(split[8]),
                     block = int(split[10])
                     ))
@@ -256,8 +260,10 @@ def parse_message(msg):
     
         if split[3] == 'x':
             parsedmsg.update(dict(
-                shake_x = int(split[4]),
-                shake_y = int(split[6]),
+                # convert pixels into visual degrees
+                # VD
+                shake_x = helper.px2deg(float(split[4])),
+                shake_y = helper.px2deg(float(split[6])),
                 block = int(split[2]),
                 exp_event = 'SHAKE_point'
                 ))

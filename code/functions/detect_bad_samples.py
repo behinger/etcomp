@@ -7,6 +7,7 @@ Created on Fri May 18 19:01:13 2018
 """
 import pandas as pd
 import numpy as np
+import functions.et_helper as  helper
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -26,7 +27,9 @@ def detect_bad_samples(etsamples):
     # Gaze Position
     # is out of the range of the monitor
     # The monitor has a size of 1920 x 1080 pixels
-    ix_outside_samples = (etsamples.gx < -500) | (etsamples.gx > 2420) | (etsamples.gy < -500) | (etsamples.gy > 1580)
+    # we give tolerance of 500 px and we convert into visual degrees
+    # VD 
+    ix_outside_samples = (etsamples.gx < (helper.px2deg(-500))) | (etsamples.gx > (helper.px2deg(2420))) | (etsamples.gy < (helper.px2deg(-500))) | (etsamples.gy > (helper.px2deg(1580)))
     percentage_outside = np.mean(ix_outside_samples)*100
     logging.info("Caution: %.2f%% samples got marked as the calculated gazeposition is outside the monitor"%(percentage_outside))
     

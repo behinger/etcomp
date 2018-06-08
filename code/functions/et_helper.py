@@ -11,6 +11,19 @@ import pandas as pd
 
 #%% 
 
+def px2deg(px, orientation=None, pxPerDeg=0.276,distance=600):
+    deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
+    # VD
+    # TODO "gx_px - gx_px-midpoint"
+    # center of our BENQ
+    # if orientation == 'vertical'
+    # center_x =
+
+    # center_y =
+    
+    return deg
+    
+
 def gaze_to_pandas(gaze):
         # Input: gaze data as dictionary
         # Output: pandas dataframe with gx, gy, confidence, smpl_time pupillabsdata, diameter and (calculated) pupil area (pa)
@@ -138,7 +151,7 @@ def load_file(et,subject,datapath):
     preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
     
     try:
-        filename_samples = str(et)  + '_samples.csv'
+        filename_samples = str(et)  + '_cleaned_samples.csv'
         filename_msgs    = str(et)  + '_msgs.csv'
         filename_events  = str(et)  + '_events.csv'
         

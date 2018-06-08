@@ -33,6 +33,11 @@ def make_samples_df(etsamples):
     for fieldname in fields_to_fillin:
         etsamples_reduced.loc[:,fieldname] = np.nan
     
+    # convert pixels into visual degrees
+    # VD
+    etsamples_reduced.gx = helper.px2deg(etsamples_reduced.gx)
+    etsamples_reduced.gy = helper.px2deg(etsamples_reduced.gy)
+    
     return(etsamples_reduced)
 
 
