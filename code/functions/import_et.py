@@ -222,6 +222,8 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     elsamples.loc[ix_left,'gy_vel']  = elsamples.gyvel_left[ix_left]
     elsamples.loc[ix_right,'gy_vel'] = elsamples.gyvel_right[ix_right]
     
+    # Make (0,0) the point bottom left
+    elsamples['gy'] = 1080 - elsamples['gy']
     
     # "select" relevant columns
     elsamples = df.make_samples_df(elsamples)

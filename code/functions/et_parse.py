@@ -56,7 +56,7 @@ def parse_message(msg):
                     # convert pixels into visual degrees
                     # VD
                     posx = helper.px2deg(float(split[4]), 'horizontal'),
-                    posy = helper.px2deg(float(split[6]), 'vertical'),
+                    posy = helper.px2deg(1080-float(split[6]), 'vertical'),
                     grid_size = int(split[8]),
                     block = int(split[10])
                     ))
@@ -263,7 +263,7 @@ def parse_message(msg):
                 # convert pixels into visual degrees
                 # VD
                 shake_x = helper.px2deg(float(split[4]), 'horizontal'),
-                shake_y = helper.px2deg(float(split[6]), 'vertical'),
+                shake_y = helper.px2deg(1080-float(split[6]), 'vertical'),
                 block = int(split[2]),
                 exp_event = 'SHAKE_point'
                 ))
