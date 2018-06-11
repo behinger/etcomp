@@ -17,6 +17,21 @@ import functions.et_helper as  helper
 
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
+
+#%% LOGGING
+
+import logging
+
+logging.basicConfig(filename=logname,
+                            filemode='a',
+                            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                            datefmt='%H:%M:%S',
+                            level=logging.DEBUG)
+
+logging.info("Running Urban Planning")
+
+self.logger = logging.getLogger('urbanGUI')
+
 #%% LOAD DATA and preprocess RAW data for ALL subjects
 
 # loop over the foldernames (subjectnames)
@@ -43,7 +58,7 @@ for subject in subjectnames:
 #%% LOAD DATA and preprocess RAW data for ONE subject
 
 # specify subject
-subject = 'VP4'
+subject = 'VP1'
 
 # preprocess pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
@@ -84,8 +99,9 @@ plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
 plt.plot(etsamples.query('type=="blink"')['smpl_time'],etsamples.query('type=="blink"')['gx'],'o')
 plt.plot(etsamples.query('type=="saccade"')['smpl_time'],etsamples.query('type=="saccade"')['gx'],'o')
 plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=="fixation"')['gx'],'o')
+plt.legend(['sample','blink','saccade','fixation'])
 
-plt.title('eyelink')
+plt.title(et_str)
 plt.ylim([0,2500])
 
 plt.plot(etsamples.query('neg_time==True')['smpl_time'],etsamples.query('neg_time==True')['gx'],'o')

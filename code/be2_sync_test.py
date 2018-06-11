@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 import functions.et_plotting as etplot
-import functions.preprocess_et as preprocess
+import functions.et_preprocess as preprocess
 import functions.make_df as df
 import functions.detect_events as events
 import functions.detect_saccades as saccades
@@ -30,7 +30,7 @@ from plotnine import *
 # load and preprocess et data
 
 # specify subject
-subject = 'VP1'
+subject = 'VP4'
 
 # load pl data
 

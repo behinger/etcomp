@@ -29,7 +29,7 @@ def detect_bad_samples(etsamples):
     # The monitor has a size of 1920 x 1080 pixels
     # we give tolerance of 500 px and we convert into visual degrees
     # VD 
-    ix_outside_samples = (etsamples.gx < (helper.px2deg(-500))) | (etsamples.gx > (helper.px2deg(2420))) | (etsamples.gy < (helper.px2deg(-500))) | (etsamples.gy > (helper.px2deg(1580)))
+    ix_outside_samples = (etsamples.gx < (helper.px2deg(-500, 'horizontal'))) | (etsamples.gx > (helper.px2deg(2420, 'horizontal'))) | (etsamples.gy < (helper.px2deg(-500, 'vertical'))) | (etsamples.gy > (helper.px2deg(1580, 'vertical')))
     percentage_outside = np.mean(ix_outside_samples)*100
     logging.info("Caution: %.2f%% samples got marked as the calculated gazeposition is outside the monitor"%(percentage_outside))
     

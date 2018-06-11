@@ -35,8 +35,8 @@ def make_samples_df(etsamples):
     
     # convert pixels into visual degrees
     # VD
-    etsamples_reduced.gx = helper.px2deg(etsamples_reduced.gx)
-    etsamples_reduced.gy = helper.px2deg(etsamples_reduced.gy)
+    etsamples_reduced.gx = helper.px2deg(etsamples_reduced.gx, 'horizontal')
+    etsamples_reduced.gy = helper.px2deg(etsamples_reduced.gy, 'vertical')
     
     return(etsamples_reduced)
 
@@ -94,10 +94,10 @@ def make_large_grid_df(merged_events):
     
     # only large grid condition
     large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
-
+    stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
+    large_grid_events.loc[stopevents.index] = stopevents
     # only last fixation before new element
     large_grid_df = helper.only_last_fix(large_grid_events, next_stim = ['block', 'element'])
-    large_grid_df.reset_index(level=['block', 'element'], inplace=True)
 
     
     return large_grid_df

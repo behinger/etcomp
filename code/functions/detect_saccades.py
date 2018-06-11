@@ -17,7 +17,7 @@ from scipy.interpolate import PchipInterpolator
 import pandas as pd
 import numpy.linalg as LA
 from functions.et_helper import append_eventtype_to_sample
-
+from matplotlib import pyplot as plt
 
 #%% WRAPPER TO DETECT SACCADES   (IN THE CASE OF PL INTERPOLATE SAMPLES FIRST)
 
@@ -55,8 +55,7 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents,et = None):
          interpgaze['is_blink'] =  etsamples.type=='blink' 
          fs = 500
          
-         
-         
+ 
     # apply the saccade detection algorithm     
     saccades = apply_engbert_mergenthaler(xy_data = interpgaze[['gx','gy']],is_blink = interpgaze['is_blink'], vel_data = None,sample_rate=fs)
     

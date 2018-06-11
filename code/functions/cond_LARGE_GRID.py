@@ -43,7 +43,8 @@ all_large_grid_fix = merged_events.query('condition == "GRID"').loc[:,['type', '
 # (the last fixation before the new element  (used a groupby.last() to achieve that))
 large_grid_df = make_df.make_large_grid_df(merged_events)
 
-     
+
+
 #%% Get df of displayed elements
 
 # make a df that contains all grid element positions
@@ -57,24 +58,30 @@ plotname = 'GRID_' + et_str + '_' + subject
 
 gridplot.save(filename=plotname, format=None, path='/net/store/nbp/users/kgross/etcomp/plots', dpi=600, verbose=True)
 
-  
+
+
+first_elements = etmsgs.query("condition =='GRID' & element==1").loc[:, ['msg_time', 'block']]
+first_events = pd.merge_asof(first_elements, etevents, left_on='msg_time',right_on='start_time', direction='backward'))
+
+
 #%% PLOTS
 
 # plots always use fixations as main df and then at the end a layer of the shown GRID elements is added
 
 
 # all fixations
-gridplot = ggplot(all_large_grid_fix, aes(x='mean_gx', y='mean_gy', color='factor(mean_gx * mean_gy)')) +\
+gridplot = ggplot(all_large_grid_fix, aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)')) +\
            geom_point()+\
            geom_point(aes(x='posx_elem', y='posy_elem', color='factor(posx_elem * posy_elem)'),data = grid_elements)+\
            facet_wrap('~block')+\
-           ggtitle(et_str + ': Large Grid using all fixations')
+           ggtitle(et_str + ': Large Grid using all fixations')+\
+           scale_color_discrete(guide=False)
            
 
 # simple
-gridplot = ggplot(large_grid_df, aes(x='mean_gx', y='mean_gy', color='mean_gx * mean_gy')) +\
+gridplot = ggplot(large_grid_df, aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)')) +\
            geom_point()+\
-           geom_point(aes(x='posx_elem', y='posy_elem', color='posx_elem * posy_elem'), data = grid_elements)+\
+           geom_point(aes(x='posx_elem', y='posy_elem', color='factor(posx_elem * posy_elem)'), data = grid_elements)+\
            facet_wrap('~block')+\
            ggtitle(et_str + ': Large Grid using only last fixation')
   

@@ -158,7 +158,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # refer to artefacts. If you use %SYNCTIME% this might be problematic (don't know how nwilming's edfread incorporates synctime)
     print('Deleting %.4f%% samples due to time being less than the starting time'%(100*np.mean(elsamples.time <= elsamples.time[0])))
     elsamples = elsamples.loc[elsamples.time > elsamples.time[0]]
-    
+    elsamples = elsamples.reset_index()
     # Convert to same units
     # change to seconds to be the same as pupil
     elsamples['smpl_time'] = elsamples['time'] / 1000 

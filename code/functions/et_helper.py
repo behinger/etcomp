@@ -7,20 +7,23 @@ import numpy as np
 import pandas as pd
 
 
-
-
 #%% 
 
-def px2deg(px, orientation=None, pxPerDeg=0.276,distance=600):
-    deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
+def px2deg(px, orientation, pxPerDeg=0.276,distance=600):
     # VD
-    # TODO "gx_px - gx_px-midpoint"
-    # center of our BENQ
-    # if orientation == 'vertical'
-    # center_x =
+    # "gx_px - gx_px-midpoint"
+    # subtract center of our BENQ
 
-    # center_y =
+    if orientation == 'horizontal':
+        center_x = 1920 / 2
+        px       = px - center_x
     
+    if orientation == 'vertical':
+        center_y = 1080 / 2
+        px       = px - center_y
+           
+    deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
+
     return deg
     
 
@@ -77,7 +80,8 @@ def convert_diam_to_pa(axes1, axes2):
 def only_last_fix(merged_etevents, next_stim = ['block', 'element']):
     # we group by  block and element and then take the last fixation
     large_grid_df = merged_etevents.groupby(next_stim).last()
-    
+    large_grid_df.reset_index(level=['block', 'element'], inplace=True)
+
     return large_grid_df
 
 #%%      
@@ -133,9 +137,9 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     flat_ranges = [item for sublist in ranges for item in sublist]
     
     
-    flat_ranges = np.intersect1d(flat_ranges,etsamples.index)
+    flat_ranges = np.intersect1d(flat_ranges,range(etsamples.shape[0]))
     # all etsamples with ix in ranges , will the eventype in the column type
-    etsamples.loc[flat_ranges, 'type'] = eventtype
+    etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
 
     return etsamples
                 
