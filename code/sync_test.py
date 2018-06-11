@@ -17,20 +17,28 @@ import functions.et_helper as  helper
 
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
+import os
+import logging
 
 #%% LOGGING
 
-import logging
+logger = logging.getLogger('sync_test')
 
-logging.basicConfig(filename=logname,
-                            filemode='a',
-                            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                            datefmt='%H:%M:%S',
-                            level=logging.DEBUG)
+# set logging level 
+logger.setLevel(logging.DEBUG)
 
-logging.info("Running Urban Planning")
+# create a file handler
+handler = logging.FileHandler(filename=os.path.join('/net/store/nbp/projects/etcomp/log_files', 'preprocess_log_file.log'))
+# set handler level
+handler.setLevel(logging.DEBUG)
+# create a logging format
+formatter = logging.Formatter("%(asctime)s - %(name)-55s - %(levelname)-8s - %(message)s", "%Y-%m-%d %H:%M:%S")
+# logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")
+handler.setFormatter(formatter)
 
-self.logger = logging.getLogger('urbanGUI')
+# add the handlers to the logger
+logger.addHandler(handler)
+
 
 #%% LOAD DATA and preprocess RAW data for ALL subjects
 
@@ -38,7 +46,7 @@ self.logger = logging.getLogger('urbanGUI')
 # restricted to subjects that we do not exclude from analysis
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
-rejected_subjects = ['pilot', '007', 'VP8', 'VP7']
+rejected_subjects = ['pilot', 'log_files', '007', 'VP11', 'VP8', 'VP13', 'VP1', 'VP2', 'VP3', 'VP4']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['pl', 'el']    
 
@@ -49,14 +57,14 @@ for subject in subjectnames:
         print()
         print()
         print()
-        print(et, subject)
+        print()
+        logger.critical('Eyetracker: %s    Subject: %s ', et, subject)
         print()
         etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
 
 
 #%% LOAD DATA and preprocess RAW data for ONE subject
-
 # specify subject
 subject = 'VP1'
 

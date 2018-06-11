@@ -6,6 +6,8 @@ import os
 import numpy as np
 import pandas as pd
 
+import logging
+
 
 #%% 
 
@@ -114,14 +116,17 @@ def add_events_to_samples(etsamples, etevents):
         
     
 def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
-    print('appending eventtype:',eventtype,' to samples')
+    # get a logger
+    logger = logging.getLogger("sync_test.preprocess_et.append_eventtype_to_sample")
+     
+    logger.debug('Appending eventtype: %s to samples',eventtype)
     if timemargin is None:
         
         if eventtype== 'blink':
-            print('Taking Default value for timemargin (blink = -0.1s/0.1s)')
+            logger.info('Taking Default value for timemargin (blink = -0.1s/0.1s)')
             timemargin = [-.1,.1]
         else:
-            print('Taking Default value for timemargin (fix/saccade = 0s)')
+            logger.info('Taking Default value for timemargin (fix/saccade = 0s)')
             timemargin = [0,0]
         
                

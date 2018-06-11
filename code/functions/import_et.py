@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 import os
+import logging
 
 from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 from functions.et_helper import findFile,gaze_to_pandas
@@ -17,14 +18,6 @@ try:
     import functions.pl_surface as pl_surface
 except ImportError:
     print('Could not import pl_surface')
-    
-
-
-
-import logging
-logger = logging.getLogger()
-
-
 
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
@@ -127,6 +120,10 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
 
     assert(type(subject)==str)
     
+    # get a logger
+    logger = logging.getLogger("sync_test.preprocess_et.import_el")
+     
+    
     # Load edf
     filename = os.path.join(datapath,subject,'raw')
     
@@ -138,25 +135,25 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     
     elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
     if np.any(elsamples.time>1e13):
-        logging.warning('Attention: Found sampling time above 1*e100. This is clearly wrong. Trying again,lets see whether we get an error (will check again later)')
+        logger.error('Attention: Found sampling time above 1*e100. This is clearly wrong. Trying again,lets see whether we get an error (will check again later)')
         elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
         
         
     
     
     # We also delete Samples with interpolated pupil responses. In one dataset these were ~800samples.
-    print('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
-    print('Deleting %.4f%% due to other errors in the import process'%(100*np.mean((elsamples.errors !=8) & (elsamples.errors!=0))))
+    logger.warning('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
+    logger.warning('Deleting %.4f%% due to other errors in the import process'%(100*np.mean((elsamples.errors !=8) & (elsamples.errors!=0))))
     elsamples = elsamples.loc[elsamples.errors == 0]
     # We had issues with samples with negative time
     
-    print('Deleting %.4f%% samples due to time<=0'%(100*np.mean(elsamples.time<=0)))
+    logger.warning('Deleting %.4f%% samples due to time<=0'%(100*np.mean(elsamples.time<=0)))
     elsamples = elsamples.loc[elsamples.time > 0]
     
     # Also at the end of the recording, we had time samples that were smaller than the first sample.
     # Note that this assumes the samples are correctly ordered and the last samples actually 
     # refer to artefacts. If you use %SYNCTIME% this might be problematic (don't know how nwilming's edfread incorporates synctime)
-    print('Deleting %.4f%% samples due to time being less than the starting time'%(100*np.mean(elsamples.time <= elsamples.time[0])))
+    logger.warning('Deleting %.4f%% samples due to time being less than the starting time'%(100*np.mean(elsamples.time <= elsamples.time[0])))
     elsamples = elsamples.loc[elsamples.time > elsamples.time[0]]
     elsamples = elsamples.reset_index()
     # Convert to same units

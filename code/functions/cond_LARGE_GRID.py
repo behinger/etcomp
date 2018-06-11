@@ -21,12 +21,7 @@ import functions.et_helper as  helper
 import functions.make_df as  make_df
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
-
 import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
 
 #%% LETS try for one subject first
 
@@ -59,9 +54,6 @@ plotname = 'GRID_' + et_str + '_' + subject
 gridplot.save(filename=plotname, format=None, path='/net/store/nbp/users/kgross/etcomp/plots', dpi=600, verbose=True)
 
 
-
-first_elements = etmsgs.query("condition =='GRID' & element==1").loc[:, ['msg_time', 'block']]
-first_events = pd.merge_asof(first_elements, etevents, left_on='msg_time',right_on='start_time', direction='backward'))
 
 
 #%% PLOTS

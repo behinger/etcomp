@@ -20,62 +20,44 @@ from functions.make_df import make_events_df
 import functions.et_helper as  helper
 
 import os
-
-
 import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-
-#%% Zum testen
-
-# specify subject
-
-if False:
-    subject = 'inga_3'
-    subject = 'VP1'
-    datapath='/net/store/nbp/projects/etcomp/'
-
-    # filepath for preprocessed folder
-    preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
-
-    et = 'el'
-    et = 'pl'
 
 #%%
     
 def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations)):    
     # Output:     3 cleaned dfs: etsamples, etmsgs, etevents   
-        
+    
+    # get a logger for the preprocess function    
+    logger = logging.getLogger("sync_test.preprocess_et")
+    
     # load already calculated df
     if load:
-        logging.info('Load data from file ...')
+        logger.info('Loading et data from file ...')
         try:
             etsamples,etmsgs,etevents = load_file(et,subject,datapath)
             return(etsamples,etmsgs,etevents)
         except:
-            logging.warning('Error: Could not read file')
+            logger.warning('Error: Could not read file')
 
         
     # import according to the type of eyetracker
-    logging.info('Starting to preprocess data ...')
+    logger.debug("Importing et data")
     if et == 'pl':
-        logging.debug('Caution: etevents might be empty')
+        logger.debug('Caution: etevents might be empty')
         etsamples,etmsgs,etevents = import_pl(subject=subject,datapath=datapath)
     elif et == 'el':
         etsamples,etmsgs,etevents = import_el(subject=subject,datapath=datapath)
         
         
     # Mark bad samples
-    logging.info('Marking bad samples')
+    logger.debug('Marking bad et samples')
     etsamples = detect_bad_samples(etsamples)
     
     # Detect events
     # by our default first blinks, then saccades, then fixations
-    logging.info('Making event df')
+    logger.debug('Making event df')
     for evtfunc in eventfunctions:
-        logging.info('Events: calling %s',evtfunc.__name__)
+        logger.debug('Events: calling %s',evtfunc.__name__)
         etsamples, etevents = evtfunc(etsamples, etevents, et)
         
     # Make a nice etevent df
@@ -83,19 +65,19 @@ def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=Fal
     
     # Each sample has a column 'type' (blink, saccade, fixation)
     # which is set according to the event df
-    logging.info('Add events to each sample')
+    logger.debug('Add events to each sample')
     etsamples = add_events_to_samples(etsamples,etevents)
        
     # Samples get removed from the samples df
     # because of outside monitor, pupilarea Nan, negative sample time
-    logging.info('Removing bad samples')
+    logger.info('Removing bad samples')
     cleaned_etsamples = remove_bad_samples(etsamples)
     
     
     # in case you want to save the calculated results
     if save:
+        logger.info('Saving preprocessed et data')
         save_file([etsamples,cleaned_etsamples, etmsgs,etevents],et,subject,datapath)
-        logging.debug('Done - saving')
     
     
     return cleaned_etsamples, etmsgs, etevents
