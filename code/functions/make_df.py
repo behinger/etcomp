@@ -15,6 +15,7 @@ GET nice DATAFRAMES
  
 import numpy as np
 import pandas as pd
+from scipy.spatial import distance
 
 import functions.et_helper as  helper
 
@@ -87,6 +88,10 @@ def make_epochs(et,msgs,td=[-2,2]):
  
    
 #%% 
+    
+def calc_accuracy(row):
+    # use eculidean distance measure
+    return distance.euclidean((row['posx'], row['posy']), (row['mean_gx'], row['mean_gy']))
 
 def make_large_grid_df(merged_events):
     # Input:    merged_events have info from msgs df AND event df
@@ -98,6 +103,8 @@ def make_large_grid_df(merged_events):
     large_grid_events.loc[stopevents.index] = stopevents
     # only last fixation before new element
     large_grid_df = helper.only_last_fix(large_grid_events, next_stim = ['block', 'element'])
-
+    
+    # accuracy: error(euclidian diatance) between displayed element(posx, posy) and the fixation of the subject(mean_gx, mean_gy)
+    large_grid_df['accuracy'] = large_grid_df.apply(calc_accuracy, axis=1)
     
     return large_grid_df
