@@ -28,7 +28,7 @@ def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=Fal
     # Output:     3 cleaned dfs: etsamples, etmsgs, etevents   
     
     # get a logger for the preprocess function    
-    logger = logging.getLogger("sync_test.preprocess_et")
+    logger = logging.getLogger(__name__)
     
     # load already calculated df
     if load:

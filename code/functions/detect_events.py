@@ -7,9 +7,11 @@ Created on Tue May  8 16:42:55 2018
 """
 import functions.detect_saccades as saccades
 import functions.et_helper as et_helper
+import functions.make_df as make_df
 import pandas as pd
 import numpy as np
 import os
+import logging
 
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
@@ -19,10 +21,14 @@ from functions.pl_detect_blinks import pl_detect_blinks
 #%% PL Events df
 
 def make_blinks(etsamples,etevents,et):
+    
+    # get a logger
+    logger = logging.getLogger(__name__)
+    
     if et == 'pl':
-        print('Detecting Pupillabs Blinks')
+        logger.debug('Detecting Pupillabs Blinks')
+        
         # add Blink information to pldata
-
         etsamples = pl_detect_blinks(etsamples)
         etsamples['blink_id'] = (1*(etsamples['is_blink']==1)) * ((1*(etsamples['is_blink']==1)).diff()==1).cumsum()
 
@@ -33,8 +39,8 @@ def make_blinks(etsamples,etevents,et):
         etevents= pd.concat([etevents, blinkevents], axis=0,sort=False)
     
     elif et == 'el':
-        print('eyelink blink events are already in etevents')
-        print('deleting all other eyelink events')
+        logger.debug('eyelink blink events are already in etevents')
+        logger.debug('deleting all other eyelink events')
         
         etevents = etevents.query('blink == True')
         etevents = etevents.rename(columns={'start':'start_time','end':'end_time'})
@@ -45,7 +51,7 @@ def make_blinks(etsamples,etevents,et):
 
 
 def make_saccades(etsamples,etevents,et):
-    #TODO hier laeuft was falsch!   thresholds anpassen!    
+
     saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et)
 
     # select only interesting columns: keep only the raw
@@ -70,7 +76,10 @@ def make_fixations(etsamples, etevents,et):
     # this happened already:  
     # etsamples, etevents = make_blinks(etsamples, etevents, et)
     # etsamples, etevents = make_saccades(etsamples, etevents, et)
-       
+    
+    # get a logger
+    logger = logging.getLogger(__name__)
+    
     # add labels blink and saccade information from the event df  to sample df
     etsamples = et_helper.add_events_to_samples(etsamples, etevents)
      
@@ -79,7 +88,6 @@ def make_fixations(etsamples, etevents,et):
     # mark them as fixations
     etsamples.loc[ix_fix, 'type'] = 'fixation'
     
-    # TODO: chack and write comments
     # use magic to get start and end times of fixations in a temporary column
     etsamples['tmp_fix'] = ((1*(etsamples['type'] == 'fixation')).diff())
     # assume that we always start with a fixation
@@ -109,20 +117,38 @@ def make_fixations(etsamples, etevents,et):
         ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time) & (etsamples.outside==False) & (etsamples.zero_pa==False)  & (etsamples.neg_time==False)
         fixationevents.loc[ix, 'mean_gx'] =  np.mean(etsamples.loc[ix_fix, 'gx'])    
         fixationevents.loc[ix, 'mean_gy'] =  np.mean(etsamples.loc[ix_fix, 'gy'])
-        # calculate rms error (inter-sample distances)
-        # distances in pixels of temporally adjacent samples
+
         fix_samples = etsamples.loc[ix_fix,['gx', 'gy']]
+
+        # calculate rms error (inter-sample distances)
         # take euclidean distance between adjacent samples
-        fixationevents.loc[ix, 'fix_rms'] = np.sqrt(fix_samples.diff().dropna().apply(np.square).sum(1).mean())
+        fixationevents.loc[ix, 'euc_fix_rms'] = np.sqrt(fix_samples.diff().dropna().apply(np.square).sum(1).mean())
+        
+        if fix_samples.empty:
+            fixationevents.loc[ix, 'spher_fix_rms'] = np.nan
+
+        else:                
+            # the thetas are the difference in spherical angle
+            fixdf = pd.DataFrame({'x0':fix_samples.iloc[:-1].gx.values,'y0':fix_samples.iloc[:-1].gy.values,'x1':fix_samples.iloc[1:].gx.values,'y1':fix_samples.iloc[1:].gy.values})
+            thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
+
+            #print(ix)
+            #print(np.sqrt(((np.square(thetas)).mean())))
+        
+            # calculate the rms 
+            fixationevents.loc[ix, 'spher_fix_rms'] = np.sqrt(((np.square(thetas)).mean()))
+
 
 
     # Sanity checks
+
     # check if negative duration:
     if (fixationevents.duration < 0).any():
-        print("something is wrong" )    
+        logger.warning("something is wrong" )    
+
     # TODO : check for short fixation durations
     if (fixationevents.duration < 0.1).any():
-        print("There are some really short fixations" )
+        logger.warning("There are some really short fixations" )
     
     
     # concatenate to original event df    
@@ -132,23 +158,6 @@ def make_fixations(etsamples, etevents,et):
 
 #%%
     
-#    
-## TODO for pl: return all events in same format as eyelink
-#def pl_make_events(plsamples):
-#    raise ('old')
-#    
-#    assert('blink_id' in plsamples)
-#    assert('is_blink' in plsamples)
-#    
-#    pl_blink_events = pl_make_blink_events(plsamples)
-#    pl_sacc_events  = pl_make_sacc_events(plsamples)
-#    pl_fix_events   = pl_make_fix_events(plsamples)    
-#    plevents = pl_blink_events.append(pl_sacc_events, ignore_index=True)
-#    
-#    return plevents
-#
-
-
 def pl_make_blink_events(pl_extended_samples):
     # detects Blink events for pupillabs
     
@@ -185,11 +194,4 @@ def pl_make_blink_events(pl_extended_samples):
     return pl_blink_events      
      
 
-#TODO
-#def pl_make_fix_events(pl_extended_samples):
-#    # detects Blink events for pupillabs
-#    
-#    #return pl_fix_events      
-#    pass
-#
 

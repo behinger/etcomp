@@ -18,7 +18,7 @@ def detect_bad_samples(etsamples):
     # adds columns for bad samples (out of monitor, sampling frequency)
     
     # get a logger
-    logger = logging.getLogger("sync_test.preprocess_et.append_eventtype_to_sample")
+    logger = logging.getLogger(__name__)
      
     logger.info("Removing bad samples ...")
     

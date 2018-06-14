@@ -19,6 +19,8 @@ import numpy.linalg as LA
 from functions.et_helper import append_eventtype_to_sample
 from matplotlib import pyplot as plt
 
+import logging
+
 #%% WRAPPER TO DETECT SACCADES   (IN THE CASE OF PL INTERPOLATE SAMPLES FIRST)
 
 def detect_saccades_engbert_mergenthaler(etsamples,etevents,et = None):
@@ -27,18 +29,21 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents,et = None):
     # Output:     saccades (df) with expanded / raw
     #             amplitude, duration, start_time, end_time, peak_velocity
     
+    
+    # get a logger
+    logger = logging.getLogger(__name__)    
+    
     # if you specify a sampling frequency, the samples get interpolated
     # to have regular sampled data in order to apply the saccade detection algorithm
     etsamples = etsamples.copy()
     
-    print('eyetracker:',et)
+    logger.debug('eyetracker: %s',et)
     etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype='blink')
     
-    print('Setting Eyeblink Data to 0')
-    
+    logger.debug('Setting Eyeblink Data to 0')
     etsamples.loc[etsamples.type=='blink',['gx','gy']] = np.nan
 
-    print('removing bad-samples for saccade detection')
+    logger.debug('removing bad-samples for saccade detection')
     assert('outside' in etsamples)
     etsamples.loc[etsamples.outside==True,['gx','gy']] = np.nan
     
@@ -96,7 +101,11 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
     
     """
    
-    print('Start.... Detecting Saccades')
+    # get a logger
+    logger = logging.getLogger(__name__)
+    
+    
+    logger.debug('Start.... Detecting Saccades')
     
     # If xy_data and vel_data are both None, function can't continue
     if xy_data is None and vel_data is None:
@@ -128,9 +137,9 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
     med = np.nanmedian(vel_data, axis = 0)
      
     std = np.nanmean(np.array(np.sqrt((vel_data - med)**2)), axis = 0) 
-    scaled_vel_data = vel_data / std# scale by the standard deviation
+    scaled_vel_data = vel_data / std # scale by the standard deviation
     
-    print('Std of velocity data',std)
+    logger.warning('Std of velocity data %s', np.round(std, 4))
     # normalize and to acceleration and its sign
     if (float(np.__version__.split('.')[1]) == 1.0) and (float(np.__version__.split('.')[1]) > 6):
         normed_scaled_vel_data = LA.norm(scaled_vel_data, axis = 1)
@@ -144,7 +153,7 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
     
     # when are we above the threshold, and when were the crossings
     over_threshold = (normed_scaled_vel_data > l)
-    print('Mean overthreshold values:',over_threshold.mean())
+    logger.warning('Mean overthreshold values: %s',np.round(over_threshold.mean(), 4))
     # integers instead of bools preserve the sign of threshold transgression
     over_threshold_int = np.array(over_threshold, dtype = np.int16)
     
@@ -189,11 +198,11 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
     
         # print threshold_crossing_indices_2x2, valid_threshold_crossing_indices, blinks_during_saccades, ((raw_saccade_durations / sample_rate) > minimum_saccade_duration), right_times, valid_saccades_bool
         # print raw_saccade_durations, sample_rate, minimum_saccade_duration        
-    print('Number of saccades detected:',valid_threshold_crossing_indices.shape)
+    logger.warning('Number of saccades detected: %s',valid_threshold_crossing_indices.shape)
     
     saccades = []
     for i, cis in enumerate(valid_threshold_crossing_indices):
-        if i%100 == 0:
+        if i%1000 == 0:
             print(i)
         # find the real start and end of the saccade by looking at when the acceleleration reverses sign before the start and after the end of the saccade:
         # sometimes the saccade has already started?
@@ -262,7 +271,7 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
 
     # shell()
     
-    print('Done... Detecting Saccades')
+    logger.debug('Done... Detecting Saccades')
     
     return pd.DataFrame(saccades)
 
@@ -273,8 +282,11 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
 def interpolate_gaze(etsamples, fs=None): 
     # Input:         etsamples
     # Output:        gazeInt (df)
-
-    print('Start.... Interpolating Samples')
+   
+    # get a logger
+    logger = logging.getLogger(__name__)
+    
+    logger.debug('Start.... Interpolating Samples')
         
     # find the time range
     fromT = etsamples.smpl_time.iloc[0]    # find the first sample
@@ -294,7 +306,7 @@ def interpolate_gaze(etsamples, fs=None):
     gazeInt['gy']  = interp(etsamples.smpl_time,etsamples.gy)
     gazeInt['is_blink']  = interp(etsamples.smpl_time,etsamples.type == 'blink')
     
-    print('Done.... Interpolating Samples')
+    logger.debug('Done.... Interpolating Samples')
     
 
     return gazeInt

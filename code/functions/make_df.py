@@ -7,17 +7,17 @@ Created on Fri May 18 14:57:55 2018
 
 GET nice DATAFRAMES
 
-- samples
-- epochs
-- full
 
 """
  
-import numpy as np
 import pandas as pd
+import numpy as np
+from numpy import pi
 from scipy.spatial import distance
 
 import functions.et_helper as  helper
+
+import logging
 
 
 #%% MAKE SAMPLES
@@ -66,14 +66,17 @@ def make_epochs(et,msgs,td=[-2,2]):
     # Output:   df for each notification,
     #           find all samples that are in the range of +-td (default timediff 2 s)
     
+    # get a logger
+    logger = logging.getLogger(__name__)
+    
     epoched_data = pd.DataFrame()
     
     for idx,msg in msgs.iterrows():
-        print(idx)
+        logger.debug(idx)
         ix = ((et['smpl_time'] - msg['msg_time'])>td[0]) & ((et['smpl_time'] - msg['msg_time'])<td[1]) # ix is a boolean (0 / 1, false / true) (this way we find all samples +-td)
         if np.sum(ix) == 0:
-            print('warning, no sample found for msg %i'%(idx))
-            print(msg)
+            logger.warning('warning, no sample found for msg %i'%(idx))
+            logger.warning(msg)
             continue
         tmp= et.loc[ix]
         tmp = tmp.assign(td=tmp.smpl_time-msg['msg_time'])
@@ -87,11 +90,33 @@ def make_epochs(et,msgs,td=[-2,2]):
     return(epoched_data)
  
    
-#%% 
+#%% Make df for LARGE GRID condition
     
 def calc_accuracy(row):
-    # use eculidean distance measure
+    # use euclidean distance measure
     return distance.euclidean((row['posx'], row['posy']), (row['mean_gx'], row['mean_gy']))
+
+def calc_horizontal_accuracy(row):
+    # use absolute value of difference in angle (horizontal)
+    return np.abs(row['posx'] - row['mean_gx'])
+
+def calc_vertical_accuracy(row):
+    # use absolute value of difference in angle (vertical)
+    return np.abs(row['posy'] - row['mean_gy'])
+
+def calc_3d_angle_onerow(row):
+    # this is just a wrapper
+    return calc_3d_angle_points(row['posx'], row['posy'], row['mean_gx'], row['mean_gy'] )
+
+def calc_3d_angle_points(x_0, y_0, x_1, y_1):
+    
+    # calculate the spherical angle between 2 points
+    vec1 = helper.sph2cart(x_0/360*2*pi, y_0/360*2*pi)
+    vec2 = helper.sph2cart(x_1/360*2*pi, y_1/360*2*pi)
+    angle=np.arccos(np.dot(vec1,vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))) * 360/(2*pi)
+    
+    return angle
+
 
 def make_large_grid_df(merged_events):
     # Input:    merged_events have info from msgs df AND event df
@@ -101,10 +126,18 @@ def make_large_grid_df(merged_events):
     large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
     large_grid_events.loc[stopevents.index] = stopevents
+    
     # only last fixation before new element
     large_grid_df = helper.only_last_fix(large_grid_events, next_stim = ['block', 'element'])
     
-    # accuracy: error(euclidian diatance) between displayed element(posx, posy) and the fixation of the subject(mean_gx, mean_gy)
-    large_grid_df['accuracy'] = large_grid_df.apply(calc_accuracy, axis=1)
-    
+    # Accuracy
+    # error(euclidian diatance) between displayed element(posx, posy) and the fixation of the subject(mean_gx, mean_gy)
+    large_grid_df['euc_accuracy'] = large_grid_df.apply(calc_accuracy, axis=1)
+    # use absolute value of difference in angle (horizontal)
+    large_grid_df['hori_accuracy'] = large_grid_df.apply(calc_horizontal_accuracy, axis=1)
+    # use absolute value of difference in angle (vertical)
+    large_grid_df['vert_accuracy'] = large_grid_df.apply(calc_vertical_accuracy, axis=1)
+    # calculate the spherical angle
+    large_grid_df['spher_accuracy'] = large_grid_df.apply(calc_3d_angle_onerow, axis=1)
+   
     return large_grid_df

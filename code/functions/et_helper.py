@@ -4,30 +4,14 @@
 import math
 import os
 import numpy as np
+from numpy import pi,cos,sin
+
 import pandas as pd
 
 import logging
 
 
-#%% 
-
-def px2deg(px, orientation, pxPerDeg=0.276,distance=600):
-    # VD
-    # "gx_px - gx_px-midpoint"
-    # subtract center of our BENQ
-
-    if orientation == 'horizontal':
-        center_x = 1920 / 2
-        px       = px - center_x
-    
-    if orientation == 'vertical':
-        center_y = 1080 / 2
-        px       = px - center_y
-           
-    deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
-
-    return deg
-    
+#%% put PUPIL LABS data into PANDAS DF
 
 def gaze_to_pandas(gaze):
         # Input: gaze data as dictionary
@@ -74,19 +58,7 @@ def convert_diam_to_pa(axes1, axes2):
     return math.pi * float(axes1) * float(axes2) * 0.25
 
 
-#%% 
-
-
-
-
-def only_last_fix(merged_etevents, next_stim = ['block', 'element']):
-    # we group by  block and element and then take the last fixation
-    large_grid_df = merged_etevents.groupby(next_stim).last()
-    large_grid_df.reset_index(level=['block', 'element'], inplace=True)
-
-    return large_grid_df
-
-#%%      
+#%% adding information to dfs
 
 def add_msg_to_event(etevents,etmsgs,timefield = 'start_time'):
     # combine the event df with the msg df          
@@ -117,7 +89,7 @@ def add_events_to_samples(etsamples, etevents):
     
 def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     # get a logger
-    logger = logging.getLogger("sync_test.preprocess_et.append_eventtype_to_sample")
+    logger = logging.getLogger(__name__)
      
     logger.debug('Appending eventtype: %s to samples',eventtype)
     if timemargin is None:
@@ -147,12 +119,51 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
 
     return etsamples
-                
+
+
+#%% last fixation (e.g. for large GRID)
+
+def only_last_fix(merged_etevents, next_stim = ['block', 'element']):
+    # we group by  block and element and then take the last fixation
+       
+    # use only fixation events and group by block and element and then take the last one of it
+    large_grid_df = merged_etevents[merged_etevents.type == 'fixation'].groupby(next_stim).last()
+    large_grid_df.reset_index(level=['block', 'element'], inplace=True)
+
+    return large_grid_df
+
+
+#%% everything related to VISUAL DEGREES
+
+def px2deg(px, orientation, pxPerDeg=0.276,distance=600):
+    # VD
+    # "gx_px - gx_px-midpoint"
+    # subtract center of our BENQ
+
+    if orientation == 'horizontal':
+        center_x = 1920 / 2
+        px       = px - center_x
     
+    if orientation == 'vertical':
+        center_y = 1080 / 2
+        px       = px - center_y
+           
+    deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
+
+    return deg
+
+
+def sph2cart(theta_sph,phi_sph,rho_sph=1):
+    xyz_sph = np.asarray([rho_sph * sin(theta_sph) * cos(phi_sph), 
+           rho_sph * sin(theta_sph) * sin(phi_sph), 
+           rho_sph * cos(theta_sph)])
+
+    return xyz_sph
+
+
 
 
 #%% LOAD & SAVE & FIND file
-  
     
 def load_file(et,subject,datapath):
     
@@ -173,8 +184,6 @@ def load_file(et,subject,datapath):
         raise('Error: Could not read file')
 
     return etsamples,etmsgs,etevents
-
-
 
 
 

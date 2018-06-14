@@ -58,6 +58,10 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     #           datapath:        (str) location where data is stored
     #           surfaceMap:
     # Output:   Returns 2 dfs (plsamples and plmsgs)
+    
+    # get a logger
+    logger = logging.getLogger(__name__)
+    
 
     assert(type(subject)==str)
     
@@ -72,7 +76,7 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
         folder= os.path.join(datapath,subject,'raw')
         tracker = pl_surface.map_surface(folder)   
         gaze_on_srf  = pl_surface.surface_map_data(tracker,original_pldata['gaze_positions'])
-        print('Original Data Samples:',len(original_pldata['gaze_positions']),'on surface:',len(gaze_on_srf))
+        logger.warning('Original Data Samples: %s on surface: %s',len(original_pldata['gaze_positions']),len(gaze_on_srf))
         original_pldata['gaze_positions'] = gaze_on_srf
         
 
@@ -82,7 +86,7 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     if surfaceMap:   
         pldata.gx = pldata.gx*(1920 - 2*(75+18))+(75+18) # minus white border of marker & marker
         pldata.gy = pldata.gy*(1080- 2*(75+18))+(75+18)
-        print('Mapped Surface to ScreenSize 1920 & 1080 (minus markers)')
+        logger.debug('Mapped Surface to ScreenSize 1920 & 1080 (minus markers)')
         del tracker
 
     # sort according to smpl_time
@@ -121,7 +125,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     assert(type(subject)==str)
     
     # get a logger
-    logger = logging.getLogger("sync_test.preprocess_et.import_el")
+    logger = logging.getLogger(__name__)
      
     
     # Load edf
@@ -135,7 +139,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     
     elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
     if np.any(elsamples.time>1e13):
-        logger.error('Attention: Found sampling time above 1*e100. This is clearly wrong. Trying again,lets see whether we get an error (will check again later)')
+        logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')
         elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
         
         
@@ -164,7 +168,9 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     elevents['start']      = elevents['start'] / 1000     
     elevents['end']        = elevents['end'] / 1000             
     
+    # TODO solve this!
     if np.any(elsamples.smpl_time>1e10):
+        logger.error('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
         raise Exception('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
 
     # for horizontal gaze component
