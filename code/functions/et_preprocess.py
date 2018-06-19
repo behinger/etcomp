@@ -57,7 +57,7 @@ def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=Fal
     # by our default first blinks, then saccades, then fixations
     logger.debug('Making event df')
     for evtfunc in eventfunctions:
-        logger.debug('Events: calling %s',evtfunc.__name__)
+        logger.debug('Events: calling %s', evtfunc.__name__)
         etsamples, etevents = evtfunc(etsamples, etevents, et)
         
     # Make a nice etevent df

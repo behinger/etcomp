@@ -46,7 +46,7 @@ def detect_bad_samples(etsamples):
     tmp['fs'] = etsamples.smpl_time.diff()
     ix_bad_freq = tmp.fs > (1./120.)
     percentage_bad_freq = np.mean(ix_bad_freq)*100
-    logger.warning("Report: %.2f%% samples have a sampling frequency worse than 120 Hz"%(percentage_bad_freq))
+    logger.warning("Caution: %.2f%% samples have a sampling frequency worse than 120 Hz"%(percentage_bad_freq))
     
     
     # Pupil Area is NaN

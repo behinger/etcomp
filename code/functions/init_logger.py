@@ -22,7 +22,7 @@ if len(logger.handlers) != 2:
     logfile = os.path.join('/net/store/nbp/projects/etcomp/log_files', str('temp_' + time.strftime("%Y_%m_%d-%H-%M-%S") + '.log'))
     
     # final logfile name
-    # logfile = os.path.join('/net/store/nbp/projects/etcomp/log_files', str('log_preprocess_' + time.strftime("%Y_%m_%d-%H-%M-%S") + '.log'))
+    #logfile = os.path.join('/net/store/nbp/projects/etcomp/log_files', str('log_preprocess_' + time.strftime("%Y_%m_%d-%H-%M-%S") + '.log'))
     
     # delete file if it already exists
     #if os.path.isfile(logfile):

@@ -31,7 +31,9 @@ import logging
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 #rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8']
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP12', 'VP8', 'VP13', 'VP7', 'VP11', 'VP14']
+# ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
+# ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['pl', 'el']    
 
@@ -50,7 +52,7 @@ for subject in subjectnames:
 
 #%% LOAD DATA and preprocess RAW data for ONE subject
 # specify subject
-subject = 'VP4'
+subject = 'VP1'
 
 # preprocess pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))

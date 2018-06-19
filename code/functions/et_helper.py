@@ -60,11 +60,12 @@ def convert_diam_to_pa(axes1, axes2):
 
 #%% adding information to dfs
 
-def add_msg_to_event(etevents,etmsgs,timefield = 'start_time'):
+def add_msg_to_event(etevents,etmsgs,timefield = 'start_time', direction='backward'):
     # combine the event df with the msg df          
     etevents = etevents.sort_values('start_time')
+    etmsgs   = etmsgs.sort_values('msg_time')
     # make a merge on the msg time and the start time of the events
-    merged_etevents = pd.merge_asof(etevents,etmsgs,left_on='start_time',right_on='msg_time',direction='backward')
+    merged_etevents = pd.merge_asof(etevents,etmsgs,left_on='start_time',right_on='msg_time',direction=direction)
     
     return merged_etevents
     

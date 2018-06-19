@@ -17,10 +17,15 @@ import functions.et_parse as parse
 from functions.et_helper import findFile,gaze_to_pandas
 from functions.import_et import import_el
 
+#%%
+
 #elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
 elsamples, elmsgs,elevents= import_el('VP1')
 
-#%%
+
+# load preprocessed data for el subject VP1
+elsamples, elmsgs, elevents = preprocess.preprocess_et('el','VP1',load=True)
+            
 
 
 plt.figure()
@@ -29,6 +34,12 @@ plt.plot(elsamples.smpl_time,elsamples.gy,'o')
 for k,row in elmsgs.query('condition=="GRID"').iterrows():
     if ~np.isnan(row['posy']):
         plt.text(row['msg_time'],0,'%.2f'%(row['posy']))
+
+
+for k,row in elmsgs.query('condition=="FREEVIEW"').iterrows():
+    #if ~np.isnan(row['exp_event']):
+    plt.text(row['msg_time'],0,'%s'%(row['exp_event']))
+
 
 for k,row in elmsgs.query('condition=="SMOOTH"').iterrows():
     if ~np.isnan(row['angle']):

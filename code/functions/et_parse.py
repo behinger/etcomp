@@ -5,13 +5,20 @@ import numpy as np
 
 import functions.et_helper as  helper
 
+import logging
+
+
 
 def parse_message(msg):
     # Input: message to be parsed
     #        (e.g. notification from pldata['notifications'])
     # Output: pandas Series of the parsedmsg
     #         see "overview dataframe pdf"
-
+    
+    
+    # get a logger
+    logger = logging.getLogger(__name__)
+    
 
     try:
         # for EyeLink
@@ -166,6 +173,9 @@ def parse_message(msg):
     # block:    block of experiment
    
     if split[0] == 'FREEVIEW':
+        
+        #logger.warning(split)
+        
         parsedmsg = dict(
               msg_time = msg_time,
               exp_event = split[1])
@@ -181,7 +191,8 @@ def parse_message(msg):
             parsedmsg.update(dict(
                 block = int(split[3])
                 ))
-
+            
+        #logger.warning(parsedmsg)
 
     # label "MICROSACC"
     # msg_time: timestamp when msg was sent

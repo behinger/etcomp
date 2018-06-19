@@ -138,11 +138,14 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     
     
     elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
-    if np.any(elsamples.time>1e13):
+    # TODO understand and fix this
+    count = 0
+    while np.any(elsamples.time>1e10) and count < 40:
+        count = count + 1
+        logger.error(elsamples.time[elsamples.time>1e10])
         logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')
         elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
-        
-        
+    
     
     
     # We also delete Samples with interpolated pupil responses. In one dataset these were ~800samples.
@@ -170,6 +173,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     
     # TODO solve this!
     if np.any(elsamples.smpl_time>1e10):
+        logger.error(elsamples.smpl_time[elsamples.smpl_time>1e10])
         logger.error('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
         raise Exception('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
 

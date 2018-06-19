@@ -83,8 +83,8 @@ def make_fixations(etsamples, etevents,et):
     # add labels blink and saccade information from the event df  to sample df
     etsamples = et_helper.add_events_to_samples(etsamples, etevents)
      
-    # get all nan index (not a blink neither a saccade)
-    ix_fix = pd.isnull(etsamples.type)
+    # get all nan index (not a blink neither a saccade) and pupil has to be detected and no negative time
+    ix_fix = pd.isnull(etsamples.type) & (etsamples.zero_pa==False)  & (etsamples.neg_time==False)
     # mark them as fixations
     etsamples.loc[ix_fix, 'type'] = 'fixation'
     
@@ -114,7 +114,7 @@ def make_fixations(etsamples, etevents,et):
     for ix,row in fixationevents.iterrows():
         # take the mean gx/gy position over all samples that belong to that fixation
         # removed bad samples explicitly
-        ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time) & (etsamples.outside==False) & (etsamples.zero_pa==False)  & (etsamples.neg_time==False)
+        ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time) & (etsamples.zero_pa==False)  & (etsamples.neg_time==False)
         fixationevents.loc[ix, 'mean_gx'] =  np.mean(etsamples.loc[ix_fix, 'gx'])    
         fixationevents.loc[ix, 'mean_gy'] =  np.mean(etsamples.loc[ix_fix, 'gy'])
 
@@ -125,16 +125,13 @@ def make_fixations(etsamples, etevents,et):
         fixationevents.loc[ix, 'euc_fix_rms'] = np.sqrt(fix_samples.diff().dropna().apply(np.square).sum(1).mean())
         
         if fix_samples.empty:
-            fixationevents.loc[ix, 'spher_fix_rms'] = np.nan
+            logger.error('Empty fixation sample df encountered for fix_event at index %s', ix)
 
         else:                
             # the thetas are the difference in spherical angle
             fixdf = pd.DataFrame({'x0':fix_samples.iloc[:-1].gx.values,'y0':fix_samples.iloc[:-1].gy.values,'x1':fix_samples.iloc[1:].gx.values,'y1':fix_samples.iloc[1:].gy.values})
             thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
-
-            #print(ix)
-            #print(np.sqrt(((np.square(thetas)).mean())))
-        
+       
             # calculate the rms 
             fixationevents.loc[ix, 'spher_fix_rms'] = np.sqrt(((np.square(thetas)).mean()))
 
