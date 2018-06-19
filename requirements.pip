@@ -17,4 +17,3 @@ msgpack_python
 glfw
 matplotlib
 pyav
-bokeh
