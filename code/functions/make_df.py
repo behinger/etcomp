@@ -150,6 +150,51 @@ def make_large_grid_df(merged_events):
 
    
 #%% Make df for FREEVIEW condition
+
+# TODO
+def make_all_elements_grid_df(merged_events):
+    # Input:    merged_events have info from msgs df AND event df
+    #           (see add_msg_to_event in et_helper)
+    
+    # only large grid condition
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'euc_fix_rms', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    # use the last exp_event fixation as element 50
+    stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
+    large_grid_events.loc[stopevents.index] = stopevents
+    
+    # only small grid before condition
+    small_grid_before_events = merged_events.query('condition == "SMALLGRID_BEFORE"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'euc_fix_rms', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    
+    # only small grid after condition
+    small_grid_after_events = merged_events.query('condition == "SMALLGRID_AFTER"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'euc_fix_rms', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    
+
+    
+
+    # take only elements that are in small and large grid
+    all_elements_df = pd.concat([large_grid_events, small_grid_before_events, small_grid_after_events], ignore_index=True)
+   
+    
+    # only last fixation before new element
+    all_elements_df = helper.only_last_fix(all_elements_df, next_stim = ['condition', 'block', 'element'])
+
+    
+    # Accuracy
+    # error(euclidian diatance) between displayed element(posx, posy) and the fixation of the subject(mean_gx, mean_gy)
+    all_elements_df['euc_accuracy'] = all_elements_df.apply(calc_euc_accuracy, axis=1)
+    # use absolute value of difference in angle (horizontal)
+    all_elements_df['hori_accuracy'] = all_elements_df.apply(calc_horizontal_accuracy, axis=1)
+    # use absolute value of difference in angle (vertical)
+    all_elements_df['vert_accuracy'] = all_elements_df.apply(calc_vertical_accuracy, axis=1)
+    # calculate the spherical angle
+    all_elements_df['spher_accuracy'] = all_elements_df.apply(calc_3d_angle_onerow, axis=1)
+   
+    return all_elements_df
+
+
+
+   
+#%% Make df for FREEVIEW condition
     
 def make_freeview_df(merged_freeview_events):
     # Input:    merged_events have info from msgs df AND event df

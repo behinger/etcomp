@@ -13,7 +13,7 @@ from functions.et_helper import findFile,gaze_to_pandas
 import functions.et_parse as parse
 import functions.make_df as df
 import functions.et_helper as  helper
-
+import imp
 try:
     import functions.pl_surface as pl_surface
 except ImportError:
@@ -141,6 +141,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # TODO understand and fix this
     count = 0
     while np.any(elsamples.time>1e10) and count < 40:
+        imp.reload(edf)
         count = count + 1
         logger.error(elsamples.time[elsamples.time>1e10])
         logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')

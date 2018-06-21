@@ -15,84 +15,153 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from plotnine import *
-from plotnine.data import *
-#from plotnine.stat_density_2d import stat_density_2d
-#from plotnine import ggplot, aes, geom_point, stat_hull, theme
 
 
 
 import functions.et_preprocess as preprocess
 import functions.et_helper as  helper
-import functions.make_df as  make_df
-from functions.detect_events import make_blinks,make_saccades,make_fixations
-
-
+import functions.ANALYSIS_get_condition_df as get_condition_df
 
 import logging
 
 
+theme_set( theme_minimal(base_size=12) + theme(text = element_text(),\
+               panel_background = element_rect(colour = 'None'),\
+               plot_background = element_rect(colour = 'None'),\
+               panel_border = element_rect(colour = 'None'),\
+               axis_title = element_text(size = 10),\
+               axis_title_y = element_text(angle=90,vjust =0),\
+               axis_title_x = element_text(vjust = -0.2),\
+               axis_text = element_text(),\
+               axis_line = element_line(colour="black"),\
+               axis_ticks = element_line(),\
+               panel_grid_major = element_line(colour="#f0f0f0"),\
+               panel_grid_minor = element_blank(),\
+               legend_key = element_rect(colour = 'None'),\
+               legend_position = "bottom",\
+               legend_background=element_rect(fill='None',color='None'),\
+               legend_direction = "horizontal",\
+               legend_box = 'horizontal',\
+               legend_margin = 10,\
+               legend_title = element_text(size=10),\
+               legend_title_align = 'left',\
+               strip_background=element_rect(colour="#ffffff",fill="#ffffff"),\
+               strip_text = element_text(face="bold")))
+               
+               
 #%% get FREEVIEW df
 
 
-# get the complete large grid df
-
+# specify which subjects you want to analyze
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
-rejected_subjects = ['pilot', '007', 'log_files', 'surface', 'VP3', 'VP7', 'VP8', 'VP12', 'VP15']
+rejected_subjects = ['pilot', '007', 'log_files', 'surface', 'VP3','VP1', 'VP7', 'VP8', 'VP12', 'VP15']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['pl', 'el']    
 
 
-complete_freeview_df, complete_fix_count_df = get_complete_freeview_df(subjectnames, ets)
+# load freeview df for all subjects
+complete_freeview_df, complete_fix_count_df = get_condition_df.get_complete_freeview_df(subjectnames, ets)
 
 
-
-
-
-#%% Sanity checks
-
+# Sanity check
 # there should not be any NaN values
 if complete_freeview_df.isnull().values.any():
     raise ValueError('Some value(s) of the df is NaN')
     
     
+#%% Make variables categorical
+    
+complete_fix_count_df.dtypes
+# TODO : rename el into EyeLink
+complete_fix_count_df[complete_fix_count_df.select_dtypes(['object']).columns] = complete_fix_count_df.select_dtypes(['object']).apply(lambda x: x.astype('category'))
+complete_freeview_df[complete_freeview_df.select_dtypes(['object']).columns] = complete_freeview_df.select_dtypes(['object']).apply(lambda x: x.astype('category'))
+
+
+
+
+complete_fix_count_df["et"] = complete_fix_count_df["et"].astype('category')
+complete_fix_count_df["subject"] = complete_fix_count_df["subject"].astype('category')
+complete_fix_count_df["block"] = complete_fix_count_df["block"].astype('category')
+
+complete_fix_count_df["trial"] = complete_fix_count_df["trial"].astype('category')
+complete_fix_count_df["pic_id"] = complete_fix_count_df["pic_id"].astype('category')
+
+
+
+    
 #%% Plot for multiple subjects and both eye trackes
-    
-    
+  
 # investigate on the number of fixations
 
-# compare eye tracker for each subject   
-ggplot(complete_fix_count_df, aes(x='factor(et).codes', y='fix_counts', color = 'factor(pic_id)')) \
+# shows number of fixations per picture for each eye tracker (facets over subjects)   
+ggplot(complete_fix_count_df, aes(x='et', y='fix_counts', color = 'factor(pic_id)')) \
         + geom_point(alpha=0.4) \
         + geom_line(aes(group='pic_id')) \
-        + facet_grid('.~subject')
+        + guides(color=guide_legend(ncol=40)) \
+        + facet_grid('.~subject') \
+        + xlab('Eyetracker') \
+        + ylab('Number of fixations') \
+        + ggtitle('EyeLink vs PupilLabs: Number of fixations for each picture') 
+      
+
 
 
 # using boxplot to compare eye tracker overall
 ggplot(complete_fix_count_df, aes(x='et', y='fix_counts')) \
-        + geom_boxplot() \
-        + ggtitle('Mean number of fixations for each picture')
+        + geom_boxplot(aes(fill='et'), color='k', alpha=0.2, outlier_color='r', outlier_size=1.5, show_legend=False) \
+        + ylab('Number of fixations per picture') \
+        + ggtitle('EyeLink vs PupilLabs: Mean number of fixations for each picture')
+
+
+# using violin to compare eye tracker overall
+# TODO sth woring here 
+ggplot(complete_fix_count_df, aes(x='et', y='fix_counts')) \
+        + geom_violin(aes(color='et', fill='et'), alpha = 0.25, show_legend=False) \
+        + xlab('Eyetracker') \
+        + ylab('Number of fixations') \
+        + ggtitle('EyeLink vs PupilLabs: Mean number of fixations')
+
 
 
 
 
 # investigate on the position of fixations (use density)
+
+# TODO maybe do this first
+# select only important columns       
 freeview_df = complete_freeview_df.drop(columns=['msg_time', 'condition', 'exp_event', 'type', 'euc_fix_rms'])
+freeview_df["pic_id"] = freeview_df["pic_id"].astype('category')
 
+freeview_df.dtypes
+
+
+# only for sanity:
 # plotting all fixations for each eye tracker
-ggplot(freeview_df, aes(x='mean_gx', y='mean_gy')) \
-        + geom_point(aes(size = 'duration', color = 'factor(pic_id)')) \
-        + facet_grid('.~et')
+ggplot(complete_freeview_df, aes(x='mean_gx', y='mean_gy')) \
+        + geom_point(aes(size = 'duration', color = 'pic_id')) \
+        + guides(color=guide_legend(ncol=40)) \
+        + facet_grid('.~et') \
+        + ggtitle('EyeLink vs PupilLabs: All fixations of all subjects of all trials')
 
 
-# looking at density distributions for each gaze component (horizontal/vertical) and for each eyetracker
+
+# looking at density distributions
+# for each gaze component (horizontal/vertical) and for each eyetracker
 gaze_comp_freeview_df = freeview_df.melt(id_vars=['et', 'subject', 'block', 'trial', 'pic_id', 'start_time', 'end_time', 'duration', 'spher_fix_rms'], var_name='gaze_comp')
 
 # display both eye tracker in the same plot
 ggplot(gaze_comp_freeview_df, aes(x='value', color = 'et')) \
-       + geom_density(kernel='gaussian', alpha=.3, trim=True) \
+       + stat_density(geom='line', kernel='gaussian') \
+       + xlab('Position in visual angle (degrees)') \
        + facet_grid('.~gaze_comp')
 
 
+#TODO: DISCUSS what i am seeing and the meaning of the hoehenlinien
+# using a 2D visualization for the density
+ggplot(freeview_df, aes(x='mean_gx', y='mean_gy')) \
+    + stat_density_2d() \
+    + facet_grid('.~et') \
+    + ggtitle('EyeLink vs PupilLabs: Density distribution over all subjects and all trials')
 
 
 
@@ -100,6 +169,12 @@ ggplot(gaze_comp_freeview_df, aes(x='value', color = 'et')) \
 
 
 
+# JUST FOR ME
+ggplot(freeview_df, aes(x='mean_gx', y='mean_gy')) \
+    + geom_point(alpha = 0.25, color='red') \
+    + stat_density_2d() \
+    + facet_grid('.~et') \
+    + ggtitle('EyeLink vs PupilLabs: Density distribution over all subjects and all trials')
 
 
 
@@ -107,11 +182,72 @@ ggplot(gaze_comp_freeview_df, aes(x='value', color = 'et')) \
 
 
 
+   
+#%% Make a heatmap
+ 
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from scipy.ndimage.filters import gaussian_filter
+
+
+# picture size
+
+def px2deg(px, pxPerDeg=0.276,distance=600):
+          
+    deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
+
+    return deg
+
+
+# the picture has a size of 1200 x 1500 pixels
+# the pictures is centered  --> therefore divide by 2
+pic_horizontal = px2deg(1500*0.6) / 2
+pic_vertical = px2deg(1200*0.6) / 2
 
 
 
 
 
+# make 5000 bins from - picturesize in degrees to picturesize in degrees with a stepsize of 0.01
+def myplot(x, y, s, bins=np.arange(-pic_horizontal,pic_horizontal,step=0.01)):
+    heatmap, xedges, yedges = np.histogram2d(x, y, bins=bins)
+    heatmap = gaussian_filter(heatmap, sigma=s)
+
+    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    return heatmap.T, extent
+
+
+
+
+fig, axs = plt.subplots(2, 2)
+
+# mean fixation location data
+x_pl = list(freeview_df.query('et == "pl"').mean_gx)
+y_pl = list(freeview_df.query('et == "pl"').mean_gy)
+
+
+x_el = list(freeview_df.query('et == "el"').mean_gx)
+y_el = list(freeview_df.query('et == "el"').mean_gy)
+
+
+sigmas = [0, 300, 0, 300]
+
+axs[0,0].plot(x_pl, y_pl, 'k.', markersize=5)
+axs[0,0].set_title("PL Scatter plot")
+
+img, extent = myplot(x_pl,y_pl, s)
+axs[0,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
+axs[0,1].set_title("PL Smoothing with  $\sigma$ = %d" % s)
+
+axs[1,0].plot(x_el, y_el, 'k.', markersize=5)
+axs[1,0].set_title("EL Scatter plot")
+
+img, extent = myplot(x_el, y_el, s)
+axs[1,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
+axs[1,1].set_title("EL Smoothing with  $\sigma$ = %d" % s)
+
+plt.show()
 
 
 
