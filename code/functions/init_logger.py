@@ -58,7 +58,7 @@ def update_logger_filepath(newpath):
     # delete old filehandler
     logger = logging.getLogger()
     for hdlr in logger.handlers[:]:  # remove all old handlers
-        if isinstance(hdlr,logger.FileHander):
+        if isinstance(hdlr,logging.FileHandler):
             logger.removeHandler(hdlr)
     
     # delete file if it already exists

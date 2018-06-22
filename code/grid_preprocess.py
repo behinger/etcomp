@@ -35,7 +35,7 @@ subjectnames      = [subject for subject in foldernames if subject not in reject
     
 if 1 == 0:
     import subprocess 
-    subprocess.check_output(["qsub",'-cwd','-N','etcomp','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=15G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'grid_preprocess.sge'])
+    subprocess.check_output(["qsub",'-cwd','-N','etcomp','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'grid_preprocess.sge'])
     
 
 
