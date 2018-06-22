@@ -35,7 +35,7 @@ subjectnames      = [subject for subject in foldernames if subject not in reject
     
 if 1 == 0:
     import subprocess 
-    subprocess.check_output(["qsub",'-cwd','-N','etcomp','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'grid_preprocess.sge'])
+    subprocess.check_output(["qsub",'-cwd','-N','etcomp2','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'grid_preprocess.sge'])
     
 
 
@@ -46,6 +46,7 @@ subject = subjectnames[subid] #jobID ranges from 1:N not 0:N-1
 # change the loggerpath
 
 init_logger.update_logger_filepath(newpath = os.path.join(logfilepath, 'log_preprocess_%s_subject%s.log'%(time.strftime("%Y_%m_%d-%H-%M-%S"),subject)))
+
 logger = logging.getLogger(__name__)
 ets               = ['pl', 'el']    
 # preprocess for all subjects

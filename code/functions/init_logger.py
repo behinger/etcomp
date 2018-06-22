@@ -69,7 +69,7 @@ def update_logger_filepath(newpath):
     logging_file = logging.FileHandler(filename=newpath)
     
     # set handler level
-    logging_cons.setLevel(logging.DEBUG)
+    logging_file.setLevel(logging.WARNING)
     
     # create a logging format
     formatter = logging.Formatter("%(asctime)s - %(name)-65s - %(levelname)-8s - %(message)s", "%Y-%m-%d %H:%M:%S")
