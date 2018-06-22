@@ -1,6 +1,5 @@
 #!/bin/bash
 #$ -N etcomp
-#$ -l mem=5G
 
 export LD_LIBRARY_PATH=/net/store/nbp/projects/lib/edfread/build/linux64:../local/build/build_ffmpeg/lib/:../local/build/build_glfw/lib/:$LD_LIBRARY_PATH
 
