@@ -24,7 +24,7 @@ import logging
 
 #%%
     
-def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations)):    
+def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations),outputprefix=''):    
     # Output:     3 cleaned dfs: etsamples, etmsgs, etevents   
     
     # get a logger for the preprocess function    
@@ -34,7 +34,7 @@ def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=Fal
     if load:
         logger.info('Loading et data from file ...')
         try:
-            etsamples,etmsgs,etevents = load_file(et,subject,datapath)
+            etsamples,etmsgs,etevents = load_file(et,subject,datapath,outputprefix='')
             return(etsamples,etmsgs,etevents)
         except:
             logger.warning('Error: Could not read file')
@@ -77,7 +77,7 @@ def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=Fal
     # in case you want to save the calculated results
     if save:
         logger.info('Saving preprocessed et data')
-        save_file([etsamples,cleaned_etsamples, etmsgs,etevents],et,subject,datapath)
+        save_file([etsamples,cleaned_etsamples, etmsgs,etevents],et,subject,datapath,outputprefix=outputprefix)
     
     
     return cleaned_etsamples, etmsgs, etevents

@@ -166,11 +166,11 @@ def sph2cart(theta_sph,phi_sph,rho_sph=1):
 
 #%% LOAD & SAVE & FIND file
     
-def load_file(et,subject,datapath):
+def load_file(et,subject,datapath,outputprefix=''):
     
     # filepath for preprocessed folder
     preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
-    
+    et = outputprefix+et
     try:
         filename_samples = str(et)  + '_cleaned_samples.csv'
         filename_msgs    = str(et)  + '_msgs.csv'
@@ -188,7 +188,7 @@ def load_file(et,subject,datapath):
 
 
 
-def save_file(data,et,subject,datapath):
+def save_file(data,et,subject,datapath,outputprefix=''):
     
     # filepath for preprocessed folder
     preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
@@ -197,6 +197,7 @@ def save_file(data,et,subject,datapath):
     if not os.path.exists(preprocessed_path):
         os.makedirs(preprocessed_path)
     
+    et = outputprefix+et
     # dump data in csv
     filename_samples = str(et) + '_samples.csv'
     filename_cleaned_samples = str(et) + '_cleaned_samples.csv'
