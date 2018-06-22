@@ -44,7 +44,7 @@ def make_samples_df(etsamples):
 
 
 def make_events_df(etevents):
-    fields_to_keep = set(['blink_id', 'end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'start_point', 'vector', 'mean_gx', 'mean_gy', 'spher_fix_rms', 'euc_fix_rms'])
+    fields_to_keep = set(['blink_id', 'start_gx','start_gy','end_gx','end_gy','end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'start_point', 'mean_gx', 'mean_gy', 'spher_fix_rms', 'euc_fix_rms'])
         
     fields_to_fillin = fields_to_keep - set(etevents.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin

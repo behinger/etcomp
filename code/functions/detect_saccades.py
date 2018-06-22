@@ -71,7 +71,6 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents,et = None):
     for fn in ['raw_start_time','raw_end_time','expanded_start_time','expanded_end_time']:
         saccades[fn]=np.array(interpgaze.smpl_time.iloc[np.array(saccades[fn])])
 
-
     return saccades
 
 
@@ -225,18 +224,20 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
                 'expanded_start_time': expanded_saccade_start,
                 'expanded_end_time': expanded_saccade_end,
                 'expanded_duration': (expanded_saccade_end - expanded_saccade_start)*1./sample_rate,
-                'expanded_start_point': xy_data[expanded_saccade_start],
-                'expanded_end_point': xy_data[expanded_saccade_end],
-                'expanded_vector': xy_data[expanded_saccade_end] - xy_data[expanded_saccade_start],
+                'expanded_start_gx': xy_data[expanded_saccade_start][0],
+                'expanded_start_gy': xy_data[expanded_saccade_start][1],
+                'expanded_end_gx': xy_data[expanded_saccade_end][0],
+                'expanded_end_gy': xy_data[expanded_saccade_end][1],
                 'expanded_amplitude': np.sum(normed_vel_data[expanded_saccade_start:expanded_saccade_end]),
                 'expanded_peak_velocity': np.max(normed_vel_data[expanded_saccade_start:expanded_saccade_end])*sample_rate,
 
                 'raw_start_time': cis[0],
                 'raw_end_time': cis[1],
                 'raw_duration': (cis[1] - cis[0])*1./sample_rate,
-                'raw_start_point': xy_data[cis[1]],
-                'raw_end_point': xy_data[cis[0]],
-                'raw_vector': xy_data[cis[1]] - xy_data[cis[0]],
+                'raw_start_gx': xy_data[cis[1]][0],
+                'raw_start_gy': xy_data[cis[1]][1],
+                'raw_end_gx': xy_data[cis[0]][0],
+                'raw_end_gy': xy_data[cis[0]][1],
                 'raw_amplitude': np.sum(normed_vel_data[cis[0]:cis[1]]),
                 'raw_peak_velocity': np.max(normed_vel_data[cis[0]:cis[1]]) * sample_rate,
 
@@ -252,18 +253,20 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
             'expanded_start_time': 0,
             'expanded_end_time': 0,
             'expanded_duration': 0.0,
-            'expanded_start_point': [0.0,0.0],
-            'expanded_end_point': [0.0,0.0],
-            'expanded_vector': [0.0,0.0],
+            'expanded_start_gx': 0.0,
+            'expanded_end_gx': 0.0,
+            'expanded_start_gy': 0.0,
+            'expanded_end_gy': 0.0,
             'expanded_amplitude': 0.0,
             'expanded_peak_velocity': 0.0,
 
             'raw_start_time': 0,
             'raw_end_time': 0,
             'raw_duration': 0.0,
-            'raw_start_point': [0.0,0.0],
-            'raw_end_point': [0.0,0.0],
-            'raw_vector': [0.0,0.0],
+            'raw_start_gx': 0.0,
+            'raw_end_gx': 0.0,
+            'raw_start_gy': 0.0,
+            'raw_end_gy': 0.0,
             'raw_amplitude': 0.0,
             'raw_peak_velocity': 0.0,
         }
