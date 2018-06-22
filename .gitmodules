@@ -4,3 +4,6 @@
 [submodule "lib/pyedfread"]
 	path = lib/pyedfread
 	url = https://github.com/nwilming/pyedfread
+[submodule "lib/nslr-hmm"]
+	path = lib/nslr-hmm
+	url = https://gitlab.com/nslr/nslr-hmm/
