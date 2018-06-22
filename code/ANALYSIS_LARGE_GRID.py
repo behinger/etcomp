@@ -17,23 +17,25 @@ import matplotlib.pyplot as plt
 from plotnine import *
 from plotnine.data import *
 
-import functions.LARGE_GRID_condition_df as grid_df
 import functions.et_helper as  helper
+import functions.ANALYSIS_get_condition_df as get_condition_df
 
 import logging
 
 #%% visualize accuracy and precision in LARGE GRID condition
 
-# get the complete large grid df
 
+# specify which subjects you want to analyze
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 rejected_subjects = ['pilot', '007', 'log_files', 'surface', 'VP3', 'VP7', 'VP8', 'VP12', 'VP15']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['pl', 'el']    
 
+# load grid df for all subjects
+complete_large_grid_df = get_condition_df.get_complete_large_grid_df(subjectnames, ets)
 
-complete_large_grid_df = grid_df.get_complete_large_grid_df(subjectnames, ets)
 
+# Sanity check
 # there should not be any NaN values
 if complete_large_grid_df.isnull().values.any():
     logging.error((complete_large_grid_df.columns[complete_large_grid_df.isna().any()].tolist()))
@@ -143,16 +145,17 @@ ggplot(aes(x='posx', y='posy', size='spher_fix_rms'), data=et_grouped_elem_pos.g
 
 
 
-#%% PLOTS
+#%% PLOTS for only a specific subject
+
+
 # Looking at only one subject
+specific_subject_df = complete_large_grid_df.query('et == "el" & subject == "VP1" & block == 1')
         
 # mean_fix vs grid point elements
-  
-
-
-
-
-
+ggplot(specific_subject_df, aes(x='mean_gx', y='mean_gy', color='factor(posx*posy)')) \
+        + geom_point((aes(size=10, shape=10)), alpha=1.0) \
+        + geom_point(specific_subject_df, aes(x='posx', y='posy', color='factor(posx*posy)'), alpha=0.4) \
+        + ggtitle('Mean fixation gaze vs displayed element points')
 
 
 

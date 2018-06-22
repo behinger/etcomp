@@ -31,9 +31,29 @@ elsamples, elmsgs, elevents = preprocess.preprocess_et('el','VP1',load=True)
 plt.figure()
 plt.plot(elsamples.smpl_time,elsamples.gy,'o')
 #%%
+for k,row in elmsgs.query('condition=="Instruction"').iterrows():
+    #if ~np.isnan(row['exp_event']):
+        plt.text(row['msg_time'],0,'%s'%(row['exp_event']))
+
+
 for k,row in elmsgs.query('condition=="GRID"').iterrows():
     if ~np.isnan(row['posy']):
         plt.text(row['msg_time'],0,'%.2f'%(row['posy']))
+
+
+
+for k,row in elmsgs.query('condition=="SMALLGRID_BEFORE"').iterrows():
+    if ~np.isnan(row['posy']):
+        plt.text(row['msg_time'],0,'%.2f'%(row['posy']))
+
+for k,row in elmsgs.query('condition=="SMALLGRID_AFTER"').iterrows():
+    if ~np.isnan(row['posy']):
+        plt.text(row['msg_time'],0,'%.2f'%(row['posy']))
+
+
+
+
+
 
 
 for k,row in elmsgs.query('condition=="FREEVIEW"').iterrows():
