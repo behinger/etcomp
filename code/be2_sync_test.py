@@ -30,7 +30,7 @@ from plotnine import *
 # load and preprocess et data
 
 # specify subject
-subject = 'VP4'
+subject = 'VP2'
 
 # load pl data
 

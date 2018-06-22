@@ -33,9 +33,9 @@ foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 #rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8']
 # ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
 # ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP2', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP15', 'VP3', 'VP4','VP7', 'VP8', 'VP11', 'VP12', 'VP14']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
-ets               = ['pl', 'el']    
+ets               = ['pl']    
 
 
 # get a logger

@@ -152,6 +152,9 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
     signed_acc_data = np.sign(normed_acc_data)
     
     # when are we above the threshold, and when were the crossings
+    # Deleted nans due to spyder bug https://github.com/numpy/numpy/issues/11029
+    # This is just aesthetics so we do not get a runtime warning
+    normed_scaled_vel_data[np.isnan(normed_scaled_vel_data)] = -1
     over_threshold = (normed_scaled_vel_data > l)
     logger.warning('Mean overthreshold values: %s',np.round(over_threshold.mean(), 4))
     # integers instead of bools preserve the sign of threshold transgression

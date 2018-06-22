@@ -61,14 +61,21 @@ def pl_detect_blinks(plsamples):
     blink_id = 0
  
     for idx, classification in enumerate(response_classification):
-                if state == 'no blink' and classification > 0:
+                if ((state == 'no blink')or(state == 'during blink' ))and classification == 1:
+                    # if blink finished or during a blink and we find a new one, we take the newest one (ignoring the old start)
                     state = 'blink started'
                     startidx = idx
-                elif state == 'blink started' and classification == -1:
+                elif state == 'blink started' and classification ==0:
+                    # if we then find samples after a start, we are during blink
+                    state = 'during blink'
+                    
+                elif ((state=='blink started') or (state == 'during blink')) and classification == -1:
+                    # the blink can only end if we are during blink and we get an offset (or the blink started directly), the blink is ending
                     state = 'blink ending'
                     endidx = idx
                     
                 elif state == 'blink ending' and classification >= 0:
+                    # if we are now back in the neutral state, the blink truly ended
                     # save blink
                     pd_blinks[int(filter_size/4+startidx):int(filter_size/4+endidx)] = blink_id
                     # add blink id

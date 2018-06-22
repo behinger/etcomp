@@ -49,9 +49,6 @@ if complete_all_grids_df.isnull().values.any():
 
 #%% start plotting 
 
-complete_all_grids_df.groupby(['posx', 'posy']).count()
-
-
 # simple: eyetracker vs  mean accuracy over all blocks
 ggplot(complete_all_grids_df, aes(x='factor(et).codes', y='spher_accuracy')) +\
           geom_boxplot() +\
@@ -100,7 +97,6 @@ ggplot(aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)'), data= et_grou
 #%% plot that we wanted:
 
 
- 
 complete_all_grids_df["condition"] = complete_all_grids_df["condition"].astype('category')
  
 complete_all_grids_df["et"] = complete_all_grids_df["et"].astype('category')
@@ -108,14 +104,21 @@ complete_all_grids_df["et"] = complete_all_grids_df["et"].astype('category')
 
 # todo groupby subject
 # TODO  this is a stupid way to do so
-element_pairs = complete_all_grids_df.query('condition=="SMALLGRID_BEFORE" & block == 1 & subject=="VP2"').loc[:,['posx', 'posy']]
+element_pairs = complete_all_grids_df.query('condition=="SMALLGRID_BEFORE"').loc[:,['posx', 'posy']]
+element_pairs = element_pairs.drop_duplicates()
+
 dict_elem = element_pairs.to_dict('list')
 
-here_we_go = complete_all_grids_df.isin(dict_elem)
 
-last = complete_all_grids_df[(here_we_go['posx']==True) & (here_we_go['posy']==True)]
 
-last.query('condition=="GRID" & block == 1 & subject=="VP2"& et=="el"')
+idx_only_13 = complete_all_grids_df.isin(dict_elem)
+
+only_13 = complete_all_grids_df[(idx_only_13['posx']==True) & (idx_only_13['posy']==True)]
+
+only_13.query('condition=="GRID" & block == 1 & subject=="VP2"& et=="el"')
+
+
+
 
 
 ggplot(aes(x='posx', y='posy', color='factor(posx * posy)'), data= last) +\
@@ -133,9 +136,8 @@ ggplot(complete_all_grids_df, aes(x='condition', y='spher_accuracy', fill='et'))
 
 
 
-
-
-
+element_pairs = complete_all_grids_df.query('condition=="SMALLGRID_BEFORE"').loc[:,['posx', 'posy']]
+last = pd.merge(complete_all_grids_df, element_pairs, on=['posx', 'posy'], how='inner')
 
 
 

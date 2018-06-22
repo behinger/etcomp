@@ -19,18 +19,39 @@ from functions.import_et import import_el
 
 #%%
 
-#elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
-elsamples, elmsgs,elevents= import_el('VP1')
+# elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
+# elsamples, elmsgs,elevents= import_el('VP1')
 
 
 # load preprocessed data for el subject VP1
 elsamples, elmsgs, elevents = preprocess.preprocess_et('el','VP1',load=True)
-            
+     
 
+       
+
+_etsamples, etmsgs, etevents = preprocess.preprocess_et('pl','VP15',load=True)
+
+datapath='/net/store/nbp/projects/etcomp/'
+preprocessed_path = os.path.join(datapath, 'VP15', 'preprocessed')
+filename_samples = 'pl_samples.csv'
+etsamples = pd.read_csv(os.path.join(preprocessed_path,filename_samples))
 
 plt.figure()
-plt.plot(elsamples.smpl_time,elsamples.gy,'o')
+plt.plot(etsamples.smpl_time,etsamples.gy,'o')
+
 #%%
+
+for k,row in etmsgs.query('condition=="FREEVIEW"').iterrows():
+    if ~np.isnan(row['trial']):
+        #plt.text(row['msg_time'],0,'%s'%(row['exp_event']))
+        plt.text(row['msg_time'],0,'%s'%(row['pic_id']))
+        
+plt.plot(etsamples.query('type=="blink"')['smpl_time'],etsamples.query('type=="blink"')['gy'],'o')
+plt.plot(etsamples.query('type=="saccade"')['smpl_time'],etsamples.query('type=="saccade"')['gy'],'o')
+plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=="fixation"')['gy'],'o')
+plt.legend(['sample','blink','saccade','fixation'])        
+
+
 for k,row in elmsgs.query('condition=="Instruction"').iterrows():
     #if ~np.isnan(row['exp_event']):
         plt.text(row['msg_time'],0,'%s'%(row['exp_event']))

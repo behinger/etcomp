@@ -143,7 +143,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     while np.any(elsamples.time>1e10) and count < 40:
         imp.reload(edf)
         count = count + 1
-        logger.error(elsamples.time[elsamples.time>1e10])
+        # logger.error(elsamples.time[elsamples.time>1e10])
         logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')
         elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
     

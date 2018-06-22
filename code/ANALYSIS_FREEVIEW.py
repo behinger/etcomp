@@ -13,7 +13,7 @@ import os
 import pandas as pd
 import numpy as np
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pltE
 from plotnine import *
 
 
@@ -86,6 +86,17 @@ complete_fix_count_df["block"] = complete_fix_count_df["block"].astype('category
 complete_fix_count_df["trial"] = complete_fix_count_df["trial"].astype('category')
 complete_fix_count_df["pic_id"] = complete_fix_count_df["pic_id"].astype('category')
 
+    
+#%% Look at pi_ids
+
+
+np.sort(complete_fix_count_df.pic_id.unique())
+
+np.sort(complete_fix_count_df.query("subject == 'VP1'").pic_id.unique())
+
+# TODO pic_id 5 and 6 are missing
+np.sort(complete_fix_count_df.query("subject == 'VP2' & et == 'pl'").pic_id.unique())
+
 
 
     
@@ -124,8 +135,8 @@ ggplot(complete_fix_count_df, aes(x='et', y='fix_counts')) \
 
 
 
-
-# investigate on the position of fixations (use density)
+   
+#%% investigate on the position of fixations (use density)
 
 # TODO maybe do this first
 # select only important columns       
@@ -210,7 +221,7 @@ pic_vertical = px2deg(1200*0.6) / 2
 
 
 # make 5000 bins from - picturesize in degrees to picturesize in degrees with a stepsize of 0.01
-def myplot(x, y, s, bins=np.arange(-pic_horizontal,pic_horizontal,step=0.01)):
+def myplot(x, y, s, bins=[np.arange(-pic_horizontal,pic_horizontal,step=0.01),np.arange(-pic_vertical,pic_vertical,step=0.01)]):
     heatmap, xedges, yedges = np.histogram2d(x, y, bins=bins)
     heatmap = gaussian_filter(heatmap, sigma=s)
 
@@ -236,16 +247,16 @@ sigmas = [0, 300, 0, 300]
 axs[0,0].plot(x_pl, y_pl, 'k.', markersize=5)
 axs[0,0].set_title("PL Scatter plot")
 
-img, extent = myplot(x_pl,y_pl, s)
+img, extent = myplot(x_pl,y_pl, sigmas[1])
 axs[0,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
-axs[0,1].set_title("PL Smoothing with  $\sigma$ = %d" % s)
+axs[0,1].set_title("PL Smoothing with  $\sigma$ = %d" % sigmas[1])
 
 axs[1,0].plot(x_el, y_el, 'k.', markersize=5)
 axs[1,0].set_title("EL Scatter plot")
 
-img, extent = myplot(x_el, y_el, s)
+img, extent = myplot(x_el, y_el, sigmas[3])
 axs[1,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
-axs[1,1].set_title("EL Smoothing with  $\sigma$ = %d" % s)
+axs[1,1].set_title("EL Smoothing with  $\sigma$ = %d" % sigmas[3])
 
 plt.show()
 

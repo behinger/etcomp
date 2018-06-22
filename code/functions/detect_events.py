@@ -110,6 +110,11 @@ def make_fixations(etsamples, etevents,et):
     # add the type    
     fixationevents['type'] = 'fixation'
     fixationevents['duration'] = fixationevents['end_time'] - fixationevents['start_time']
+
+    # delete fixationevents shorter than 50 ms
+    logger.warning("Deleted %s fixationsevents of %s fixationsevents in total cause they were shorter than 50ms", np.sum(fixationevents.duration <= 0.05), len(fixationevents))
+    fixationevents = fixationevents[fixationevents.duration > 0.05]
+    
     
     for ix,row in fixationevents.iterrows():
         # take the mean gx/gy position over all samples that belong to that fixation
@@ -132,8 +137,11 @@ def make_fixations(etsamples, etevents,et):
             fixdf = pd.DataFrame({'x0':fix_samples.iloc[:-1].gx.values,'y0':fix_samples.iloc[:-1].gy.values,'x1':fix_samples.iloc[1:].gx.values,'y1':fix_samples.iloc[1:].gy.values})
             thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
        
-            # calculate the rms 
-            fixationevents.loc[ix, 'spher_fix_rms'] = np.sqrt(((np.square(thetas)).mean()))
+            # calculate the rms
+            #print('ix : %s', ix)
+            #print('fixdf : %s', len(fixdf))
+            #print('np.sqrt((np.square(thetas)).mean()) : %s', np.sqrt((np.square(thetas)).mean()))
+            fixationevents.loc[ix, 'spher_fix_rms'] = np.sqrt((np.square(thetas)).mean())
 
 
 
@@ -142,11 +150,6 @@ def make_fixations(etsamples, etevents,et):
     # check if negative duration:
     if (fixationevents.duration < 0).any():
         logger.warning("something is wrong" )    
-
-    # TODO : check for short fixation durations
-    if (fixationevents.duration < 0.1).any():
-        logger.warning("There are some really short fixations" )
-    
     
     # concatenate to original event df    
     etevents= pd.concat([etevents, fixationevents], axis=0,sort=False)
