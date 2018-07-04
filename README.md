@@ -35,9 +35,11 @@ You can put these in your `~./bashrc` so that everytime you run a terminal, you 
 You need these packages definitely installed (there might be more):
 ```
 automake
+cmake
 pkgconfig
 python3-dev
 libglew-dev <-- this one is usually not installed
+xorg-dev libglu1-mesa-dev <-- needed for libglew
 ```
 
 In principle you can also try to compile glew, but I could not manage properly.
