@@ -1,4 +1,4 @@
-# ACUITY TE
+# ACUITY TEST
 http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&distance=1&distanceUnits=meters&chartType=2&optoType=0&displayType=1&rowIndex=14&mirror=false&animate=false&crowd=false&nearFar=near&col1=#dedede&col2=#f10708&col3=#20e4fa&col4=#000000&mode3d=0
 
 # How to start the compiled binary of pupil player / capture locally under ubuntu:
@@ -34,10 +34,10 @@ You can put these in your `~./bashrc` so that everytime you run a terminal, you 
 
 You need these packages definitely installed (there might be more):
 ```
-libglew-dev/xenial,now 1.13.0-2 amd64 [installed,automatic]
-libglew1.13/xenial,now 1.13.0-2 amd64 [installed,automatic]
-libglewmx-dev/xenial,now 1.13.0-2 amd64 [installed]
-libglewmx1.13/xenial,now 1.13.0-2 amd64 [installed,automatic]
+automake
+pkgconfig
+python3-dev
+libglew-dev <-- this one is usually not installed
 ```
 
 In principle you can also try to compile glew, but I could not manage properly.
