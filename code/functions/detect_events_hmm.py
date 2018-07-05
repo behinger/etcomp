@@ -131,6 +131,6 @@ def sampletype_to_event(etsamples,eventtype):
     etsamples.drop('tmp', axis=1, inplace=True)
     return(events)
 #if 1 == 0:
-subject = 'VP4'
-etsamples, etmsgs, etevents = preprocess.preprocess_et('el',subject,datapath='/home/behinger/etcomp/local/data/',load=False,save=True,outputprefix='hmm_',eventfunctions=(make_blinks,detect_events_hmm))
+#subject = 'VP4'
+#etsamples, etmsgs, etevents = preprocess.preprocess_et('el',subject,datapath='/home/behinger/etcomp/local/data/',load=False,save=True,outputprefix='hmm_',eventfunctions=(make_blinks,detect_events_hmm))
     
