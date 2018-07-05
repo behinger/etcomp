@@ -34,7 +34,7 @@ def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=Fal
     if load:
         logger.info('Loading et data from file ...')
         try:
-            etsamples,etmsgs,etevents = load_file(et,subject,datapath,outputprefix='')
+            etsamples,etmsgs,etevents = load_file(et,subject,datapath,outputprefix=outputprefix)
             return(etsamples,etmsgs,etevents)
         except:
             logger.warning('Error: Could not read file')

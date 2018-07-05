@@ -22,7 +22,7 @@ from functions.detect_events import make_blinks,make_saccades,make_fixations
 from functions.et_helper import tic,toc
 
 
-
+#%%
 
 def detect_events_hmm(etsamples,etevents,et):
     
@@ -32,7 +32,10 @@ def detect_events_hmm(etsamples,etevents,et):
 
     # First add blinks
     etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype='blink')
-    etsamples = etsamples.iloc[1:2000]
+    
+    # run only on subset
+    etsamples = etsamples.iloc[1:10000]
+    etevents = etevents[etevents.end_time<etsamples.iloc[-1].smpl_time]
     #
     
     
@@ -61,7 +64,7 @@ def detect_events_hmm(etsamples,etevents,et):
         
         plt.show()
         
-    eventtypes = np.asarray(['fixation','saccade','smoothpursuit','pso'])
+    eventtypes = np.asarray(['fixation','saccade','pso','smoothpursuit'])
     nonblink = etsamples.type != 'blink'
     etsamples.loc[nonblink,'type'] = eventtypes[sample_class-1]
     etevents = pd.concat([etevents,
@@ -80,7 +83,7 @@ def sampletype_to_event(etsamples,eventtype):
     etsamples['tmp'] = (1*(etsamples['type'] == eventtype)).diff()
     # assume that we always start with a fixation
     
-    etsamples.iloc[0, etsamples.columns.get_loc('tmp')] = 1
+    etsamples.iloc[0, etsamples.columns.get_loc('tmp')] = etsamples.iloc[0].type==eventtype
     etsamples['tmp'] = etsamples['tmp'].astype(int)
         
     # make a list of the start and end times
@@ -129,5 +132,5 @@ def sampletype_to_event(etsamples,eventtype):
     return(events)
 #if 1 == 0:
 subject = 'VP4'
-etsamples, etmsgs, etevents = preprocess.preprocess_et('el',subject,load=False,save=True,outputprefix='hmm_',eventfunctions=(make_blinks,detect_events_hmm))
+etsamples, etmsgs, etevents = preprocess.preprocess_et('el',subject,datapath='/home/behinger/etcomp/local/data/',load=False,save=True,outputprefix='hmm_',eventfunctions=(make_blinks,detect_events_hmm))
     

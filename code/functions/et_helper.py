@@ -74,7 +74,7 @@ def add_msg_to_event(etevents,etmsgs,timefield = 'start_time', direction='backwa
 def add_events_to_samples(etsamples, etevents):
     # Calls append_eventtype_to_sample for each event
     # Also adds blink_id
-    
+    print(etevents.type.unique())
     for evt in etevents.type.unique():
         etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype=evt)
         
@@ -107,9 +107,17 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     ix_event = etevents['type']==eventtype
     
     # get list of start and end indeces in the etsamples df
-    startix = np.searchsorted(etsamples.smpl_time,etevents.loc[ix_event].start_time+float(timemargin[0]))
-    endix = np.searchsorted(etsamples.smpl_time,etevents.loc[ix_event].end_time+float(timemargin[1]))
+    eventstart = etevents.loc[ix_event].start_time+float(timemargin[0])
+    eventend = etevents.loc[ix_event].end_time+float(timemargin[1])
     
+    # due to timemargin strange effects can occur and we need to clip
+    eventstart = eventstart[eventstart>=0]
+    eventend   =   eventend[eventend  <=etsamples.smpl_time.iloc[-1]]
+    startix = np.searchsorted(etsamples.smpl_time,eventstart)
+    endix = np.searchsorted(etsamples.smpl_time,eventend)
+    
+    
+    print('%i events of %s found'%(len(startix),eventtype))
     # make a list of ranges to have all indices in between the startix and endix
     ranges = [list(range(s,e)) for s,e in zip(startix,endix)]
     flat_ranges = [item for sublist in ranges for item in sublist]
