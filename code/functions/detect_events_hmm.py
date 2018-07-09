@@ -6,36 +6,36 @@ import functions.add_path
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from plotnine import *
-from plotnine.data import *
+#import matplotlib.pyplot as plt
+#from plotnine import *
+#from plotnine.data import *
 
-import functions.make_df as df
-import functions.et_helper as  helper
-import functions.et_plotting as etplot
-import functions.detect_saccades as saccades
-import functions.et_preprocess as preprocess
-import functions.pl_detect_blinks as pl_blinks
-from functions.detect_events import make_blinks,make_saccades,make_fixations
+#import functions.make_df as df
+#import functions.et_helper as  helper
+#import functions.et_plotting as etplot
+#import functions.detect_saccades as saccades
+#import functions.et_preprocess as preprocess
+#import functions.pl_detect_blinks as pl_blinks
+#from functions.detect_events import make_blinks,make_saccades,make_fixations
 
 import functions.make_df as make_df
 from functions.et_helper import tic,toc
-
+from functions.et_helper import append_eventtype_to_sample
+import nslr_hmm
 
 #%%
 
 def detect_events_hmm(etsamples,etevents,et):
     
     #etevents = etevents.loc[etevents.start_time < etsamples.smpl_time.iloc[-1]]
-    from functions.et_helper import append_eventtype_to_sample
-    import nslr_hmm
+
 
     # First add blinks
     etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype='blink')
     
     # run only on subset
-    etsamples = etsamples.iloc[1:10000]
-    etevents = etevents[etevents.end_time<etsamples.iloc[-1].smpl_time]
+    #etsamples = etsamples.iloc[1:10000]
+    #etevents = etevents[etevents.end_time<etsamples.iloc[-1].smpl_time]
     #
     
     
@@ -137,6 +137,6 @@ def sampletype_to_event(etsamples,eventtype):
     etsamples.drop('tmp', axis=1, inplace=True)
     return(events)
 #if 1 == 0:
-subject = 'VP4'
-etsamples, etmsgs, etevents = preprocess.preprocess_et('el',subject,datapath='/home/behinger/etcomp/local/data/',load=False,save=False,outputprefix='hmm_',eventfunctions=(make_blinks,detect_events_hmm))
+#subject = 'VP4'
+#etsamples, etmsgs, etevents = preprocess.preprocess_et('el',subject,datapath='/home/behinger/etcomp/local/data/',load=False,save=False,outputprefix='hmm_',eventfunctions=(make_blinks,detect_events_hmm))
     
