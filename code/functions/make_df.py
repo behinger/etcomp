@@ -137,7 +137,7 @@ def make_large_grid_df(merged_events):
     # use absolute value of difference in angle (vertical)
     large_grid_df['vert_accuracy'] = large_grid_df.apply(calc_vertical_accuracy, axis=1)
     # calculate the spherical angle
-    large_grid_df['spher_accuracy'] = large_grid_df.apply(calc_3d_angle_onerow, axis=1)
+    large_grid_df['accuracy'] = large_grid_df.apply(calc_3d_angle_onerow, axis=1)
    
     return large_grid_df
 
@@ -179,7 +179,7 @@ def make_all_elements_grid_df(merged_events):
     # use absolute value of difference in angle (vertical)
     all_elements_df['vert_accuracy'] = all_elements_df.apply(calc_vertical_accuracy, axis=1)
     # calculate the spherical angle
-    all_elements_df['spher_accuracy'] = all_elements_df.apply(calc_3d_angle_onerow, axis=1)
+    all_elements_df['accuracy'] = all_elements_df.apply(calc_3d_angle_onerow, axis=1)
    
     return all_elements_df
 

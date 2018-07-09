@@ -50,7 +50,7 @@ if complete_large_grid_df.isnull().values.any():
 
 # get df grouped by et and subject 
 # take the mean of the accuracy and precision measures over all blocks
-grouped_large_grid_df = complete_large_grid_df.groupby(['et', 'subject']).mean().loc[:,['spher_accuracy', 'hori_accuracy', 'vert_accuracy','spher_fix_rms']]
+grouped_large_grid_df = complete_large_grid_df.groupby(['et', 'subject']).mean().loc[:,['accuracy', 'hori_accuracy', 'vert_accuracy','spher_fix_rms']]
 grouped_large_grid_df.reset_index(level=['et', 'subject'], inplace=True)
 
 
@@ -64,7 +64,7 @@ grouped_large_grid_df[grouped_large_grid_df.select_dtypes(['object']).columns] =
 
 
 # simple: eyetracker vs  mean accuracy over all blocks
-ggplot(grouped_large_grid_df, aes(x='et', y='spher_accuracy', color='subject')) +\
+ggplot(grouped_large_grid_df, aes(x='et', y='accuracy', color='subject')) +\
           geom_line(aes(group='subject')) +\
           geom_point() +\
           guides(color=guide_legend(ncol=40)) +\
@@ -73,7 +73,7 @@ ggplot(grouped_large_grid_df, aes(x='et', y='spher_accuracy', color='subject')) 
 
 # make facets over subjects
 # investigate how mean accuracy is changes for different subjects
-ggplot(grouped_large_grid_df, aes(x='et', y='spher_accuracy', color='subject')) +\
+ggplot(grouped_large_grid_df, aes(x='et', y='accuracy', color='subject')) +\
           geom_line(aes(group='subject')) +\
           geom_point() +\
           guides(color=guide_legend(ncol=40)) +\
@@ -85,7 +85,7 @@ ggplot(grouped_large_grid_df, aes(x='et', y='spher_accuracy', color='subject')) 
 complete_large_grid_df["block"] = complete_large_grid_df["block"].astype('category')
 
 # Here: Learn how to use stat summary          
-ggplot(aes(x='et', y='spher_accuracy',color='block'), data=complete_large_grid_df.groupby(['et', 'subject','block']).mean().reset_index(level=['et','subject','block'])) +\
+ggplot(aes(x='et', y='accuracy',color='block'), data=complete_large_grid_df.groupby(['et', 'subject','block']).mean().reset_index(level=['et','subject','block'])) +\
         geom_point(alpha=0.1,data=complete_large_grid_df,position=position_dodge(width=0.7)) +\
         geom_point(position=position_dodge(width=0.7))+geom_line(aes(group='block'),position=position_dodge(width=0.7)) +\
         facet_grid('.~subject') + \
@@ -95,12 +95,12 @@ ggplot(aes(x='et', y='spher_accuracy',color='block'), data=complete_large_grid_d
 
 # just calculating the mean:
 # TODO: how can this be different for complete and grouped??
-complete_large_grid_df.query('et == "pl"').spher_accuracy.mean()
-complete_large_grid_df.query('et == "el"').spher_accuracy.mean()
+complete_large_grid_df.query('et == "pl"').accuracy.mean()
+complete_large_grid_df.query('et == "el"').accuracy.mean()
 
 
 # using boxplot
-ggplot(grouped_large_grid_df, aes(x='et', y='spher_accuracy')) +\
+ggplot(grouped_large_grid_df, aes(x='et', y='accuracy')) +\
         geom_boxplot() +\
         ggtitle('Mean spherical accuracy over all blocks for each subject')
 
@@ -149,7 +149,7 @@ ggplot(aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)'), data= et_grou
 # look which grid points by trend have higher/lower accuracy 
 
 # sphere_accuracy
-ggplot(aes(x='posx', y='posy', size='spher_accuracy'), data=et_grouped_elem_pos.groupby(['subject','posx', 'posy']).mean().reset_index(level=['subject','posx', 'posy'])) +\
+ggplot(aes(x='posx', y='posy', size='accuracy'), data=et_grouped_elem_pos.groupby(['subject','posx', 'posy']).mean().reset_index(level=['subject','posx', 'posy'])) +\
         geom_point() +\
         facet_wrap('~subject')+\
         ggtitle(str(et) +' accuracy visiualized by size of grid points')

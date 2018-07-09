@@ -59,7 +59,7 @@ complete_all_grids_df[complete_all_grids_df.select_dtypes(['object']).columns] =
 #%% start plotting 
 
 # simple: eyetracker vs  mean accuracy over all blocks
-ggplot(complete_all_grids_df, aes(x='et', y='spher_accuracy')) +\
+ggplot(complete_all_grids_df, aes(x='et', y='accuracy')) +\
           geom_boxplot() +\
           facet_grid('.~condition')+\
           ggtitle('Spherical accuracy in visual degrees')
@@ -79,7 +79,7 @@ complete_all_grids_df['condition'] = complete_all_grids_df['condition'].astype(s
 
 
 # TODO using stat_summary
-ggplot(aes(x='et', y='spher_accuracy',color='condition'), data=complete_all_grids_df.groupby(['et', 'subject','condition']).mean().reset_index(level=['et','subject','condition'])) +\
+ggplot(aes(x='et', y='accuracy',color='condition'), data=complete_all_grids_df.groupby(['et', 'subject','condition']).mean().reset_index(level=['et','subject','condition'])) +\
         geom_point(alpha=0.1,data=complete_all_grids_df, position=position_dodge(width=0.7)) +\
         geom_point(position=position_dodge(width=0.7))+geom_line(aes(group='condition'),position=position_dodge(width=0.7)) +\
         facet_grid('.~subject') + \
@@ -87,7 +87,7 @@ ggplot(aes(x='et', y='spher_accuracy',color='condition'), data=complete_all_grid
 
 
 # points show mean over block for each subject
-ggplot(aes(x='et', y='spher_accuracy',color='condition'), data=complete_all_grids_df.groupby(['et', 'subject','condition']).mean().reset_index(level=['et','subject','condition'])) +\
+ggplot(aes(x='et', y='accuracy',color='condition'), data=complete_all_grids_df.groupby(['et', 'subject','condition']).mean().reset_index(level=['et','subject','condition'])) +\
         geom_point(alpha=0.1,data=complete_all_grids_df.groupby(['et', 'subject','condition','block']).mean().reset_index(level=['et','subject','condition','block']),position=position_dodge(width=0.7)) +\
         geom_point(position=position_dodge(width=0.7))+geom_line(aes(group='condition'),position=position_dodge(width=0.7)) +\
         facet_grid('.~subject') + \
@@ -141,7 +141,7 @@ ggplot(aes(x='posx', y='posy', color='factor(posx * posy)'), data= only_13) +\
 
 
 # simple: eyetracker vs  mean accuracy over all blocks
-ggplot(complete_all_grids_df.groupby(['et', 'subject','condition']).median().reset_index(level=['et', 'subject','condition']), aes(x='condition', y='spher_accuracy', fill='et')) +\
+ggplot(complete_all_grids_df.groupby(['et', 'subject','condition']).median().reset_index(level=['et', 'subject','condition']), aes(x='condition', y='accuracy', fill='et')) +\
           geom_boxplot(alpha=0.7) +\
           ggtitle('Spherical accuracy in visual degrees')
 
