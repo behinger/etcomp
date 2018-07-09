@@ -32,8 +32,8 @@ etevents = pd.DataFrame()
 for et in ['el','pl']:
     for outputtype in ['','hmm_']:
         elsamples, elmsgs, elevents = helper.load_file(et,subject,datapath=datapath,outputprefix=outputtype)
-        t0 = elmsgs.query("condition=='Instruction'&exp_event=='BEGINNING_start'").msg_time
-        if t0.empty:
+        t0 = elmsgs.query("condition=='Instruction'&exp_event=='BEGINNING_start'").msg_time.values
+        if len(t0)!=1:
             raise error
         elsamples.smpl_time = elsamples.smpl_time - t0
         elmsgs.msg_time= elmsgs.msg_time - t0
@@ -48,7 +48,11 @@ for et in ['el','pl']:
         etevents  = pd.concat([etevents,  elevents.assign(eyetracker=et,algorithm=outputtype)],ignore_index=True, sort=False)
         
 #%%
-(ggplot(etsamples.query("smpl_time<2"),aes(x="smpl_time",y="gx",color="type"))+
+tstart = 220
+tdur =50
+(ggplot(etsamples.query("smpl_time>%i & smpl_time<%i"%(tstart,tstart+tdur)),aes(x="smpl_time",y="gx",color="type"))+
              geom_point()+
-             facet_grid("eyetracker~algorithm")
+             facet_grid("algorithm~eyetracker")
 )
+
+#%%
