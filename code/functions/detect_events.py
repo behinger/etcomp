@@ -90,14 +90,23 @@ def make_fixations(etsamples, etevents,et):
     
     # use magic to get start and end times of fixations in a temporary column
     etsamples['tmp_fix'] = ((1*(etsamples['type'] == 'fixation')).diff())
-    # assume that we always start with a fixation
-    etsamples.iloc[0, etsamples.columns.get_loc('tmp_fix')] = 1
     etsamples['tmp_fix'] = etsamples['tmp_fix'].astype(int)
+    
+    # first sample should be fix start?
+    if etsamples['tmp_fix'][np.argmax(etsamples['tmp_fix'] != 0)] == -1: # argmax stops at first true
+        # if we only find an fixation end, add a start at the beginning
+        etsamples.iloc[0, etsamples.columns.get_loc('tmp_fix')] = 1
+        
+    
         
     # make a list of the start and end times
     start_times_list = list(etsamples.loc[etsamples['tmp_fix'] == 1, 'smpl_time'].astype(float))
     end_times_list   = list(etsamples.loc[etsamples['tmp_fix'] == -1, 'smpl_time'].astype(float))
     
+    if len(start_times_list) == len(end_times_list)+1:
+        # drop the last one if not finished
+        start_times_list = start_times_list[0:-1]
+        
     # drop the temporary column
     etsamples.drop('tmp_fix', axis=1, inplace=True)
     

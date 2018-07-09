@@ -111,8 +111,16 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     eventend = etevents.loc[ix_event].end_time+float(timemargin[1])
     
     # due to timemargin strange effects can occur and we need to clip
-    eventstart = eventstart[eventstart>=0]
-    eventend   =   eventend[eventend  <=etsamples.smpl_time.iloc[-1]]
+    mintime = etsamples.smpl_time.iloc[0]
+    maxtime = etsamples.smpl_time.iloc[-1]
+    eventstart[eventstart < mintime] = mintime
+    eventstart[eventstart > maxtime] = maxtime
+    eventend[eventend  < mintime] = mintime
+    eventend[eventend  > maxtime] = maxtime
+    
+    if len(eventstart)!=len(eventend):
+        raise error
+        
     startix = np.searchsorted(etsamples.smpl_time,eventstart)
     endix = np.searchsorted(etsamples.smpl_time,eventend)
     
