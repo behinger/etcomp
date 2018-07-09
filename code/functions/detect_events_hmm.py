@@ -34,8 +34,8 @@ def detect_events_hmm(etsamples,etevents,et):
     etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype='blink')
     
     # run only on subset
-    etsamples = etsamples.iloc[1:10000]
-    etevents = etevents[etevents.end_time<etsamples.iloc[-1].smpl_time]
+    #etsamples = etsamples.iloc[1:10000]
+    #etevents = etevents[etevents.end_time<etsamples.iloc[-1].smpl_time]
     #
     
     

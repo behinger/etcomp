@@ -111,8 +111,16 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     eventend = etevents.loc[ix_event].end_time+float(timemargin[1])
     
     # due to timemargin strange effects can occur and we need to clip
-    eventstart = eventstart[eventstart>=0]
-    eventend   =   eventend[eventend  <=etsamples.smpl_time.iloc[-1]]
+    mintime = etsamples.smpl_time.iloc[0]
+    maxtime = etsamples.smpl_time.iloc[-1]
+    eventstart[eventstart < mintime] = mintime
+    eventstart[eventstart > maxtime] = maxtime
+    eventend[eventend  < mintime] = mintime
+    eventend[eventend  > maxtime] = maxtime
+    
+    if len(eventstart)!=len(eventend):
+        raise error
+        
     startix = np.searchsorted(etsamples.smpl_time,eventstart)
     endix = np.searchsorted(etsamples.smpl_time,eventend)
     
@@ -134,7 +142,9 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
 
 def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element']):
     # we group by  block and element and then take the last fixation
-       
+    
+    # for HMM we define alle smooth pursuit as fixations
+    merged_etevents.type[merged_etevents.type == 'smoothpursuit'] = 'fixation'
     # use only fixation events and group by block and element and then take the last one of it
     large_grid_df = merged_etevents[merged_etevents.type == 'fixation'].groupby(next_stim).last()
     large_grid_df.reset_index(level= next_stim, inplace=True)

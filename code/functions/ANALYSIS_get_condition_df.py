@@ -22,7 +22,7 @@ import logging
 #%% Create large_grid_df for all subjects
 
 
-def get_complete_large_grid_df(subjectnames, ets):
+def get_complete_large_grid_df(subjectnames, ets,**kwargs):
     # make the df for the large GRID for both eyetrackers and all subjects
     
     # create df
@@ -33,7 +33,7 @@ def get_complete_large_grid_df(subjectnames, ets):
             logging.critical('Eyetracker: %s    Subject: %s ', et, subject)
             
             # load preprocessed data for one eyetracker and for one subject
-            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True)
+            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True,**kwargs)
             
             # adding the messages to the event df
             merged_events = helper.add_msg_to_event(etevents, etmsgs, timefield = 'start_time', direction='backward')
@@ -57,7 +57,7 @@ def get_complete_large_grid_df(subjectnames, ets):
 #%% Create small_large_grid_df for all subjects
 
 
-def get_complete_small_large_grid_df(subjectnames, ets):
+def get_complete_small_large_grid_df(subjectnames, ets,**kwargs):
     # make the df for all elements that appear in the small AND the large GRID for both eyetrackers and all subjects
     
     # create df
@@ -68,7 +68,7 @@ def get_complete_small_large_grid_df(subjectnames, ets):
             logging.critical('Eyetracker: %s    Subject: %s ', et, subject)
             
             # load preprocessed data for one eyetracker and for one subject
-            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True)
+            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True,**kwargs)
             
             # adding the messages to the event df
             merged_events = helper.add_msg_to_event(etevents, etmsgs, timefield = 'start_time', direction='backward')
@@ -95,7 +95,7 @@ def get_complete_small_large_grid_df(subjectnames, ets):
 
 
 
-def get_complete_freeview_df(subjectnames, ets):
+def get_complete_freeview_df(subjectnames, ets,**kwargs):
     # make the df for the large GRID for both eyetrackers and all subjects
     
     # create df
@@ -107,8 +107,9 @@ def get_complete_freeview_df(subjectnames, ets):
             logging.critical('Eyetracker: %s    Subject: %s ', et, subject)
             
             # load preprocessed data for one eyetracker and for one subject
-            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject, load=True)
-            
+            #etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject, load=True)
+            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True,**kwargs)
+          
             
             # due to experimental triggers: FORWARD merge to add msgs to the events
             merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='forward')
