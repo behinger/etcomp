@@ -16,6 +16,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from plotnine import *
 from plotnine.data import *
+# specify costumed minimal theme
+import functions.plotnine_theme
 
 import functions.et_helper as  helper
 import functions.ANALYSIS_get_condition_df as get_condition_df
@@ -23,38 +25,12 @@ import functions.ANALYSIS_get_condition_df as get_condition_df
 import logging
 
 
-
-theme_set( theme_minimal(base_size=12) + theme(text = element_text(),\
-               panel_background = element_rect(colour = 'None'),\
-               plot_background = element_rect(colour = 'None'),\
-               panel_border = element_rect(colour = 'None'),\
-               axis_title = element_text(size = 10),\
-               axis_title_y = element_text(angle=90,vjust =0),\
-               axis_title_x = element_text(vjust = -0.2),\
-               axis_text = element_text(),\
-               axis_line = element_line(colour="black"),\
-               axis_ticks = element_line(),\
-               panel_grid_major = element_line(colour="#f0f0f0"),\
-               panel_grid_minor = element_blank(),\
-               legend_key = element_rect(colour = 'None'),\
-               legend_position = "bottom",\
-               legend_background=element_rect(fill='None',color='None'),\
-               legend_direction = "horizontal",\
-               legend_box = 'horizontal',\
-               legend_margin = 10,\
-               legend_title = element_text(size=10),\
-               legend_title_align = 'left',\
-               strip_background=element_rect(colour="#ffffff",fill="#ffffff"),\
-               strip_text = element_text(face="bold")))
-               
-    
-
 #%% visualize accuracy and precision in LARGE GRID condition
 
 
 # specify which subjects you want to analyze
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP15', 'VP12']
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP15', 'VP12', 'VP21', 'VP22']
 # rejected_subjects = ['pilot', '007', 'log_files', 'surface', 'VP3', 'VP7', 'VP8', 'VP12', 'VP15']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['pl', 'el']    
@@ -74,7 +50,7 @@ if complete_large_grid_df.isnull().values.any():
 
 # get df grouped by et and subject 
 # take the mean of the accuracy and precision measures over all blocks
-grouped_large_grid_df = complete_large_grid_df.groupby(['et', 'subject']).mean().loc[:,['spher_accuracy', 'hori_accuracy', 'vert_accuracy', 'euc_accuracy', 'spher_fix_rms', 'euc_fix_rms']]
+grouped_large_grid_df = complete_large_grid_df.groupby(['et', 'subject']).mean().loc[:,['spher_accuracy', 'hori_accuracy', 'vert_accuracy','spher_fix_rms']]
 grouped_large_grid_df.reset_index(level=['et', 'subject'], inplace=True)
 
 
@@ -152,7 +128,7 @@ ggplot(melted_measures, aes(x='et', y='value', color='measure')) +\
 # group data so that we have one fixation observation for each grid point in each block and for each subject and for each eyetracker
 grouped_elem_pos = complete_large_grid_df.groupby(['et', 'subject','posx', 'posy', 'block']).mean().reset_index(level=['et', 'subject','posx', 'posy', 'block']).drop(columns = ['end_time','start_time','msg_time'])
 
-et = 'el'
+et = 'pl'
 
 # select eye tracker
 if et == 'pl':

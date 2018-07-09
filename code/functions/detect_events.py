@@ -90,10 +90,11 @@ def make_fixations(etsamples, etevents,et):
     
     # use magic to get start and end times of fixations in a temporary column
     etsamples['tmp_fix'] = ((1*(etsamples['type'] == 'fixation')).diff())
+    etsamples['tmp_fix'].iloc[0] = 0
     etsamples['tmp_fix'] = etsamples['tmp_fix'].astype(int)
     
     # first sample should be fix start?
-    if etsamples['tmp_fix'][np.argmax(etsamples['tmp_fix'] != 0)] == -1: # argmax stops at first true
+    if etsamples['tmp_fix'][np.argmax(etsamples['tmp_fix'] != 0)] == -1:  #argmax stops at first true
         # if we only find an fixation end, add a start at the beginning
         etsamples.iloc[0, etsamples.columns.get_loc('tmp_fix')] = 1
         
@@ -135,9 +136,7 @@ def make_fixations(etsamples, etevents,et):
         fix_samples = etsamples.loc[ix_fix,['gx', 'gy']]
 
         # calculate rms error (inter-sample distances)
-        # take euclidean distance between adjacent samples
-        fixationevents.loc[ix, 'euc_fix_rms'] = np.sqrt(fix_samples.diff().dropna().apply(np.square).sum(1).mean())
-        
+       
         if fix_samples.empty:
             logger.error('Empty fixation sample df encountered for fix_event at index %s', ix)
 

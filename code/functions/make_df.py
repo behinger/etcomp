@@ -44,7 +44,7 @@ def make_samples_df(etsamples):
 
 
 def make_events_df(etevents):
-    fields_to_keep = set(['blink_id', 'start_gx','start_gy','end_gx','end_gy','end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'mean_gx', 'mean_gy', 'spher_fix_rms', 'euc_fix_rms'])
+    fields_to_keep = set(['blink_id', 'start_gx','start_gy','end_gx','end_gy','end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'mean_gx', 'mean_gy', 'spher_fix_rms'])
         
     fields_to_fillin = fields_to_keep - set(etevents.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin
@@ -91,11 +91,7 @@ def make_epochs(et,msgs,td=[-2,2]):
  
    
 #%% Make df for LARGE GRID condition
-    
-def calc_euc_accuracy(row):
-    # use euclidean distance measure
-    return distance.euclidean((row['posx'], row['posy']), (row['mean_gx'], row['mean_gy']))
-
+ 
 def calc_horizontal_accuracy(row):
     # use absolute value of difference in angle (horizontal)
     return np.abs(row['posx'] - row['mean_gx'])
@@ -127,7 +123,7 @@ def make_large_grid_df(merged_events):
     #           (see add_msg_to_event in et_helper)
     
     # only large grid condition
-    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'euc_fix_rms', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     # use the last exp_event fixation as element 50
     stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
     large_grid_events.loc[stopevents.index] = stopevents
@@ -136,8 +132,6 @@ def make_large_grid_df(merged_events):
     large_grid_df = helper.only_last_fix(large_grid_events, next_stim = ['block', 'element'])
     
     # Accuracy
-    # error(euclidian diatance) between displayed element(posx, posy) and the fixation of the subject(mean_gx, mean_gy)
-    large_grid_df['euc_accuracy'] = large_grid_df.apply(calc_euc_accuracy, axis=1)
     # use absolute value of difference in angle (horizontal)
     large_grid_df['hori_accuracy'] = large_grid_df.apply(calc_horizontal_accuracy, axis=1)
     # use absolute value of difference in angle (vertical)
@@ -157,16 +151,16 @@ def make_all_elements_grid_df(merged_events):
     #           (see add_msg_to_event in et_helper)
     
     # only large grid condition
-    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'euc_fix_rms', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     # use the last exp_event fixation as element 50
     stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
     large_grid_events.loc[stopevents.index] = stopevents
     
     # only small grid before condition
-    small_grid_before_events = merged_events.query('condition == "SMALLGRID_BEFORE"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'euc_fix_rms', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    small_grid_before_events = merged_events.query('condition == "SMALLGRID_BEFORE"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     
     # only small grid after condition
-    small_grid_after_events = merged_events.query('condition == "SMALLGRID_AFTER"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'euc_fix_rms', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    small_grid_after_events = merged_events.query('condition == "SMALLGRID_AFTER"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     
 
     
@@ -180,8 +174,6 @@ def make_all_elements_grid_df(merged_events):
 
     
     # Accuracy
-    # error(euclidian diatance) between displayed element(posx, posy) and the fixation of the subject(mean_gx, mean_gy)
-    all_elements_df['euc_accuracy'] = all_elements_df.apply(calc_euc_accuracy, axis=1)
     # use absolute value of difference in angle (horizontal)
     all_elements_df['hori_accuracy'] = all_elements_df.apply(calc_horizontal_accuracy, axis=1)
     # use absolute value of difference in angle (vertical)
@@ -202,7 +194,7 @@ def make_freeview_df(merged_freeview_events):
     
     
     # select only relevant columns
-    all_freeview_events = merged_freeview_events.loc[:,['msg_time', 'condition', 'exp_event', 'block', 'trial', 'pic_id', 'type', 'start_time', 'end_time','duration', 'mean_gx', 'mean_gy', 'euc_fix_rms', 'spher_fix_rms']]
+    all_freeview_events = merged_freeview_events.loc[:,['msg_time', 'condition', 'exp_event', 'block', 'trial', 'pic_id', 'type', 'start_time', 'end_time','duration', 'mean_gx', 'mean_gy', 'spher_fix_rms']]
     
     # select only fixations while picture was presented
     freeview_fixations_df = all_freeview_events.query("type == 'fixation' & exp_event == 'trial'")

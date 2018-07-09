@@ -12,7 +12,7 @@ import functions.add_path
 #import os
 
 from functions.detect_events import make_blinks,make_saccades,make_fixations
-from functions.import_et import import_pl,import_el
+from functions.et_import import import_pl, import_el
 from functions.detect_bad_samples import detect_bad_samples,remove_bad_samples
 from functions.et_helper import add_events_to_samples
 from functions.et_helper import load_file, save_file

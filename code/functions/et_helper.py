@@ -143,8 +143,10 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
 def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element']):
     # we group by  block and element and then take the last fixation
     
+    # TODO auskommentieren weil davon komischer Fehler kommt
     # for HMM we define alle smooth pursuit as fixations
-    merged_etevents.type[merged_etevents.type == 'smoothpursuit'] = 'fixation'
+    # merged_etevents.type[merged_etevents.type == 'smoothpursuit'] = 'fixation'
+    
     # use only fixation events and group by block and element and then take the last one of it
     large_grid_df = merged_etevents[merged_etevents.type == 'fixation'].groupby(next_stim).last()
     large_grid_df.reset_index(level= next_stim, inplace=True)

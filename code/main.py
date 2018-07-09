@@ -19,7 +19,6 @@ import functions.pl_detect_blinks as pl_blinks
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
 
-
 #%% LOAD DATA and preprocess RAW data for ALL subjects
 
 # to initialize logging
@@ -32,11 +31,9 @@ import logging
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 #rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8']
-# ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
-# ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
 rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP15', 'VP3', 'VP4','VP7', 'VP8', 'VP11', 'VP12', 'VP14']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
-ets               = ['pl']    
+ets               = ['et', 'pl']    
 
 
 # get a logger
@@ -50,8 +47,8 @@ for subject in subjectnames:
         etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
 
 
+#%% CALCULATE data and preprocess RAW data for ONE subject
 
-#%% LOAD DATA and preprocess RAW data for ONE subject
 # specify subject
 subject = 'VP14'
 
@@ -63,11 +60,11 @@ elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,s
 
 
 
-
-#%% LOAD preprocessed DATA from csv file
+#%% LOAD preprocessed data from csv file
 
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=True)
 elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
+
 
 
 # which et do you want to examine?
@@ -88,15 +85,12 @@ plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
 
 
 
-
 #%% Figure to examine which samples we exclude
-
 
 # get uncleaned data samples
 datapath='/net/store/nbp/projects/etcomp/'
 preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
 etsamples = pd.read_csv(os.path.join(preprocessed_path,str(et_str+'_samples.csv')))
-
 
 
 plt.figure()
@@ -117,9 +111,18 @@ plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa=
 
 
 
+#%% Call plots from analysis here
+
+# Large Grid
+LARGEGRID.plot_accuracy(subjectnames)
 
 
+# Large and Small Grid 
+LARGE_and_SMALL_GRID.plot_accuracy(subjectnames)
 
+# Freeviewing
+FREEVIEW.plot_histogram(subjectnames)
+FREEVIEW.plot_heatmap(subjectnames)
 
 
 

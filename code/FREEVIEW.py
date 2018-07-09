@@ -15,7 +15,8 @@ import numpy as np
 
 import matplotlib.pyplot as pltE
 from plotnine import *
-
+# specify costumed minimal theme
+import functions.plotnine_theme
 
 
 import functions.et_preprocess as preprocess
@@ -24,30 +25,6 @@ import functions.ANALYSIS_get_condition_df as get_condition_df
 
 import logging
 
-
-theme_set( theme_minimal(base_size=12) + theme(text = element_text(),\
-               panel_background = element_rect(colour = 'None'),\
-               plot_background = element_rect(colour = 'None'),\
-               panel_border = element_rect(colour = 'None'),\
-               axis_title = element_text(size = 10),\
-               axis_title_y = element_text(angle=90,vjust =0),\
-               axis_title_x = element_text(vjust = -0.2),\
-               axis_text = element_text(),\
-               axis_line = element_line(colour="black"),\
-               axis_ticks = element_line(),\
-               panel_grid_major = element_line(colour="#f0f0f0"),\
-               panel_grid_minor = element_blank(),\
-               legend_key = element_rect(colour = 'None'),\
-               legend_position = "bottom",\
-               legend_background=element_rect(fill='None',color='None'),\
-               legend_direction = "horizontal",\
-               legend_box = 'horizontal',\
-               legend_margin = 10,\
-               legend_title = element_text(size=10),\
-               legend_title_align = 'left',\
-               strip_background=element_rect(colour="#ffffff",fill="#ffffff"),\
-               strip_text = element_text(face="bold")))
-               
                
 #%% get FREEVIEW df
 
@@ -136,7 +113,7 @@ ggplot(complete_fix_count_df, aes(x='et', y='fix_counts')) \
 
 # TODO maybe do this first
 # select only important columns       
-freeview_df = complete_freeview_df.drop(columns=['msg_time', 'condition', 'exp_event', 'type', 'euc_fix_rms'])
+freeview_df = complete_freeview_df.drop(columns=['msg_time', 'condition', 'exp_event', 'type'])
 freeview_df["pic_id"] = freeview_df["pic_id"].astype('category')
 
 freeview_df.dtypes
