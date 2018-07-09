@@ -27,3 +27,6 @@ sys.path.append(os.path.abspath("../"))
 sys.path.append(os.path.abspath("../lib/nslr-hmm"))
 sys.path.append(os.path.abspath("../lib/pyedfread/lib"))
 sys.path.append(os.path.abspath("../code/functions/fake_pl_loading"))
+
+import pandas as pd
+pd.options.display.max_columns = 30

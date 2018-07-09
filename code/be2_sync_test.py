@@ -108,10 +108,11 @@ ggplot(etepochs_fv,aes(x='gx',y='gy'))+\
 etevents= pd.concat([elevents.assign(eyetracker='eyelink'),plevents.assign(eyetracker='pupillabs')],ignore_index=True)
             
 #Fixduration
-ggplot(etevents.query('type=="fixation"'),aes(x='duration',color='eyetracker'))+geom_density()+xlim([0,1])
+ggplot(etevents.query('type=="fixation"'),aes(x='duration',color='eyetracker'))+geom_density()+xlim([0,1]) + ggtitle('Fixduration')
 
 #Saccadeparameters
-ggplot(etevents.query('type=="saccade"'),aes(x='amplitude',color='eyetracker'))+geom_density() + xlab('amplitude [px]')
+ggplot(etevents.query('type=="saccade"'),aes(x='amplitude',color='eyetracker'))+geom_density() + xlab('amplitude [px]') + ggtitle('Saccadeparameters')
 
 # main sequence
-ggplot(etevents.query('type=="saccade"'),aes(x='np.log10(peak_velocity)',y='np.log10(amplitude)',color='eyetracker'))+stat_smooth(method='loess')
+# install scikit-misc
+ggplot(etevents.query('type=="saccade"'),aes(x='np.log10(peak_velocity)',y='np.log10(amplitude)',color='eyetracker'))+stat_smooth(method='loess') + ggtitle('main sequence')

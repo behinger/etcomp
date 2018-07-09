@@ -4,6 +4,7 @@ import functions.add_path
 
 import numpy as np
 import pandas as pd
+import os
 import matplotlib.pyplot as plt
 from plotnine import *
 from plotnine.data import *
@@ -52,7 +53,7 @@ for subject in subjectnames:
 
 #%% LOAD DATA and preprocess RAW data for ONE subject
 # specify subject
-subject = 'VP1'
+subject = 'VP14'
 
 # preprocess pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
@@ -91,6 +92,13 @@ plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
 #%% Figure to examine which samples we exclude
 
 
+# get uncleaned data samples
+datapath='/net/store/nbp/projects/etcomp/'
+preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
+etsamples = pd.read_csv(os.path.join(preprocessed_path,str(et_str+'_samples.csv')))
+
+
+
 plt.figure()
 plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
 
@@ -100,7 +108,8 @@ plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=
 plt.legend(['sample','blink','saccade','fixation'])
 
 plt.title(et_str)
-plt.ylim([0,2500])
+plt.ylim([-50,2500])
+
 
 plt.plot(etsamples.query('neg_time==True')['smpl_time'],etsamples.query('neg_time==True')['gx'],'o')
 plt.plot(etsamples.query('outside==True')['smpl_time'],etsamples.query('outside==True')['gx'],'o')

@@ -54,7 +54,7 @@ theme_set( theme_minimal(base_size=12) + theme(text = element_text(),\
 
 # specify which subjects you want to analyze
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
-rejected_subjects = ['pilot', '007', 'log_files', 'surface', 'VP3','VP1', 'VP7', 'VP8', 'VP12', 'VP15']
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP15', 'VP12', 'VP1', 'VP19', 'VP20', 'VP21', 'VP22', 'VP23', 'VP24', 'VP25', 'VP26']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['pl', 'el']    
 
@@ -86,18 +86,15 @@ complete_fix_count_df["block"] = complete_fix_count_df["block"].astype('category
 complete_fix_count_df["trial"] = complete_fix_count_df["trial"].astype('category')
 complete_fix_count_df["pic_id"] = complete_fix_count_df["pic_id"].astype('category')
 
-    
-#%% Look at pi_ids
 
+    
+#%% Look at pic_ids
 
 np.sort(complete_fix_count_df.pic_id.unique())
-
 np.sort(complete_fix_count_df.query("subject == 'VP1'").pic_id.unique())
 
 # TODO pic_id 5 and 6 are missing
 np.sort(complete_fix_count_df.query("subject == 'VP2' & et == 'pl'").pic_id.unique())
-
-
 
     
 #%% Plot for multiple subjects and both eye trackes
@@ -125,7 +122,6 @@ ggplot(complete_fix_count_df, aes(x='et', y='fix_counts')) \
 
 
 # using violin to compare eye tracker overall
-# TODO sth woring here 
 ggplot(complete_fix_count_df, aes(x='et', y='fix_counts')) \
         + geom_violin(aes(color='et', fill='et'), alpha = 0.25, show_legend=False) \
         + xlab('Eyetracker') \
@@ -245,106 +241,19 @@ y_el = list(freeview_df.query('et == "el"').mean_gy)
 sigmas = [0, 300, 0, 300]
 
 axs[0,0].plot(x_pl, y_pl, 'k.', markersize=5)
-axs[0,0].set_title("PL Scatter plot")
+axs[0,0].set_title("Pupil Labs Scatter plot")
 
 img, extent = myplot(x_pl,y_pl, sigmas[1])
 axs[0,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
-axs[0,1].set_title("PL Smoothing with  $\sigma$ = %d" % sigmas[1])
+axs[0,1].set_title("Pupil Labs  Smoothing with 3 $^\circ$")
 
 axs[1,0].plot(x_el, y_el, 'k.', markersize=5)
-axs[1,0].set_title("EL Scatter plot")
+axs[1,0].set_title("EyeLink Scatter plot")
 
 img, extent = myplot(x_el, y_el, sigmas[3])
 axs[1,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
-axs[1,1].set_title("EL Smoothing with  $\sigma$ = %d" % sigmas[3])
+axs[1,1].set_title("EyeLink Smoothing with 3 $^\circ$")
 
 plt.show()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#%% Freeviewing
-# LETS try for one subject first
-
-# load preprocessed data for one subject
-subject = 'VP1'
-
-elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
-
-et_str = 'el'
-etsamples = elsamples
-etmsgs = elmsgs
-etevents = elevents
-
-# forward merge to add msgs to the events
-merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='forward')
-
-# get all relevant columns
-all_freeview_events = merged_events.loc[:,['msg_time',  'condition', 'exp_event','block', 'trial', 'pic_id', 'type','start_time', 'end_time','duration', 'mean_gx', 'mean_gy', 'euc_fix_rms', 'spher_fix_rms']]
-
-
-# select only fixations while picture was presented
-freeview_fixations = all_freeview_events.query("type == 'fixation' & exp_event == 'trial'")
-
-# count how many fixations per trail   in seperate dataframe  (use as sanity check)
-fix_count = freeview_fixations.groupby(['block', 'trial']).size().reset_index(name='fix_counts')
-
-
-
-# block 1 trial 1
-
-block_trial_1 = freeview_fixations.query("block == 1 & trial == 1")
-
-
-
-ggplot(block_trial_1, aes(x='mean_gx', y='mean_gy')) \
-        + geom_point(aes(size = 'duration', color = 'pic_id'))
-
-
-
-
-# density for mean gx and gy over all pictures
-ggplot(freeview_fixations, aes(x='mean_gx')) + geom_density()
-# ggplot(freeview_fixations, aes(x = 'mean_gx')) + stat_density()
-ggplot(freeview_fixations, aes(x='mean_gy')) + geom_density()
-
-
-
-ggplot(freeview_fixations, aes(x='mean_gx')) \
-       + geom_density(kernel='gaussian', alpha=.3, trim=True)
-
-
-p = (ggplot(mtcars)
-     + aes('wt', 'mpg', color='factor(cyl)')
-     + geom_point()
-     + stat_hull(size=1)
-     )
-
-
-
-# stat density 2d
-
-ggplot(freeview_fixations, aes(x='mean_gx', y='mean_gy')) + stat_density_2d()
-
-ggplot(freeview_fixations, aes(x='mean_gx', y='mean_gy')) \
-  + geom_point() \
-  + stat_density_2d()
-  
-ggplot(wdata, aes(x = weight)) + stat_density()
 

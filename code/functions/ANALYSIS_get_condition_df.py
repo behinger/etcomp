@@ -107,13 +107,13 @@ def get_complete_freeview_df(subjectnames, ets):
             logging.critical('Eyetracker: %s    Subject: %s ', et, subject)
             
             # load preprocessed data for one eyetracker and for one subject
-            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True)
+            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject, load=True)
             
             
             # due to experimental triggers: FORWARD merge to add msgs to the events
             merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='forward')
             
-            # make df for grid condition that only contains ONE fixation per element
+            # freeview df
             freeview_df, fix_count_df = make_df.make_freeview_df(merged_events)          
             
             # add a column for eyetracker and subject

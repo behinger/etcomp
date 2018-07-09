@@ -17,57 +17,68 @@ import functions.et_parse as parse
 from functions.et_helper import findFile,gaze_to_pandas
 from functions.import_et import import_el
 
-#%%
+#%% Load cleaned samples 
 
 # elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
 # elsamples, elmsgs,elevents= import_el('VP1')
 
 
-# load preprocessed data for el subject VP1
-elsamples, elmsgs, elevents = preprocess.preprocess_et('el','VP1',load=True)
-     
+subject = 'VP14'
 
-       
+# load preprocessed data for subject
+etsamples, etmsgs, etevents = preprocess.preprocess_et('pl',subject,load=True)
 
-_etsamples, etmsgs, etevents = preprocess.preprocess_et('pl','VP15',load=True)
+
+
+
+#%% load samples with outliers
 
 datapath='/net/store/nbp/projects/etcomp/'
-preprocessed_path = os.path.join(datapath, 'VP15', 'preprocessed')
+preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
+
+filename_samples = 'el_samples.csv'
 filename_samples = 'pl_samples.csv'
 etsamples = pd.read_csv(os.path.join(preprocessed_path,filename_samples))
+
+
+
+#%% plot samples
 
 plt.figure()
 plt.plot(etsamples.smpl_time,etsamples.gy,'o')
 
-#%%
 
-for k,row in etmsgs.query('condition=="FREEVIEW"').iterrows():
-    if ~np.isnan(row['trial']):
-        #plt.text(row['msg_time'],0,'%s'%(row['exp_event']))
-        plt.text(row['msg_time'],0,'%s'%(row['pic_id']))
-        
+   
 plt.plot(etsamples.query('type=="blink"')['smpl_time'],etsamples.query('type=="blink"')['gy'],'o')
 plt.plot(etsamples.query('type=="saccade"')['smpl_time'],etsamples.query('type=="saccade"')['gy'],'o')
 plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=="fixation"')['gy'],'o')
 plt.legend(['sample','blink','saccade','fixation'])        
 
 
-for k,row in elmsgs.query('condition=="Instruction"').iterrows():
+#%% print conditions as text in samples
+
+for k,row in etmsgs.query('condition=="FREEVIEW"').iterrows():
+    if ~np.isnan(row['trial']):
+        #plt.text(row['msg_time'],0,'%s'%(row['exp_event']))
+        plt.text(row['msg_time'],0,'%s'%(row['pic_id']))
+     
+
+for k,row in etmsgs.query('condition=="Instruction"').iterrows():
     #if ~np.isnan(row['exp_event']):
         plt.text(row['msg_time'],0,'%s'%(row['exp_event']))
 
 
-for k,row in elmsgs.query('condition=="GRID"').iterrows():
+for k,row in etmsgs.query('condition=="GRID"').iterrows():
     if ~np.isnan(row['posy']):
         plt.text(row['msg_time'],0,'%.2f'%(row['posy']))
 
 
 
-for k,row in elmsgs.query('condition=="SMALLGRID_BEFORE"').iterrows():
+for k,row in etmsgs.query('condition=="SMALLGRID_BEFORE"').iterrows():
     if ~np.isnan(row['posy']):
         plt.text(row['msg_time'],0,'%.2f'%(row['posy']))
 
-for k,row in elmsgs.query('condition=="SMALLGRID_AFTER"').iterrows():
+for k,row in etmsgs.query('condition=="SMALLGRID_AFTER"').iterrows():
     if ~np.isnan(row['posy']):
         plt.text(row['msg_time'],0,'%.2f'%(row['posy']))
 
@@ -77,7 +88,7 @@ for k,row in elmsgs.query('condition=="SMALLGRID_AFTER"').iterrows():
 
 
 
-for k,row in elmsgs.query('condition=="FREEVIEW"').iterrows():
+for k,row in etmsgs.query('condition=="FREEVIEW"').iterrows():
     #if ~np.isnan(row['exp_event']):
     plt.text(row['msg_time'],0,'%s'%(row['exp_event']))
 

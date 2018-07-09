@@ -114,7 +114,7 @@ def calc_3d_angle_points(x_0, y_0, x_1, y_1):
     vec1 = helper.sph2cart(x_0/360*2*pi, y_0/360*2*pi)
     vec2 = helper.sph2cart(x_1/360*2*pi, y_1/360*2*pi)
     
-    #pupillabs : precision = np.sqrt(np.mean(np.rad2deg(np.arccos(succesive_distances.clip(-1., 1.))) ** 2))
+    # pupillabs : precision = np.sqrt(np.mean(np.rad2deg(np.arccos(succesive_distances.clip(-1., 1.))) ** 2))
     cosdistance = np.dot(vec1,vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
     angle = np.arccos(np.clip(cosdistance,-1., 1.))
     angle = angle * 360/(2*pi) # radian to degree
@@ -207,7 +207,7 @@ def make_freeview_df(merged_freeview_events):
     # select only fixations while picture was presented
     freeview_fixations_df = all_freeview_events.query("type == 'fixation' & exp_event == 'trial'")
     
-    # count how many fixations per trail   in seperate dataframe  (use as sanity check)
+    # count how many fixations per trail   in seperate dataframe
     fix_count_df = freeview_fixations_df.groupby(['block', 'trial', 'pic_id']).size().reset_index(name='fix_counts')
     
     
