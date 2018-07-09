@@ -133,7 +133,9 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     
     flat_ranges = np.intersect1d(flat_ranges,range(etsamples.shape[0]))
     # all etsamples with ix in ranges , will the eventype in the column type
-    etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
+    if len(flat_ranges) > 0:
+        etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
+        
 
     return etsamples
 

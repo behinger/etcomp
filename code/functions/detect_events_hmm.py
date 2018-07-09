@@ -13,12 +13,12 @@ from plotnine.data import *
 import functions.make_df as df
 import functions.et_helper as  helper
 import functions.et_plotting as etplot
-import functions.detect_events as events
 import functions.detect_saccades as saccades
 import functions.et_preprocess as preprocess
 import functions.pl_detect_blinks as pl_blinks
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
+import functions.make_df as make_df
 from functions.et_helper import tic,toc
 
 
@@ -34,8 +34,8 @@ def detect_events_hmm(etsamples,etevents,et):
     etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype='blink')
     
     # run only on subset
-    #etsamples = etsamples.iloc[1:10000]
-    #etevents = etevents[etevents.end_time<etsamples.iloc[-1].smpl_time]
+    etsamples = etsamples.iloc[1:10000]
+    etevents = etevents[etevents.end_time<etsamples.iloc[-1].smpl_time]
     #
     
     
@@ -81,10 +81,16 @@ def sampletype_to_event(etsamples,eventtype):
    
     # use magic to get start and end times of fixations in a temporary column
     etsamples['tmp'] = (1*(etsamples['type'] == eventtype)).diff()
-    # assume that we always start with a fixation
+    etsamples['tmp'].iloc[0] = 0
+    etsamples['tmp'] = etsamples['tmp'].astype(int)
+    
+    if etsamples['tmp'][np.argmax(etsamples['tmp'] != 0)] == -1:  #argmax stops at first true
+        # if we only find an fixation end, add a start at the beginning
+        etsamples.iloc[0, etsamples.columns.get_loc('tmp')] = 1
+
     
     etsamples.iloc[0, etsamples.columns.get_loc('tmp')] = etsamples.iloc[0].type==eventtype
-    etsamples['tmp'] = etsamples['tmp'].astype(int)
+    
         
     # make a list of the start and end times
     start_times_list = list(etsamples.loc[etsamples['tmp'] == 1, 'smpl_time'].astype(float))
@@ -96,41 +102,41 @@ def sampletype_to_event(etsamples,eventtype):
     events = pd.DataFrame([start_times_list, end_times_list], ['start_time', 'end_time']).T
 
     # delete event if start or end is NaN
-    events.dropna(subset=['start_time', 'end_time'], inplace=True)
+
 
     # add the type    
     events['type'] = eventtype
     events['duration'] = events['end_time'] - events['start_time']
+    events = pd.concat([events,etsamples.loc[etsamples['tmp'] == 1, 'gx'].astype(float).reset_index(drop=True).rename('start_gx')],axis=1)
+    events = pd.concat([events,etsamples.loc[etsamples['tmp'] == 1, 'gy'].astype(float).reset_index(drop=True).rename('start_gy')],axis=1)
+    events = pd.concat([events,etsamples.loc[etsamples['tmp'] == -1, 'gx'].astype(float).reset_index(drop=True).rename('end_gx')],axis=1)
+    events = pd.concat([events,etsamples.loc[etsamples['tmp'] == -1, 'gy'].astype(float).reset_index(drop=True).rename('end_gy')],axis=1)
+
+    events.dropna(subset=['start_time', 'end_time'], inplace=True)  
+      
     #events['start_gx'] =  list(etsamples.loc[etsamples['tmp'] == 1,  'gx'].astype(float))
     #events['start_gy'] =  list(etsamples.loc[etsamples['tmp'] == 1,  'gy'].astype(float))
     #events['end_gx']   =  list(etsamples.loc[etsamples['tmp'] == -1, 'gx'].astype(float))
     #events['end_gy']   =  list(etsamples.loc[etsamples['tmp'] == -1, 'gy'].astype(float))
-    
 
+    events['spher_amplitude']= events.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
     for ix,row in events.iterrows():
         # take the mean gx/gy position over all samples that belong to that fixation
         # removed bad samples explicitly
-        ix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time)
-#        events.loc[ix, 'mean_gx'] =  np.mean(etsamples.loc[ix, 'gx'])    
-#        events.loc[ix, 'mean_gy'] =  np.mean(etsamples.loc[ix, 'gy'])
-        
-
-        
-        #if fix_samples.empty:
-        #    logger.error('Empty fixation sample df encountered for fix_event at index %s', ix)
-
-        #else:                
-            # the thetas are the difference in spherical angle
-         #   fixdf = pd.DataFrame({'x0':etsamples.iloc[:-1].gx.values,'y0':etsamples.iloc[:-1].gy.values,'x1':etsamples.iloc[1:].gx.values,'y1':etsamples.iloc[1:].gy.values})
-         #   thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
+        ix_samples = etsamples.index[(etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time)]
+        events.loc[ix, 'mean_gx'] =  np.mean(etsamples.loc[ix_samples, 'gx'])    
+        events.loc[ix, 'mean_gy'] =  np.mean(etsamples.loc[ix_samples, 'gy'])
+                
+        eventdf= pd.DataFrame({'x0':etsamples.loc[ix_samples].iloc[:-1].gx.values,'y0':etsamples.loc[ix_samples].iloc[:-1].gy.values,'x1':etsamples.loc[ix_samples].iloc[1:].gx.values,'y1':etsamples.loc[ix_samples].iloc[1:].gy.values})
+        thetas = eventdf.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.x0,localrow.y0,localrow.x1,localrow.y1),axis=1)
        
             # calculate the rms 
-      #      events.loc[ix, 'spher_rms'] = np.sqrt(((np.square(thetas)).mean()))
-            
+        events.loc[ix, 'spher_rms'] = np.sqrt(((np.square(thetas)).mean()))
+        
     # cleanup
     etsamples.drop('tmp', axis=1, inplace=True)
     return(events)
 #if 1 == 0:
-#subject = 'VP4'
-#etsamples, etmsgs, etevents = preprocess.preprocess_et('el',subject,datapath='/home/behinger/etcomp/local/data/',load=False,save=True,outputprefix='hmm_',eventfunctions=(make_blinks,detect_events_hmm))
+subject = 'VP4'
+etsamples, etmsgs, etevents = preprocess.preprocess_et('el',subject,datapath='/home/behinger/etcomp/local/data/',load=False,save=False,outputprefix='hmm_',eventfunctions=(make_blinks,detect_events_hmm))
     

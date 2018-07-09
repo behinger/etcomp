@@ -66,6 +66,8 @@ def make_saccades(etsamples,etevents,et):
     # add the type    
     saccadeevents['type'] = 'saccade'
     
+    # calculate the spherical angle
+    saccadeevents['spher_amplitude']= saccadeevents.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
     # concatenate to original event df
     etevents= pd.concat([etevents, saccadeevents], axis=0,sort=False)
     
