@@ -47,6 +47,8 @@ def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=Fal
         etsamples,etmsgs,etevents = import_pl(subject=subject,datapath=datapath)
     elif et == 'el':
         etsamples,etmsgs,etevents = import_el(subject=subject,datapath=datapath)
+    else:
+        raise ValueError("Eyetracker must be el or pl!") 
         
         
     # Mark bad samples

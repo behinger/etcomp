@@ -50,7 +50,7 @@ if complete_large_grid_df.isnull().values.any():
 
 # get df grouped by et and subject 
 # take the mean of the accuracy and precision measures over all blocks
-grouped_large_grid_df = complete_large_grid_df.groupby(['et', 'subject']).mean().loc[:,['accuracy', 'hori_accuracy', 'vert_accuracy','spher_fix_rms']]
+grouped_large_grid_df = complete_large_grid_df.groupby(['et', 'subject']).mean().loc[:,['accuracy', 'hori_accuracy', 'vert_accuracy','rms']]
 grouped_large_grid_df.reset_index(level=['et', 'subject'], inplace=True)
 
 
@@ -148,7 +148,7 @@ ggplot(aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)'), data= et_grou
 
 # look which grid points by trend have higher/lower accuracy 
 
-# sphere_accuracy
+# spherical accuracy
 ggplot(aes(x='posx', y='posy', size='accuracy'), data=et_grouped_elem_pos.groupby(['subject','posx', 'posy']).mean().reset_index(level=['subject','posx', 'posy'])) +\
         geom_point() +\
         facet_wrap('~subject')+\
@@ -156,7 +156,7 @@ ggplot(aes(x='posx', y='posy', size='accuracy'), data=et_grouped_elem_pos.groupb
 
 
 # rms
-ggplot(aes(x='posx', y='posy', size='spher_fix_rms'), data=et_grouped_elem_pos.groupby(['subject','posx', 'posy']).mean().reset_index(level=['subject','posx', 'posy'])) +\
+ggplot(aes(x='posx', y='posy', size='rms'), data=et_grouped_elem_pos.groupby(['subject','posx', 'posy']).mean().reset_index(level=['subject','posx', 'posy'])) +\
         geom_point() +\
         facet_wrap('~subject')+\
         ggtitle(str(et) +' precision visiualized by size of grid points')

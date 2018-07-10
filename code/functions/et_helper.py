@@ -145,7 +145,7 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
 def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element']):
     # we group by  block and element and then take the last fixation
     
-    # TODO auskommentieren weil davon komischer Fehler kommt
+    # TODO commented out cause it raises weird error
     # for HMM we define alle smooth pursuit as fixations
     # merged_etevents.type[merged_etevents.type == 'smoothpursuit'] = 'fixation'
     

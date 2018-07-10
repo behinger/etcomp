@@ -119,7 +119,7 @@ def sampletype_to_event(etsamples,eventtype):
     #events['end_gx']   =  list(etsamples.loc[etsamples['tmp'] == -1, 'gx'].astype(float))
     #events['end_gy']   =  list(etsamples.loc[etsamples['tmp'] == -1, 'gy'].astype(float))
 
-    events['spher_amplitude']= events.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
+    events['amplitude']= events.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
     for ix,row in events.iterrows():
         # take the mean gx/gy position over all samples that belong to that fixation
         # removed bad samples explicitly
@@ -131,7 +131,7 @@ def sampletype_to_event(etsamples,eventtype):
         thetas = eventdf.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.x0,localrow.y0,localrow.x1,localrow.y1),axis=1)
        
             # calculate the rms 
-        events.loc[ix, 'spher_rms'] = np.sqrt(((np.square(thetas)).mean()))
+        events.loc[ix, 'rms'] = np.sqrt(((np.square(thetas)).mean()))
         
     # cleanup
     etsamples.drop('tmp', axis=1, inplace=True)

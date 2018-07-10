@@ -66,8 +66,6 @@ def make_saccades(etsamples,etevents,et):
     # add the type    
     saccadeevents['type'] = 'saccade'
     
-    # calculate the spherical angle
-    saccadeevents['spher_amplitude']= saccadeevents.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
     # concatenate to original event df
     etevents= pd.concat([etevents, saccadeevents], axis=0,sort=False)
     
@@ -151,7 +149,7 @@ def make_fixations(etsamples, etevents,et):
             #print('ix : %s', ix)
             #print('fixdf : %s', len(fixdf))
             #print('np.sqrt((np.square(thetas)).mean()) : %s', np.sqrt((np.square(thetas)).mean()))
-            fixationevents.loc[ix, 'spher_fix_rms'] = np.sqrt((np.square(thetas)).mean())
+            fixationevents.loc[ix, 'rms'] = np.sqrt((np.square(thetas)).mean())
 
 
 

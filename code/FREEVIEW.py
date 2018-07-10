@@ -21,7 +21,7 @@ import functions.plotnine_theme
 
 import functions.et_preprocess as preprocess
 import functions.et_helper as  helper
-import functions.ANALYSIS_get_condition_df as get_condition_df
+import functions.get_condition_df as get_condition_df
 
 import logging
 
@@ -131,7 +131,7 @@ ggplot(complete_freeview_df, aes(x='mean_gx', y='mean_gy')) \
 
 # looking at density distributions
 # for each gaze component (horizontal/vertical) and for each eyetracker
-gaze_comp_freeview_df = freeview_df.melt(id_vars=['et', 'subject', 'block', 'trial', 'pic_id', 'start_time', 'end_time', 'duration', 'spher_fix_rms'], var_name='gaze_comp')
+gaze_comp_freeview_df = freeview_df.melt(id_vars=['et', 'subject', 'block', 'trial', 'pic_id', 'start_time', 'end_time', 'duration', 'rms'], var_name='gaze_comp')
 
 # display both eye tracker in the same plot
 ggplot(gaze_comp_freeview_df, aes(x='value', color = 'et')) \
@@ -193,8 +193,10 @@ pic_vertical = px2deg(1200*0.6) / 2
 
 
 
-# make 5000 bins from - picturesize in degrees to picturesize in degrees with a stepsize of 0.01
 def myplot(x, y, s, bins=[np.arange(-pic_horizontal,pic_horizontal,step=0.01),np.arange(-pic_vertical,pic_vertical,step=0.01)]):
+    '''
+     make 5000 bins from - picturesize in degrees to picturesize in degrees with a stepsize of 0.01
+    '''
     heatmap, xedges, yedges = np.histogram2d(x, y, bins=bins)
     heatmap = gaussian_filter(heatmap, sigma=s)
 
@@ -217,14 +219,23 @@ y_el = list(freeview_df.query('et == "el"').mean_gy)
 
 sigmas = [0, 300, 0, 300]
 
-axs[0,0].plot(x_pl, y_pl, 'k.', markersize=5)
-axs[0,0].set_title("Pupil Labs Scatter plot")
-
 img, extent = myplot(x_pl,y_pl, sigmas[1])
 axs[0,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
 axs[0,1].set_title("Pupil Labs  Smoothing with 3 $^\circ$")
 
+axs[0,0].plot(x_pl, y_pl, 'k.', markersize=5)
+axs[0,0].set_aspect('equal')
+#TODO check the margins
+axs[0, 0].set_xlim(extent[0], extent[1])
+axs[0, 0].set_ylim(extent[2], extent[3])
+axs[0,0].set_title("Pupil Labs Scatter plot")
+
+
 axs[1,0].plot(x_el, y_el, 'k.', markersize=5)
+axs[1,0].set_aspect('equal')
+#TODO check the margins
+axs[1, 0].set_xlim(extent[0], extent[1])
+axs[1, 0].set_ylim(extent[2], extent[3])
 axs[1,0].set_title("EyeLink Scatter plot")
 
 img, extent = myplot(x_el, y_el, sigmas[3])

@@ -30,10 +30,10 @@ import logging
 # restricted to subjects that we do not exclude from analysis
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
-#rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8']
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP15', 'VP3', 'VP4','VP7', 'VP8', 'VP11', 'VP12', 'VP14']
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8']
+#rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP15', 'VP3', 'VP4','VP7', 'VP8', 'VP11', 'VP12', 'VP14']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
-ets               = ['et', 'pl']    
+ets               = ['el', 'pl']    
 
 
 # get a logger
@@ -50,7 +50,7 @@ for subject in subjectnames:
 #%% CALCULATE data and preprocess RAW data for ONE subject
 
 # specify subject
-subject = 'VP14'
+subject = 'VP1'
 
 # preprocess pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
@@ -102,6 +102,8 @@ plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=
 plt.legend(['sample','blink','saccade','fixation'])
 
 plt.title(et_str)
+
+# if you want to look at the not cleaned data, you should set the yaxis
 plt.ylim([-50,2500])
 
 
