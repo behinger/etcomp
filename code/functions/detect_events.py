@@ -7,7 +7,7 @@ Created on Tue May  8 16:42:55 2018
 """
 import functions.detect_saccades as saccades
 import functions.et_helper as et_helper
-import functions.make_df as make_df
+import functions.et_make_df as make_df
 import pandas as pd
 import numpy as np
 import os

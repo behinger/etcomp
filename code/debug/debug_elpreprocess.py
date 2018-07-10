@@ -15,7 +15,7 @@ from plotnine.data import *
 
 import functions.et_plotting as etplot
 import functions.et_preprocess as preprocess
-import functions.make_df as df
+import functions.et_make_df as make_df
 import functions.detect_events as events
 import functions.detect_saccades as saccades
 import functions.pl_detect_blinks as pl_blinks

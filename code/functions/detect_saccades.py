@@ -17,7 +17,7 @@ from scipy.interpolate import PchipInterpolator
 import pandas as pd
 import numpy.linalg as LA
 from functions.et_helper import append_eventtype_to_sample
-import functions.make_df as make_df
+import functions.et_make_df as make_df
 from matplotlib import pyplot as plt
 
 import logging

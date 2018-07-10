@@ -10,7 +10,7 @@ import pandas as pd
 #from plotnine import *
 #from plotnine.data import *
 
-#import functions.make_df as df
+#import functions.et_make_df as make_df
 #import functions.et_helper as  helper
 #import functions.et_plotting as etplot
 #import functions.detect_saccades as saccades
@@ -18,7 +18,7 @@ import pandas as pd
 #import functions.pl_detect_blinks as pl_blinks
 #from functions.detect_events import make_blinks,make_saccades,make_fixations
 
-import functions.make_df as make_df
+import functions.et_make_df as make_df
 from functions.et_helper import tic,toc
 from functions.et_helper import append_eventtype_to_sample
 import nslr_hmm

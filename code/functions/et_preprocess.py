@@ -16,7 +16,7 @@ from functions.et_import import import_pl, import_el
 from functions.detect_bad_samples import detect_bad_samples,remove_bad_samples
 from functions.et_helper import add_events_to_samples
 from functions.et_helper import load_file, save_file
-from functions.make_df import make_events_df
+from functions.et_make_df import make_events_df
 import functions.et_helper as  helper
 
 import os

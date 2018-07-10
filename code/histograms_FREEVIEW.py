@@ -21,7 +21,7 @@ import functions.plotnine_theme
 
 import functions.et_preprocess as preprocess
 import functions.et_helper as  helper
-import functions.ANALYSIS_get_condition_df as get_condition_df
+import functions.et_condition_df as condition_df
 
 import logging
                
@@ -37,7 +37,7 @@ ets               = ['pl', 'el']
 
 
 # load freeview df for all subjects
-complete_freeview_df, complete_fix_count_df = get_condition_df.get_complete_freeview_df(subjectnames, ets)
+complete_freeview_df, complete_fix_count_df = condition_df.get_complete_freeview_df(subjectnames, ets)
 
 
 # Sanity check

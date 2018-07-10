@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 import functions.et_plotting as etplot
 import functions.et_preprocess as preprocess
-import functions.make_df as df
+import functions.et_make_df as make_df
 import functions.detect_events as events
 import functions.detect_saccades as saccades
 import functions.pl_detect_blinks as pl_blinks
@@ -22,7 +22,7 @@ import functions.detect_bad_samples as detect_bad_samples
 
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
-from functions.make_df import make_epochs
+from functions.et_make_df import make_epochs
 
 from plotnine import *
 #%%

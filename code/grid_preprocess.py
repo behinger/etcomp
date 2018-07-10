@@ -26,12 +26,13 @@ from functions.detect_events import make_blinks,make_saccades,make_fixations
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 logfilepath = '/net/store/nbp/projects/etcomp/log_files/'
-#rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8']
-rejected_subjects =  ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15', 'VP20', 'VP23', 'VP24', 'VP25', 'VP26']
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21', 'VP7']
+# rejected_subjects =  ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15', 'VP20', 'VP23', 'VP24', 'VP25', 'VP26']
 # ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
 # rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14']
-subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
-    
+
+# subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
+subjectnames = ['VP14', 'VP20']
     
 if 1 == 0:
     import subprocess 

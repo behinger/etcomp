@@ -19,8 +19,8 @@ from plotnine.data import *
 
 import functions.et_preprocess as preprocess
 import functions.et_helper as  helper
-import functions.make_df as  make_df
-import functions.ANALYSIS_get_condition_df as get_condition_df
+import functions.et_make_df as  make_df
+import functions.et_condition_df as condition_df
 
 
 #%%

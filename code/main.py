@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from plotnine import *
 from plotnine.data import *
 
-import functions.make_df as df
+import functions.et_make_df as make_df
 import functions.et_helper as  helper
 import functions.et_plotting as etplot
 import functions.detect_events as events
@@ -17,6 +17,7 @@ import functions.detect_saccades as saccades
 import functions.et_preprocess as preprocess
 import functions.pl_detect_blinks as pl_blinks
 from functions.detect_events import make_blinks,make_saccades,make_fixations
+
 
 
 #%% LOAD DATA and preprocess RAW data for ALL subjects
@@ -30,8 +31,7 @@ import logging
 # restricted to subjects that we do not exclude from analysis
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8']
-#rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP15', 'VP3', 'VP4','VP7', 'VP8', 'VP11', 'VP12', 'VP14']
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21', 'VP7']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['el', 'pl']    
 
@@ -39,7 +39,9 @@ ets               = ['el', 'pl']
 # get a logger
 logger = logging.getLogger(__name__)
 
-# preprocess for all subjects
+
+
+#%% preprocess for all subjects
 for subject in subjectnames:
     for et in ets:
         logger.critical(' ')
@@ -50,7 +52,7 @@ for subject in subjectnames:
 #%% CALCULATE data and preprocess RAW data for ONE subject
 
 # specify subject
-subject = 'VP1'
+subject = 'VP7'
 
 # preprocess pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
@@ -101,7 +103,7 @@ plt.plot(etsamples.query('type=="saccade"')['smpl_time'],etsamples.query('type==
 plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=="fixation"')['gx'],'o')
 plt.legend(['sample','blink','saccade','fixation'])
 
-plt.title(et_str)
+plt.title(str(et_str + " " + subject))
 
 # if you want to look at the not cleaned data, you should set the yaxis
 plt.ylim([-50,2500])
@@ -115,12 +117,35 @@ plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa=
 
 #%% Call plots from analysis here
 
+
+# change into code folder
+os.chdir('/net/store/nbp/users/kgross/etcomp/code')
+
+import LARGE_GRID 
+import LARGE_and_SMALL_GRID
+import FREEVIEW
+
+import functions.et_condition_df as condition_df
+
 # Large Grid
-LARGEGRID.plot_accuracy(subjectnames)
+
+# load grid df for subjectnames
+raw_large_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_GRID')
+    
+LARGE_GRID.plot_accuracy(raw_large_grid_df, facets=None)
+LARGE_GRID.plot_accuracy(raw_large_grid_df, facets='subjects')
+LARGE_GRID.plot_accuracy(raw_large_grid_df, facets='dodge')
+
+LARGE_GRID.compare_accuracy_components(raw_large_grid_df)
+
+table_large_grid_accuracy = LARGE_GRID.make_table_accuracy
+print(table_large_grid_accuracy)
 
 
-# Large and Small Grid 
-LARGE_and_SMALL_GRID.plot_accuracy(subjectnames)
+# Large and Small Grid
+raw_large_and_small_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_and_SMALL_GRID')
+LARGE_and_SMALL_GRID.plot_accuracy(raw_large_and_small_grid_df, facets=None)
+
 
 # Freeviewing
 FREEVIEW.plot_histogram(subjectnames)

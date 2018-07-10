@@ -156,6 +156,50 @@ def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element'])
     return large_grid_df
 
 
+
+
+#%% set dtypes of dataframe and make the labes ready to get plotted
+    
+def set_dtypes(df):
+    """
+    Set the dtype of the categories, so that plotting is easier and more pretty.
+    E.g. set column 'et' from object to categorical
+    """        
+
+    logging.debug('dtypes of the df before: %s', df.dtypes)
+
+    # make all object variables categorical
+    df[df.select_dtypes(['object']).columns] = df.select_dtypes(['object']).apply(lambda x: x.astype('category'))
+    
+    # list of categorical variables that have to be treated separately as they were not object dtypes
+    categorial_var = ["block", "trial", "pic_id"]
+    
+    # set columns to correct dtype
+    for column in categorial_var:
+        if column in df:
+            df[column] = df[column].astype('category')
+        
+    
+    logging.debug('dtypes of the df after: %s', df.dtypes)
+    
+    return df    
+
+
+def set_to_full_names(df):
+    """
+    rename columns and values to their full name
+    e.g. et --> Eye-Tracker
+    """
+    # TODO maybe more renaming?
+    
+    # rename columnnames
+    df = df.rename(index=str, columns={"et": "Eye-Tracker", "pic_id": "picture id", "fix_count": "number of fixations"})
+    #rename values
+    df['Eye-Tracker'] = df['Eye-Tracker'].map({'el': 'EyeLink', 'pl': 'Pupil Labs'})
+    
+    return df
+
+
 #%% everything related to VISUAL DEGREES
 
 def px2deg(px, orientation, pxPerDeg=0.276,distance=600):
