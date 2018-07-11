@@ -31,7 +31,8 @@ import logging
 # restricted to subjects that we do not exclude from analysis
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21', 'VP7']
+#TODO find out whats wrong with vp3 and vp12 and fix and then use vp3 again!!
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21', 'VP7', 'VP3', 'VP12']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['el', 'pl']    
 
@@ -127,22 +128,36 @@ import FREEVIEW
 
 import functions.et_condition_df as condition_df
 
-# Large Grid
+subjectnames      = ['VP3', 'VP4', 'VP1']
+
+
+# LARGE GRID
 
 # load grid df for subjectnames
 raw_large_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_GRID')
-    
+
+# plot accuracy    
 LARGE_GRID.plot_accuracy(raw_large_grid_df, facets=None)
 LARGE_GRID.plot_accuracy(raw_large_grid_df, facets='subjects')
 LARGE_GRID.plot_accuracy(raw_large_grid_df, facets='dodge')
 
+# plot accuracy components
 LARGE_GRID.compare_accuracy_components(raw_large_grid_df)
+LARGE_GRID.compare_accuracy_components(raw_large_grid_df, display_precision=True)
 
-table_large_grid_accuracy = LARGE_GRID.make_table_accuracy
-print(table_large_grid_accuracy)
+# look at numerical accuracies in table
+table_large_grid_accuracy = LARGE_GRID.make_table_accuracy(raw_large_grid_df)
+print(table_large_grid_accuracy.to_string())
+
+# investigate on the position and properties
+LARGE_GRID.display_fixations(raw_large_grid_df, option='fixations')
+LARGE_GRID.display_fixations(raw_large_grid_df, option='accuracy_for_each_element')
+LARGE_GRID.display_fixations(raw_large_grid_df, option='precision_for_each_element')
+LARGE_GRID.display_fixations(raw_large_grid_df, option='offset')
 
 
-# Large and Small Grid
+
+# LARGE and SMALL GRID
 raw_large_and_small_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_and_SMALL_GRID')
 LARGE_and_SMALL_GRID.plot_accuracy(raw_large_and_small_grid_df, facets=None)
 

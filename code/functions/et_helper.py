@@ -158,6 +158,41 @@ def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element'])
 
 
 
+#%% function to make groupby easier
+    
+
+def group_to_level_and_take_mean(raw_condition_df, lowestlevel):
+    """
+    make a groupby
+    """
+    
+    if lowestlevel=='subject':
+        # get df grouped by et and subject 
+        # --> takes the mean of the accuracy and precision measures over all blocks
+        grouped_df = raw_condition_df.groupby(['et', 'subject']).mean().reset_index(level=['et', 'subject'])
+    
+    
+    elif lowestlevel=='block':
+        # get df grouped by et, subject and block
+        # --> makes a mean for each block of the subject
+        grouped_df = raw_condition_df.groupby(['et', 'subject','block']).mean().reset_index(level=['et','subject','block'])
+
+
+    elif lowestlevel=='element_positions':
+        # get df grouped by et, subject and block
+        # --> makes a mean for each block of the subject
+        grouped_df = raw_condition_df.groupby(['et', 'subject', 'block','posx', 'posy']).mean().reset_index(level=['et', 'subject', 'block','posx', 'posy'])
+         
+        
+    else:
+        raise ValueError('This level is unknown / not implemented')
+    
+    return grouped_df
+
+
+ 
+
+
 #%% set dtypes of dataframe and make the labes ready to get plotted
     
 def set_dtypes(df):
@@ -192,10 +227,12 @@ def set_to_full_names(df):
     """
     # TODO maybe more renaming?
     
+    # maybe dont do this but rather use xaxis relabeling
     # rename columnnames
-    df = df.rename(index=str, columns={"et": "Eye-Tracker", "pic_id": "picture id", "fix_count": "number of fixations"})
+    # df = df.rename(index=str, columns={"et": "Eye-Tracker", "pic_id": "picture id", "fix_count": "number of fixations"})
+    
     #rename values
-    df['Eye-Tracker'] = df['Eye-Tracker'].map({'el': 'EyeLink', 'pl': 'Pupil Labs'})
+    df['et'] = df['et'].map({'el': 'EyeLink', 'pl': 'Pupil Labs'})
     
     return df
 
