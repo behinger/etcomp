@@ -177,17 +177,31 @@ LARGE_and_SMALL_GRID.display_fixations(raw_all_grids_df, option='fixations')
 
 
 # Freeviewing
-raw_freeviewing_df, raw_fix_count_df = condition_df.get_condition_df(subjectnames, ets, condition='FREEVIEW')
+raw_freeview_df, raw_fix_count_df = condition_df.get_condition_df(subjectnames, ets, condition='FREEVIEW')
+
+# plot the fixations as a heatmap
+# TODO annotation how many fixations from how many pictures are used for each eyetracker
+FREEVIEW.plot_heatmap(raw_freeview_df)
+
+# plot fixation counts
+FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option=None)
+FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='eyetracker')
+FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='subjects')
 
 # plot histogram of the counts
 FREEVIEW.plot_histogram(raw_fix_count_df)
 
-# plot the fixations as a heatmap
-# TODO annotation how many fixations from how many pictures are used for each eyetracker
-FREEVIEW.plot_heatmap(raw_freeviewing_df)
-
 
 # TODO plot main sequence
+FREEVIEW.plot_main_sequence(raw_freeview_df)
+
+
+
+# Look at pic_ids of freeviewing
+np.sort(raw_fix_count_df.pic_id.unique())
+np.sort(raw_fix_count_df.query("subject == 'VP1'").pic_id.unique())
+np.sort(raw_fix_count_df.query("subject == 'VP2' & et == 'Pupil Labs'").pic_id.unique())
+
 
 
 

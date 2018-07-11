@@ -8,6 +8,50 @@ Created on Sat May 12 13:58:59 2018
 
 
 
+#%% investigate on the position of fixations (use density)
+
+# only for sanity:
+# plotting all fixations for each eye tracker
+ggplot(complete_freeview_df, aes(x='mean_gx', y='mean_gy')) \
+        + geom_point(aes(size = 'duration', color = 'pic_id')) \
+        + guides(color=guide_legend(ncol=40)) \
+        + facet_grid('.~et') \
+        + ggtitle('EyeLink vs PupilLabs: All fixations of all subjects of all trials')
+
+
+# looking at density distributions
+# for each gaze component (horizontal/vertical) and for each eyetracker
+gaze_comp_freeview_df = freeview_df.melt(id_vars=['et', 'subject', 'block', 'trial', 'pic_id', 'start_time', 'end_time', 'duration', 'rms'], var_name='gaze_comp')
+
+# display both eye tracker in the same plot
+ggplot(gaze_comp_freeview_df, aes(x='value', color = 'et')) \
+       + stat_density(geom='line', kernel='gaussian') \
+       + xlab('Position in visual angle (degrees)') \
+       + facet_grid('.~gaze_comp')
+
+
+# using a 2D visualization for the density
+ggplot(freeview_df, aes(x='mean_gx', y='mean_gy')) \
+    + stat_density_2d() \
+    + facet_grid('.~et') \
+    + ggtitle('EyeLink vs PupilLabs: Density distribution over all subjects and all trials')
+
+
+
+
+
+
+
+# JUST FOR ME
+ggplot(freeview_df, aes(x='mean_gx', y='mean_gy')) \
+    + geom_point(alpha = 0.25, color='red') \
+    + stat_density_2d() \
+    + facet_grid('.~et') \
+    + ggtitle('EyeLink vs PupilLabs: Density distribution over all subjects and all trials')
+
+
+
+
 #%% All the old ANALYSIS get condition df functions:
 
 

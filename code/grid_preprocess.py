@@ -27,16 +27,13 @@ from functions.detect_events import make_blinks,make_saccades,make_fixations
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 logfilepath = '/net/store/nbp/projects/etcomp/log_files/'
 rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21', 'VP7']
-# rejected_subjects =  ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15', 'VP20', 'VP23', 'VP24', 'VP25', 'VP26']
-# ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
-# rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14']
 
-subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
-#subjectnames = ['VP14', 'VP20']
+#subjectnames = [subject for subject in foldernames if subject not in rejected_subjects]
+subjectnames = ['VP3']
     
 if 1 == 0:
     import subprocess 
-    subprocess.check_output(["qsub",'-cwd','-N','etcomp2','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'grid_preprocess.sge'])
+    subprocess.check_output(["qsub",'-cwd','-N','etcomp2','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'-q','nbp.q','grid_preprocess.sge'])
     
 
 
@@ -46,7 +43,7 @@ print(subid)
 subject = subjectnames[subid] #jobID ranges from 1:N not 0:N-1
 # change the loggerpath
 
-init_logger.update_logger_filepath(newpath = os.path.join(logfilepath, 'log_preprocess_%s_subject%s.log'%(time.strftime("%Y_%m_%d-%H-%M-%S"),subject)))
+init_logger.update_logger_filepath(newpath = os.path.join(logfilepath, 'log_preprocess_%s_subject_%s_%s.log'%(time.strftime("%Y_%m_%d-%H-%M-%S"),subject,subid+1)))
 
 logger = logging.getLogger(__name__)
 ets               = ['pl', 'el']    

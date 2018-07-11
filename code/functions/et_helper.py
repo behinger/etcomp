@@ -245,6 +245,17 @@ def set_to_full_names(df):
 
 #%% everything related to VISUAL DEGREES
 
+def size_px2deg(px, pxPerDeg=0.276,distance=600):
+    """
+    function to get the picture size of the freeviewing task
+    from pixels into visual angle
+    """
+          
+    deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
+
+    return deg
+
+
 def px2deg(px, orientation, pxPerDeg=0.276,distance=600):
     # VD
     # "gx_px - gx_px-midpoint"
@@ -261,6 +272,7 @@ def px2deg(px, orientation, pxPerDeg=0.276,distance=600):
     deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
 
     return deg
+
 
 
 def sph2cart(theta_sph,phi_sph,rho_sph=1):

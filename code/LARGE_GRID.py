@@ -68,7 +68,7 @@ def plot_accuracy(raw_large_grid_df, option=None):
 
 
     else:
-        raise ValueError('You must set facets to a valid option. See documentation.')
+        raise ValueError('You must set options to a valid option. See documentation.')
 
 
 
@@ -155,7 +155,7 @@ def display_fixations(raw_large_grid_df, option='fixations'):
     
     # make separate figure for each eyetracker
     for eyetracker in [['EyeLink'], ['Pupil Labs']]:
-        et_grouped_elem_pos = grouped_elem_pos.query('et==@eyetracker')    
+        et_grouped_elem_pos = raw_large_grid_df.query('et==@eyetracker')    
         
         if option == 'fixations':
             # visualize fixations

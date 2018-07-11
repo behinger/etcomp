@@ -107,7 +107,9 @@ def get_condition_df(subjectnames, ets, condition=None, **kwargs):
     # TODO: maybe smarter option to write own function for getting the fix_count_df???    ------> later
     # for the freeview condition we return 2 dfs
     if condition == 'FREEVIEW':
-        return complete_condition_df, fix_count_df
+        # renaming for pretty plotting
+        complete_fix_count_df = helper.set_to_full_names(complete_fix_count_df)
+        return complete_condition_df, complete_fix_count_df
     
     # for all other condtions we return the complete_condition_df
     else:

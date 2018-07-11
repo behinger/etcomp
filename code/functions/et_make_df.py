@@ -200,7 +200,7 @@ def make_freeview_df(merged_freeview_events):
     freeview_fixations_df = all_freeview_events.query("type == 'fixation' & exp_event == 'trial'")
     
     # count how many fixations per trail   in seperate dataframe
-    fix_count_df = freeview_fixations_df.groupby(['block', 'trial', 'pic_id']).size().reset_index(name='fix_counts')
+    fix_count_df = freeview_fixations_df.groupby(['pic_id']).size().reset_index(name='fix_counts')
     
     
     return freeview_fixations_df, fix_count_df
