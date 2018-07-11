@@ -269,7 +269,7 @@ def sph2cart(theta_sph,phi_sph,rho_sph=1):
 
 #%% LOAD & SAVE & FIND file
     
-def load_file(et,subject,datapath,outputprefix=''):
+def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix=''):
     
     # filepath for preprocessed folder
     preprocessed_path = os.path.join(datapath, subject, 'preprocessed')

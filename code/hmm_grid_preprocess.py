@@ -34,10 +34,10 @@ rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP2'
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 subjectnames = ['VP1','VP2','VP3','VP4']   
 print(sys.argv)
-if sys.argv[1] == 'startgrid':
+if len(sys.argv)>1 and sys.argv[1] == 'startgrid':
     
     import subprocess 
-    subprocess.check_output(["qsub",'-cwd','-N','etcomp2','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'grid_preprocess.sge'])
+    subprocess.check_output(["qsub",'-cwd','-N','etcomp_hmm','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'hmm_grid_preprocess.sge'])
     sys.exit() 
 
 
