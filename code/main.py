@@ -137,9 +137,9 @@ subjectnames      = ['VP3', 'VP4', 'VP1']
 raw_large_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_GRID')
 
 # plot accuracy    
-LARGE_GRID.plot_accuracy(raw_large_grid_df, facets=None)
-LARGE_GRID.plot_accuracy(raw_large_grid_df, facets='subjects')
-LARGE_GRID.plot_accuracy(raw_large_grid_df, facets='dodge')
+LARGE_GRID.plot_accuracy(raw_large_grid_df, option=None)
+LARGE_GRID.plot_accuracy(raw_large_grid_df, option='facet_subjects')
+LARGE_GRID.plot_accuracy(raw_large_grid_df, option='dodge')
 
 # plot accuracy components
 LARGE_GRID.compare_accuracy_components(raw_large_grid_df)
@@ -149,7 +149,7 @@ LARGE_GRID.compare_accuracy_components(raw_large_grid_df, display_precision=True
 table_large_grid_accuracy = LARGE_GRID.make_table_accuracy(raw_large_grid_df)
 print(table_large_grid_accuracy.to_string())
 
-# investigate on the position and properties
+# investigate on the position and properties of detected fixations
 LARGE_GRID.display_fixations(raw_large_grid_df, option='fixations')
 LARGE_GRID.display_fixations(raw_large_grid_df, option='accuracy_for_each_element')
 LARGE_GRID.display_fixations(raw_large_grid_df, option='precision_for_each_element')
@@ -157,17 +157,37 @@ LARGE_GRID.display_fixations(raw_large_grid_df, option='offset')
 
 
 
+
+
 # LARGE and SMALL GRID
-raw_large_and_small_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_and_SMALL_GRID')
-LARGE_and_SMALL_GRID.plot_accuracy(raw_large_and_small_grid_df, facets=None)
+raw_all_grids_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_and_SMALL_GRID')
+
+# plot accuracy  
+LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option=None)
+LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='compare_subject')
+LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='show_variance_for_blocks')
+# Todo well this is not what i want for my final figure :( still need to do this
+LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='final_figure')
+
+# investigate on the position and properties of detected fixations
+LARGE_and_SMALL_GRID.display_fixations(raw_all_grids_df, option='fixations')
+
+
+
 
 
 # Freeviewing
-FREEVIEW.plot_histogram(subjectnames)
-FREEVIEW.plot_heatmap(subjectnames)
+raw_freeviewing_df, raw_fix_count_df = condition_df.get_condition_df(subjectnames, ets, condition='FREEVIEW')
+
+# plot histogram of the counts
+FREEVIEW.plot_histogram(raw_fix_count_df)
+
+# plot the fixations as a heatmap
+# TODO annotation how many fixations from how many pictures are used for each eyetracker
+FREEVIEW.plot_heatmap(raw_freeviewing_df)
 
 
-
+# TODO plot main sequence
 
 
 

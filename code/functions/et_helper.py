@@ -184,6 +184,12 @@ def group_to_level_and_take_mean(raw_condition_df, lowestlevel):
         grouped_df = raw_condition_df.groupby(['et', 'subject', 'block','posx', 'posy']).mean().reset_index(level=['et', 'subject', 'block','posx', 'posy'])
          
         
+    elif lowestlevel=='condition':
+        # get df grouped by et, subject and GRID condition
+        # --> makes a mean for each Gridcondition of the subject
+        grouped_df = raw_condition_df.groupby(['et', 'subject', 'condition']).mean().reset_index(level=['et', 'subject', 'condition'])
+
+        
     else:
         raise ValueError('This level is unknown / not implemented')
     

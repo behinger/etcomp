@@ -8,10 +8,8 @@ Created on Fri Jun 15 18:59:38 2018
 
 
 import functions.add_path
-import os
 
 import pandas as pd
-import numpy as np
 
 import matplotlib.pyplot as plt
 from plotnine import *
@@ -20,19 +18,14 @@ from plotnine.data import *
 import functions.plotnine_theme
 
 import functions.et_helper as  helper
-import functions.et_condition_df as condition_df
-
-import logging
-
 
 
 #%% different functions for analysing the Large Grid
 
 
-def plot_accuracy(raw_large_grid_df, facets=None):
+def plot_accuracy(raw_large_grid_df, option=None):
     """
-    Input:   subjectnames (list)
-            ets (list) currently aslways: [el, pl]
+    Input:  raw df for condition
             facets: None, 'subjects', 
     Output:  ? figure(s) that visualize the difference in accuracy btw. el and pl
     """
@@ -42,7 +35,7 @@ def plot_accuracy(raw_large_grid_df, facets=None):
     mean_for_each_block_large_grid_df =  helper.group_to_level_and_take_mean(raw_large_grid_df, lowestlevel='block')
     
     
-    if facets == None:
+    if option is None:
         # plot eyetracker vs  mean accuracy over all blocks
         (ggplot(mean_for_each_subject_large_grid_df, aes(x='et', y='accuracy', color='subject')) +\
                   geom_line(aes(group='subject')) +\
@@ -51,7 +44,7 @@ def plot_accuracy(raw_large_grid_df, facets=None):
             
             ggtitle('Mean spherical accuracy in visual degrees over all blocks for each subject')).draw()
         
-    elif facets == 'subjects':
+    elif option == 'facet_subjects':
         # make facets over subjects
         # investigate how mean accuracy is changes for different subjects
         (ggplot(mean_for_each_subject_large_grid_df, aes(x='et', y='accuracy', color='subject')) +\
@@ -62,7 +55,7 @@ def plot_accuracy(raw_large_grid_df, facets=None):
                   ggtitle('Spherical accuracy in visual degrees')).draw()
         
         
-    elif facets == 'dodge':
+    elif option == 'dodge':
         # TODO: polish
         # Here: Learn how to use stat summary          
         (ggplot(aes(x='et', y='accuracy',color='block'), data=mean_for_each_block_large_grid_df) +
@@ -201,15 +194,15 @@ def display_fixations(raw_large_grid_df, option='fixations'):
         elif option == 'offset':
             # plots for only one specific subject and specific block
             specific_subject_df = raw_large_grid_df.query('et == @eyetracker & subject == @input_subject & block == @input_block')
-                        
+                      
+            
             # mean_fix vs grid point elements
             (ggplot(specific_subject_df, aes(x='mean_gx', y='mean_gy', color='factor(posx*posy)'))
-                    # gazed fixations
                     + geom_point(show_legend=False)
                     # displayed elements
-                    + geom_point(aes(x='posx', y='posy', color='factor(posx*posy)'), shape = 'x', show_legend=False)
-                    # TODO display line to connect displayed and detected gaze position  , group='posx'
-                    #+ geom_line()
+                    + geom_point(specific_subject_df, aes(x='posx', y='posy', color='factor(posx*posy)'), shape = 'x', show_legend=False)
+                    # TODO display line to connect displayed and detected gaze position !! i f i really want to do this: try melt on gze vs displyed position and then use  group !!!
+                    #+ geom_line(group='posy')
                     #+ geom_path()
                     + ggtitle(str(eyetracker)[2:-2] + ': Mean fixation gaze of "last fixation" vs displayed element points')).draw()
 
