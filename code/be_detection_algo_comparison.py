@@ -48,11 +48,18 @@ for et in ['el','pl']:
         etevents  = pd.concat([etevents,  elevents.assign(eyetracker=et,algorithm=outputtype)],ignore_index=True, sort=False)
         
 #%%
-tstart = 220
-tdur =50
+tstart = 430
+tdur =10
 (ggplot(etsamples.query("smpl_time>%i & smpl_time<%i"%(tstart,tstart+tdur)),aes(x="smpl_time",y="gx",color="type"))+
              geom_point()+
              facet_grid("algorithm~eyetracker")
 )
 
+#%% Large Grid Performance
+complete_large_grid_df = get_condition_df.get_complete_large_grid_df(['VP3'], ['pl','el'],outputprefix='hmm_',datapath=datapath)
 #%%
+ggplot(complete_large_grid_df, aes(x='mean_gx', y='mean_gy', color='factor(posx*posy)')) \
+        + geom_point((aes(size=10, shape=10)), alpha=1.0) \
+        + geom_point(aes(x='posx', y='posy', color='factor(posx*posy)'), alpha=0.4) \
+        + ggtitle('Mean fixation gaze vs displayed element points')
+
