@@ -59,7 +59,7 @@ plt.legend(['sample','blink','saccade','fixation'])
 
 for k,row in etmsgs.query('condition=="FREEVIEW"').iterrows():
     if ~np.isnan(row['trial']):
-        #plt.text(row['msg_time'],0,'%s'%(row['exp_event']))
+        plt.text(row['msg_time'],0,'%s'%(row['exp_event']))
         plt.text(row['msg_time'],0,'%s'%(row['pic_id']))
      
 

@@ -33,8 +33,8 @@ def plot_heatmap(raw_freeview_df):
     """
     
     # the pictures have a size of 1200 x 1500 pixels
-    # they are centered  --> therefore divide by 2
-    # TODO ask again why factor of 0.6 ??
+    # factor of 0.6 as we scaled the  pictures in the matlabscript (experiment)
+    # they are centered  --> divide by 2
     pic_size_horizontal = helper.size_px2deg(1500*0.6) / 2
     pic_size_vertical = helper.size_px2deg(1200*0.6) / 2
     
@@ -92,11 +92,13 @@ def plot_heatmap(raw_freeview_df):
     with open('../generated_files/heatmap_info.md', 'w')  as gf:
         print('Pupil Labs :  total number of fixations: {}'.format(len(pl_x_coords)), file=gf)
         print('EyeLink    :  total number of fixations: {}'.format(len(el_x_coords)), file=gf)
+        print('Pupil Labs :  all picture_ids that were shown: {}'.format(np.sort(raw_fix_count_df.query("et == 'Pupil Labs'").pic_id.unique())), file=gf)
+        print('EyeLink    :  all picture_ids that were shown: {}'.format(np.sort(raw_fix_count_df.query("et == 'EyeLink'").pic_id.unique())), file=gf)
 
-    
     plt.show()
-    
-    
+
+
+
 
 
 
@@ -152,7 +154,7 @@ def plot_number_of_fixations(raw_fix_count_df, option=None):
                 + ggtitle('EyeLink vs PupilLabs: Number of fixations')).draw()
 
         
-    elif option == 'subjects':        
+    elif option == 'facet_subjects':        
         # shows number of fixations per picture for each eye tracker (facets over subjects)   
         (ggplot(raw_fix_count_df, aes(x='et', y='fix_counts', color = 'factor(pic_id)')) \
                 + geom_point(alpha=0.4) \
@@ -171,13 +173,86 @@ def plot_number_of_fixations(raw_fix_count_df, option=None):
     
 
 def plot_histogram(raw_fix_count_df):
-    #TODO
+    #TODO  
     pass
 
 
-               
-#%% main sequence
-    
-#!!!!!!!!SACCADES!!!!!!!!!!!!!
+def plot_fixation_durations(raw_freeview_df, option=None):
+    """
+    makes a density plot to investigate on the fixation durations
+    compares EyeLink and Pupil Labs in same figure
+    """
 
-# look at be_sync for help
+    if option is None:
+        # use all detected fixations of all subjects and plot desity for each eyetracker
+        # Caution: ets might have different number of detected saccades as basis!
+        (ggplot(raw_freeview_df, aes(x='duration', color='et'))
+            + geom_density()
+            + xlim([0,1])
+            + xlab('fixation duration [s]')
+            + ggtitle('Fixation durations during the Freeviewig condition')).draw()
+        
+        
+    elif option == 'facet_subjects':        
+        # shows fixation duration densities (facets over subjects)   
+        (ggplot(raw_freeview_df, aes(x='duration', color='et'))
+            + geom_density()
+            + xlim([0,1])
+            + xlab('fixation duration [s]')
+            + facet_wrap('subject', scales='free')
+            + ggtitle('Fixation durations during the Freeviewig condition')).draw()
+        
+        
+    else:
+        raise ValueError('You must set options to a valid option. See documentation.')
+    
+
+
+#
+#def plot_saccade_amplitudes(option=None):
+#    """
+#    TODO
+#    """
+#
+#    if option is None:
+#        
+#        from functions.et_make_df import make_epochs
+#        
+#        condquery = 'condition == "FREEVIEW" & exp_event=="trial"'
+#        td = [-0.2, 6]
+#        elepochs_fv = make_epochs(elsamples,elmsgs.query(condquery), td=td)
+#        plepochs_fv= make_epochs(plsamples,plmsgs.query(condquery), td=td)
+#        
+#        
+#        
+#        etevents= pd.concat([elevents.assign(eyetracker='eyelink'),plevents.assign(eyetracker='pupillabs')],ignore_index=True)
+#        
+#        #Saccadeparameters
+#        ggplot(etevents.query('type=="saccade"'),aes(x='amplitude',color='eyetracker')) + geom_density() + xlab('amplitude [degrees]') + ggtitle('Saccadeparameters')
+#        
+#        
+#    else:
+#        raise ValueError('You must set options to a valid option. See documentation.')
+# 
+    
+#    
+#def plot_main_sequence():
+#    """
+#    TODO
+#    """
+#
+#    if option is None:
+#
+#
+#        etevents= pd.concat([elevents.assign(eyetracker='eyelink'),plevents.assign(eyetracker='pupillabs')],ignore_index=True)    
+#        
+#        # main sequence
+#        # install scikit-misc
+#        ggplot(etevents.query('type=="saccade"'),aes(x='np.log10(peak_velocity)',y='np.log10(amplitude)',color='eyetracker'))+stat_smooth(method='loess') + ggtitle('main sequence')
+#        
+#        
+#        
+#    else:
+#        raise ValueError('You must set options to a valid option. See documentation.')
+# 
+#    

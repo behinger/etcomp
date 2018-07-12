@@ -16,6 +16,7 @@ import functions.detect_events as events
 import functions.detect_saccades as saccades
 import functions.et_preprocess as preprocess
 import functions.pl_detect_blinks as pl_blinks
+from functions.et_make_df import make_epochs
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
 
@@ -32,7 +33,7 @@ import logging
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 #TODO find out whats wrong with vp3 and vp12 and fix and then use vp3 again!!
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21', 'VP7', 'VP3', 'VP12']
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21','VP7']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['el', 'pl']    
 
@@ -53,7 +54,7 @@ for subject in subjectnames:
 #%% CALCULATE data and preprocess RAW data for ONE subject
 
 # specify subject
-subject = 'VP7'
+subject = 'VP4'
 
 # preprocess pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
@@ -119,6 +120,8 @@ plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa=
 #%% Call plots from analysis here
 
 
+
+
 # change into code folder
 os.chdir('/net/store/nbp/users/kgross/etcomp/code')
 
@@ -128,7 +131,7 @@ import FREEVIEW
 
 import functions.et_condition_df as condition_df
 
-subjectnames      = ['VP3', 'VP4', 'VP1']
+#subjectnames      = ['VP3', 'VP4', 'VP1']
 
 
 # LARGE GRID
@@ -164,7 +167,7 @@ raw_all_grids_df = condition_df.get_condition_df(subjectnames, ets, condition='L
 
 # plot accuracy  
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option=None)
-LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='compare_subject')
+LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='facet_subjects')
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='show_variance_for_blocks')
 # Todo well this is not what i want for my final figure :( still need to do this
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='final_figure')
@@ -186,10 +189,15 @@ FREEVIEW.plot_heatmap(raw_freeview_df)
 # plot fixation counts
 FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option=None)
 FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='eyetracker')
-FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='subjects')
+FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='facet_subjects')
 
 # plot histogram of the counts
 FREEVIEW.plot_histogram(raw_fix_count_df)
+
+# plot fixation durations
+FREEVIEW.plot_fixation_durations(raw_freeview_df)
+FREEVIEW.plot_fixation_durations(raw_freeview_df, option='facet_subjects')
+
 
 
 # TODO plot main sequence
@@ -197,14 +205,49 @@ FREEVIEW.plot_main_sequence(raw_freeview_df)
 
 
 
-# Look at pic_ids of freeviewing
-np.sort(raw_fix_count_df.pic_id.unique())
-np.sort(raw_fix_count_df.query("subject == 'VP1'").pic_id.unique())
-np.sort(raw_fix_count_df.query("subject == 'VP2' & et == 'Pupil Labs'").pic_id.unique())
+
+subject = 'VP4'
+block = None
+condition = None
 
 
+compare_raw_signal(subject, block, condition)
 
-
+#
+#def compare_raw_signal(subject, block, condition, algorithm=None):
+#    """
+#    TODO
+#    shows raw signal for each eyetracker.
+#    Colors indicate detected events
+#    """
+#    
+#
+#    datapath = '/net/store/nbp/projects/etcomp/'
+#    etsamples = pd.DataFrame()
+#    etmsgs= pd.DataFrame()
+#    etevents = pd.DataFrame()
+#
+#    etgrid   = pd.DataFrame()
+#    for et in ['el','pl']:
+#
+#        etsamples, etmsgs, etevents = preprocess.preprocess_et(et, subject,load=True)
+#
+#        etsamples = pd.concat([etsamples,elsamples.assign(eyetracker=et)],ignore_index=True, sort=False)
+#        etmsgs    = pd.concat([etmsgs,      elmsgs.assign(eyetracker=et],ignore_index=True, sort=False)
+#        etevents  = pd.concat([etevents,  elevents.assign(eyetracker=et],ignore_index=True, sort=False)
+#        
+#        etgrid  = pd.concat([etgrid,  rawGRID.assign(eyetracker=et],ignore_index=True, sort=False)
+#            
+#                    
+#        # time window depends on condition and block
+#        # TODO        
+#        tstart = 220
+#        tdur =50
+#        
+#        (ggplot(etsamples.query("smpl_time>%i & smpl_time<%i"%(tstart,tstart+tdur)),aes(x="smpl_time",y="gx",color="type"))+
+#                     geom_point()+
+#                     facet_grid("algorithm~eyetracker")).draw()
+          
 
 
 

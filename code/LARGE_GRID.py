@@ -47,11 +47,11 @@ def plot_accuracy(raw_large_grid_df, option=None):
     elif option == 'facet_subjects':
         # make facets over subjects
         # investigate how mean accuracy is changes for different subjects
-        (ggplot(mean_for_each_subject_large_grid_df, aes(x='et', y='accuracy', color='subject')) +\
-                  geom_line(aes(group='subject')) +\
-                  geom_point() +\
-                  guides(color=guide_legend(ncol=40)) +\
-                  facet_grid('.~subject')+\
+        (ggplot(mean_for_each_subject_large_grid_df, aes(x='et', y='accuracy', color='subject')) +
+                  geom_line(aes(group='subject')) +
+                  geom_point() +
+                  guides(color=guide_legend(ncol=40)) +
+                  facet_grid('.~subject')+
                   ggtitle('Spherical accuracy in visual degrees')).draw()
         
         
@@ -138,12 +138,6 @@ def display_fixations(raw_large_grid_df, option='fixations'):
     
     options are: 'fixations', 'accuracy_for_each_element', 'precision_for_each_element' and 'offset'
     """
-    # I think I make a mistake here
-    #TODO check why I thought I have to do this?
-    # I would rather plot from the raw_large_grid_df directly ??
-    # group data so that we have one fixation observation for each grid point in each block and for each subject and for each eyetracker
-    grouped_elem_pos = helper.group_to_level_and_take_mean(raw_large_grid_df, 'element_positions')
-    
     
     # only if offset option you need to ask user to specify    
     if option == 'offset':
@@ -162,7 +156,6 @@ def display_fixations(raw_large_grid_df, option='fixations'):
             # subjects vs blocks for each eyetracker new window
             (ggplot(aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)'), data= et_grouped_elem_pos) +
                     geom_point(show_legend=False) + 
-                    #guides(color=guide_legend(ncol=40)) +
                     facet_grid('block~subject')+
                     ggtitle(str(eyetracker)[2:-2] + ':  Large Grid: subjects vs block')).draw()
         
