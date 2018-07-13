@@ -1,3 +1,10 @@
 *.pyc
 *.m~
 *.asv
+.spyproject
+plots
+local
+.Rhistory
+*.docx*
+__pycache__
+

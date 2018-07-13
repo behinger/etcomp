@@ -11,7 +11,7 @@ import logging
 from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 from functions.et_helper import findFile,gaze_to_pandas
 import functions.et_parse as parse
-import functions.make_df as df
+import functions.et_make_df as make_df
 import functions.et_helper as  helper
 import imp
 try:
@@ -94,7 +94,7 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     
 
     # get the nice samples df
-    plsamples = df.make_samples_df(pldata) #
+    plsamples = make_df.make_samples_df(pldata) #
     
 
     # Get msgs df      
@@ -234,7 +234,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     elsamples['gy'] = 1080 - elsamples['gy']
     
     # "select" relevant columns
-    elsamples = df.make_samples_df(elsamples)
+    elsamples = make_df.make_samples_df(elsamples)
             
         
     # Parse EL msg

@@ -10,7 +10,7 @@ import pandas as pd
 #from plotnine import *
 #from plotnine.data import *
 
-#import functions.make_df as df
+#import functions.et_make_df as make_df
 #import functions.et_helper as  helper
 #import functions.et_plotting as etplot
 #import functions.detect_saccades as saccades
@@ -18,7 +18,7 @@ import pandas as pd
 #import functions.pl_detect_blinks as pl_blinks
 #from functions.detect_events import make_blinks,make_saccades,make_fixations
 
-import functions.make_df as make_df
+import functions.et_make_df as make_df
 from functions.et_helper import tic,toc
 from functions.et_helper import append_eventtype_to_sample
 import nslr_hmm
@@ -119,7 +119,7 @@ def sampletype_to_event(etsamples,eventtype):
     #events['end_gx']   =  list(etsamples.loc[etsamples['tmp'] == -1, 'gx'].astype(float))
     #events['end_gy']   =  list(etsamples.loc[etsamples['tmp'] == -1, 'gy'].astype(float))
 
-    events['spher_amplitude']= events.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
+    events['amplitude']= events.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
     for ix,row in events.iterrows():
         # take the mean gx/gy position over all samples that belong to that fixation
         # removed bad samples explicitly
@@ -131,7 +131,7 @@ def sampletype_to_event(etsamples,eventtype):
         thetas = eventdf.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.x0,localrow.y0,localrow.x1,localrow.y1),axis=1)
        
             # calculate the rms 
-        events.loc[ix, 'spher_rms'] = np.sqrt(((np.square(thetas)).mean()))
+        events.loc[ix, 'rms'] = np.sqrt(((np.square(thetas)).mean()))
         
     # cleanup
     etsamples.drop('tmp', axis=1, inplace=True)

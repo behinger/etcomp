@@ -145,7 +145,7 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
 def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element']):
     # we group by  block and element and then take the last fixation
     
-    # TODO auskommentieren weil davon komischer Fehler kommt
+    # TODO commented out cause it raises weird error
     # for HMM we define alle smooth pursuit as fixations
     # merged_etevents.type[merged_etevents.type == 'smoothpursuit'] = 'fixation'
     
@@ -156,7 +156,105 @@ def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element'])
     return large_grid_df
 
 
+
+
+#%% function to make groupby easier
+    
+
+def group_to_level_and_take_mean(raw_condition_df, lowestlevel):
+    """
+    make a groupby
+    """
+    
+    if lowestlevel=='subject':
+        # get df grouped by et and subject 
+        # --> takes the mean of the accuracy and precision measures over all blocks
+        grouped_df = raw_condition_df.groupby(['et', 'subject']).mean().reset_index(level=['et', 'subject'])
+    
+    
+    elif lowestlevel=='block':
+        # get df grouped by et, subject and block
+        # --> makes a mean for each block of the subject
+        grouped_df = raw_condition_df.groupby(['et', 'subject','block']).mean().reset_index(level=['et','subject','block'])
+
+
+    elif lowestlevel=='element_positions':
+        # get df grouped by et, subject and block
+        # --> makes a mean for each block of the subject
+        grouped_df = raw_condition_df.groupby(['et', 'subject', 'block','posx', 'posy']).mean().reset_index(level=['et', 'subject', 'block','posx', 'posy'])
+         
+        
+    elif lowestlevel=='condition':
+        # get df grouped by et, subject and GRID condition
+        # --> makes a mean for each Gridcondition of the subject
+        grouped_df = raw_condition_df.groupby(['et', 'subject', 'condition']).mean().reset_index(level=['et', 'subject', 'condition'])
+
+        
+    else:
+        raise ValueError('This level is unknown / not implemented')
+    
+    return grouped_df
+
+
+ 
+
+
+#%% set dtypes of dataframe and make the labes ready to get plotted
+    
+def set_dtypes(df):
+    """
+    Set the dtype of the categories, so that plotting is easier and more pretty.
+    E.g. set column 'et' from object to categorical
+    """        
+
+    logging.debug('dtypes of the df before: %s', df.dtypes)
+
+    # make all object variables categorical
+    df[df.select_dtypes(['object']).columns] = df.select_dtypes(['object']).apply(lambda x: x.astype('category'))
+    
+    # list of categorical variables that have to be treated separately as they were not object dtypes
+    categorial_var = ["block", "trial", "pic_id"]
+    
+    # set columns to correct dtype
+    for column in categorial_var:
+        if column in df:
+            df[column] = df[column].astype('category')
+        
+    
+    logging.debug('dtypes of the df after: %s', df.dtypes)
+    
+    return df    
+
+
+def set_to_full_names(df):
+    """
+    rename columns and values to their full name
+    e.g. et --> Eye-Tracker
+    """
+    # TODO maybe more renaming?
+    
+    # maybe dont do this but rather use xaxis relabeling
+    # rename columnnames
+    # df = df.rename(index=str, columns={"et": "Eye-Tracker", "pic_id": "picture id", "fix_count": "number of fixations"})
+    
+    #rename values
+    df['et'] = df['et'].map({'el': 'EyeLink', 'pl': 'Pupil Labs'})
+    
+    return df
+
+
 #%% everything related to VISUAL DEGREES
+
+def size_px2deg(px, pxPerDeg=0.276,distance=600):
+    """
+    function to get the picture size of the freeviewing task
+    from pixels into visual angle
+    """
+          
+    deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
+
+    return deg
+
 
 def px2deg(px, orientation, pxPerDeg=0.276,distance=600):
     # VD
@@ -176,6 +274,7 @@ def px2deg(px, orientation, pxPerDeg=0.276,distance=600):
     return deg
 
 
+
 def sph2cart(theta_sph,phi_sph,rho_sph=1):
     xyz_sph = np.asarray([rho_sph * sin(theta_sph) * cos(phi_sph), 
            rho_sph * sin(theta_sph) * sin(phi_sph), 
@@ -188,7 +287,7 @@ def sph2cart(theta_sph,phi_sph,rho_sph=1):
 
 #%% LOAD & SAVE & FIND file
     
-def load_file(et,subject,datapath,outputprefix=''):
+def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix=''):
     
     # filepath for preprocessed folder
     preprocessed_path = os.path.join(datapath, subject, 'preprocessed')

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from plotnine import *
 from plotnine.data import *
 
-import functions.make_df as df
+import functions.et_make_df as make_df
 import functions.et_helper as  helper
 import functions.et_plotting as etplot
 import functions.detect_events as events
@@ -17,6 +17,7 @@ import functions.detect_saccades as saccades
 import functions.et_preprocess as preprocess
 import functions.pl_detect_blinks as pl_blinks
 from functions.detect_events import make_blinks,make_saccades,make_fixations
+
 
 
 #%% LOAD DATA and preprocess RAW data for ALL subjects
@@ -30,16 +31,18 @@ import logging
 # restricted to subjects that we do not exclude from analysis
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
-#rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8']
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP15', 'VP3', 'VP4','VP7', 'VP8', 'VP11', 'VP12', 'VP14']
+#TODO find out whats wrong with vp3 and vp12 and fix and then use vp3 again!!
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21', 'VP7', 'VP3', 'VP12']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
-ets               = ['et', 'pl']    
+ets               = ['el', 'pl']    
 
 
 # get a logger
 logger = logging.getLogger(__name__)
 
-# preprocess for all subjects
+
+
+#%% preprocess for all subjects
 for subject in subjectnames:
     for et in ets:
         logger.critical(' ')
@@ -50,7 +53,7 @@ for subject in subjectnames:
 #%% CALCULATE data and preprocess RAW data for ONE subject
 
 # specify subject
-subject = 'VP14'
+subject = 'VP7'
 
 # preprocess pl data
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations))
@@ -101,7 +104,9 @@ plt.plot(etsamples.query('type=="saccade"')['smpl_time'],etsamples.query('type==
 plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=="fixation"')['gx'],'o')
 plt.legend(['sample','blink','saccade','fixation'])
 
-plt.title(et_str)
+plt.title(str(et_str + " " + subject))
+
+# if you want to look at the not cleaned data, you should set the yaxis
 plt.ylim([-50,2500])
 
 
@@ -113,18 +118,89 @@ plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa=
 
 #%% Call plots from analysis here
 
-# Large Grid
-LARGEGRID.plot_accuracy(subjectnames)
+
+# change into code folder
+os.chdir('/net/store/nbp/users/kgross/etcomp/code')
+
+import LARGE_GRID 
+import LARGE_and_SMALL_GRID
+import FREEVIEW
+
+import functions.et_condition_df as condition_df
+
+subjectnames      = ['VP3', 'VP4', 'VP1']
 
 
-# Large and Small Grid 
-LARGE_and_SMALL_GRID.plot_accuracy(subjectnames)
+# LARGE GRID
+
+# load grid df for subjectnames
+raw_large_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_GRID')
+
+# plot accuracy    
+LARGE_GRID.plot_accuracy(raw_large_grid_df, option=None)
+LARGE_GRID.plot_accuracy(raw_large_grid_df, option='facet_subjects')
+LARGE_GRID.plot_accuracy(raw_large_grid_df, option='dodge')
+
+# plot accuracy components
+LARGE_GRID.compare_accuracy_components(raw_large_grid_df)
+LARGE_GRID.compare_accuracy_components(raw_large_grid_df, display_precision=True)
+
+# look at numerical accuracies in table
+table_large_grid_accuracy = LARGE_GRID.make_table_accuracy(raw_large_grid_df)
+print(table_large_grid_accuracy.to_string())
+
+# investigate on the position and properties of detected fixations
+LARGE_GRID.display_fixations(raw_large_grid_df, option='fixations')
+LARGE_GRID.display_fixations(raw_large_grid_df, option='accuracy_for_each_element')
+LARGE_GRID.display_fixations(raw_large_grid_df, option='precision_for_each_element')
+LARGE_GRID.display_fixations(raw_large_grid_df, option='offset')
+
+
+
+
+
+# LARGE and SMALL GRID
+raw_all_grids_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_and_SMALL_GRID')
+
+# plot accuracy  
+LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option=None)
+LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='compare_subject')
+LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='show_variance_for_blocks')
+# Todo well this is not what i want for my final figure :( still need to do this
+LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='final_figure')
+
+# investigate on the position and properties of detected fixations
+LARGE_and_SMALL_GRID.display_fixations(raw_all_grids_df, option='fixations')
+
+
+
+
 
 # Freeviewing
-FREEVIEW.plot_histogram(subjectnames)
-FREEVIEW.plot_heatmap(subjectnames)
+raw_freeview_df, raw_fix_count_df = condition_df.get_condition_df(subjectnames, ets, condition='FREEVIEW')
+
+# plot the fixations as a heatmap
+# TODO annotation how many fixations from how many pictures are used for each eyetracker
+FREEVIEW.plot_heatmap(raw_freeview_df)
+
+# plot fixation counts
+FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option=None)
+FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='eyetracker')
+FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='subjects')
+
+# plot histogram of the counts
+FREEVIEW.plot_histogram(raw_fix_count_df)
 
 
+# TODO plot main sequence
+FREEVIEW.plot_main_sequence(raw_freeview_df)
+
+
+
+# Look at pic_ids of freeviewing
+np.sort(raw_fix_count_df.pic_id.unique())
+np.sort(raw_fix_count_df.query("subject == 'VP1'").pic_id.unique())
+np.sort(raw_fix_count_df.query("subject == 'VP2' & et == 'Pupil Labs'").pic_id.unique())
 
 
 

@@ -248,7 +248,7 @@ def parse_message(msg):
         #LARGEGG in LARGEGRID umbennen
         if split[2] == "LARGEGG":
             split[2] = "LARGEGRID"
-        #TODO why doesnt this work?    
+  
         if split[2] == "SMALLGG":
             split[2] = "SMALLGRID"
 

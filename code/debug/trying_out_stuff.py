@@ -8,6 +8,164 @@ Created on Sat May 12 13:58:59 2018
 
 
 
+#%% investigate on the position of fixations (use density)
+
+# only for sanity:
+# plotting all fixations for each eye tracker
+ggplot(complete_freeview_df, aes(x='mean_gx', y='mean_gy')) \
+        + geom_point(aes(size = 'duration', color = 'pic_id')) \
+        + guides(color=guide_legend(ncol=40)) \
+        + facet_grid('.~et') \
+        + ggtitle('EyeLink vs PupilLabs: All fixations of all subjects of all trials')
+
+
+# looking at density distributions
+# for each gaze component (horizontal/vertical) and for each eyetracker
+gaze_comp_freeview_df = freeview_df.melt(id_vars=['et', 'subject', 'block', 'trial', 'pic_id', 'start_time', 'end_time', 'duration', 'rms'], var_name='gaze_comp')
+
+# display both eye tracker in the same plot
+ggplot(gaze_comp_freeview_df, aes(x='value', color = 'et')) \
+       + stat_density(geom='line', kernel='gaussian') \
+       + xlab('Position in visual angle (degrees)') \
+       + facet_grid('.~gaze_comp')
+
+
+# using a 2D visualization for the density
+ggplot(freeview_df, aes(x='mean_gx', y='mean_gy')) \
+    + stat_density_2d() \
+    + facet_grid('.~et') \
+    + ggtitle('EyeLink vs PupilLabs: Density distribution over all subjects and all trials')
+
+
+
+
+
+
+
+# JUST FOR ME
+ggplot(freeview_df, aes(x='mean_gx', y='mean_gy')) \
+    + geom_point(alpha = 0.25, color='red') \
+    + stat_density_2d() \
+    + facet_grid('.~et') \
+    + ggtitle('EyeLink vs PupilLabs: Density distribution over all subjects and all trials')
+
+
+
+
+#%% All the old ANALYSIS get condition df functions:
+
+
+#%% Create large_grid_df for all subjects
+
+
+def get_complete_large_grid_df(subjectnames, ets,**kwargs):
+    # make the df for the large GRID for both eyetrackers and all subjects
+    
+    # create df
+    complete_large_grid_df = pd.DataFrame()
+        
+    for subject in subjectnames:
+        for et in ets:
+            logging.critical('Eyetracker: %s    Subject: %s ', et, subject)
+            
+            # load preprocessed data for one eyetracker and for one subject
+            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True,**kwargs)
+            
+            # adding the messages to the event df
+            merged_events = helper.add_msg_to_event(etevents, etmsgs, timefield = 'start_time', direction='backward')
+                       
+            # make df for grid condition that only contains ONE fixation per element
+            # (the last fixation before the new element  (used a groupby.last() to achieve that))
+            large_grid_df = make_df.make_large_grid_df(merged_events)          
+            
+            # add a column for eyetracker and subject
+            large_grid_df['et'] = et
+            large_grid_df['subject'] = subject
+            
+            # concatenate to the complete df
+            complete_large_grid_df = pd.concat([complete_large_grid_df,large_grid_df])
+                   
+    return complete_large_grid_df
+
+
+
+
+#%% Create small_large_grid_df for all subjects
+
+
+def get_complete_small_large_grid_df(subjectnames, ets,**kwargs):
+    # make the df for all elements that appear in the small AND the large GRID for both eyetrackers and all subjects
+    
+    # create df
+    complete_small_large_grid_df = pd.DataFrame()
+        
+    for subject in subjectnames:
+        for et in ets:
+            logging.critical('Eyetracker: %s    Subject: %s ', et, subject)
+            
+            # load preprocessed data for one eyetracker and for one subject
+            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True,**kwargs)
+            
+            # adding the messages to the event df
+            merged_events = helper.add_msg_to_event(etevents, etmsgs, timefield = 'start_time', direction='backward')
+                       
+            # make df for grid condition that only contains ONE fixation per element
+            # (the last fixation before the new element  (used a groupby.last() to achieve that))
+            all_elements_df = make_df.make_all_elements_grid_df(merged_events)          
+            
+            # add a column for eyetracker and subject
+            all_elements_df['et'] = et
+            all_elements_df['subject'] = subject
+            
+            # concatenate to the complete df
+            complete_small_large_grid_df = pd.concat([complete_small_large_grid_df,all_elements_df])
+                   
+    return complete_small_large_grid_df
+
+
+
+
+
+
+#%% Create complete_freeview_df for all subjects
+
+
+
+def get_complete_freeview_df(subjectnames, ets,**kwargs):
+    # make the df for the large GRID for both eyetrackers and all subjects
+    
+    # create df
+    complete_freeview_df = pd.DataFrame()
+    complete_fix_count_df = pd.DataFrame()
+        
+    for subject in subjectnames:
+        for et in ets:
+            logging.critical('Eyetracker: %s    Subject: %s ', et, subject)
+            
+            # load preprocessed data for one eyetracker and for one subject
+            #etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject, load=True)
+            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True,**kwargs)
+          
+            
+            # due to experimental triggers: FORWARD merge to add msgs to the events
+            merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='forward')
+            
+            # freeview df
+            freeview_df, fix_count_df = make_df.make_freeview_df(merged_events)          
+            
+            # add a column for eyetracker and subject
+            freeview_df['et'] = et
+            fix_count_df['et'] = et
+            freeview_df['subject'] = subject
+            fix_count_df['subject'] = subject
+            
+            # concatenate to the complete dfs
+            complete_freeview_df = pd.concat([complete_freeview_df,freeview_df])
+            complete_fix_count_df = pd.concat([complete_fix_count_df,fix_count_df])
+            
+            
+    return complete_freeview_df, complete_fix_count_df
+
 
 
 
@@ -462,7 +620,7 @@ import matplotlib.pyplot as plt
 
 import functions.et_plotting as etplot
 import functions.et_preprocess as preprocess
-import functions.make_df as df
+import functions.et_make_df as df
 import functions.detect_events as events
 import functions.detect_saccades as saccades
 import functions.pl_detect_blinks as pl_blinks

@@ -25,9 +25,11 @@ if len(logger.handlers) != 2:
     logfile = os.path.join('/net/store/nbp/projects/etcomp/log_files', str('log_preprocess_' + time.strftime("%Y_%m_%d-%H-%M-%S") + '.log'))
     
     # delete file if it already exists
-    if os.path.isfile(logfile):
-        os.remove(logfile)
-    
+    try:
+        os.remove(logfile)       
+    except FileNotFoundError:
+        pass
+        
     # define handlers    
     logging_file = logging.FileHandler(filename=logfile)
     logging_cons = logging.StreamHandler(sys.stdout)
@@ -62,9 +64,11 @@ def update_logger_filepath(newpath):
             logger.removeHandler(hdlr)
     
     # delete file if it already exists
-    if os.path.isfile(newpath):
-        os.remove(newpath)
-    
+    try:
+        os.remove(logfile)       
+    except FileNotFoundError:
+        pass
+     
     # define handlers    
     logging_file = logging.FileHandler(filename=newpath)
     

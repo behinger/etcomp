@@ -17,6 +17,7 @@ from scipy.interpolate import PchipInterpolator
 import pandas as pd
 import numpy.linalg as LA
 from functions.et_helper import append_eventtype_to_sample
+import functions.et_make_df as make_df
 from matplotlib import pyplot as plt
 
 import logging
@@ -233,7 +234,8 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
                 'expanded_end_gy': xy_data[expanded_saccade_end][1],
                 'expanded_amplitude': np.sum(normed_vel_data[expanded_saccade_start:expanded_saccade_end]),
                 'expanded_peak_velocity': np.max(normed_vel_data[expanded_saccade_start:expanded_saccade_end])*sample_rate,
-
+                
+                # only velocity based
                 'raw_start_time': cis[0],
                 'raw_end_time': cis[1],
                 'raw_duration': (cis[1] - cis[0])*1./sample_rate,
@@ -241,9 +243,10 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
                 'raw_start_gy': xy_data[cis[1]][1],
                 'raw_end_gx': xy_data[cis[0]][0],
                 'raw_end_gy': xy_data[cis[0]][1],
-                'raw_amplitude': np.sum(normed_vel_data[cis[0]:cis[1]]),
+                # no need to calculate the raw_amplitude here as we will calculate the SPHERICAL amplitude later
+                #'raw_amplitude': np.sum(normed_vel_data[cis[0]:cis[1]]),
                 'raw_peak_velocity': np.max(normed_vel_data[cis[0]:cis[1]]) * sample_rate,
-
+                
             }
             saccades.append(this_saccade)
         except IndexError:
@@ -277,9 +280,17 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
 
     # shell()
     
+    
+    # convert into pandas df
+    saccade_df = pd.DataFrame(saccades)
+    
+    # calculate the spherical angle
+    saccade_df['raw_amplitude']= saccade_df.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.raw_start_gx,localrow.raw_start_gy,localrow.raw_end_gx,localrow.raw_end_gy),axis=1)
+    
     logger.debug('Done... Detecting Saccades')
     
-    return pd.DataFrame(saccades)
+    return saccade_df
+
 
 
 

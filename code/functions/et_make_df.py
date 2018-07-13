@@ -44,7 +44,7 @@ def make_samples_df(etsamples):
 
 
 def make_events_df(etevents):
-    fields_to_keep = set(['blink_id', 'start_gx','start_gy','end_gx','end_gy','end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'mean_gx', 'mean_gy', 'spher_fix_rms','spher_rms','spher_amplitude'])
+    fields_to_keep = set(['blink_id', 'start_gx','start_gy','end_gx','end_gy','end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'mean_gx', 'mean_gy', 'rms'])
         
     fields_to_fillin = fields_to_keep - set(etevents.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin
@@ -123,7 +123,7 @@ def make_large_grid_df(merged_events):
     #           (see add_msg_to_event in et_helper)
     
     # only large grid condition
-    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     # use the last exp_event fixation as element 50
     stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
     large_grid_events.loc[stopevents.index] = stopevents
@@ -137,7 +137,7 @@ def make_large_grid_df(merged_events):
     # use absolute value of difference in angle (vertical)
     large_grid_df['vert_accuracy'] = large_grid_df.apply(calc_vertical_accuracy, axis=1)
     # calculate the spherical angle
-    large_grid_df['spher_accuracy'] = large_grid_df.apply(calc_3d_angle_onerow, axis=1)
+    large_grid_df['accuracy'] = large_grid_df.apply(calc_3d_angle_onerow, axis=1)
    
     return large_grid_df
 
@@ -151,16 +151,16 @@ def make_all_elements_grid_df(merged_events):
     #           (see add_msg_to_event in et_helper)
     
     # only large grid condition
-    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     # use the last exp_event fixation as element 50
     stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
     large_grid_events.loc[stopevents.index] = stopevents
     
     # only small grid before condition
-    small_grid_before_events = merged_events.query('condition == "SMALLGRID_BEFORE"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    small_grid_before_events = merged_events.query('condition == "SMALLGRID_BEFORE"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     
     # only small grid after condition
-    small_grid_after_events = merged_events.query('condition == "SMALLGRID_AFTER"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'spher_fix_rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    small_grid_after_events = merged_events.query('condition == "SMALLGRID_AFTER"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     
 
     
@@ -179,7 +179,7 @@ def make_all_elements_grid_df(merged_events):
     # use absolute value of difference in angle (vertical)
     all_elements_df['vert_accuracy'] = all_elements_df.apply(calc_vertical_accuracy, axis=1)
     # calculate the spherical angle
-    all_elements_df['spher_accuracy'] = all_elements_df.apply(calc_3d_angle_onerow, axis=1)
+    all_elements_df['accuracy'] = all_elements_df.apply(calc_3d_angle_onerow, axis=1)
    
     return all_elements_df
 
@@ -194,13 +194,13 @@ def make_freeview_df(merged_freeview_events):
     
     
     # select only relevant columns
-    all_freeview_events = merged_freeview_events.loc[:,['msg_time', 'condition', 'exp_event', 'block', 'trial', 'pic_id', 'type', 'start_time', 'end_time','duration', 'mean_gx', 'mean_gy', 'spher_fix_rms']]
+    all_freeview_events = merged_freeview_events.loc[:,['msg_time', 'condition', 'exp_event', 'block', 'trial', 'pic_id', 'type', 'start_time', 'end_time','duration', 'mean_gx', 'mean_gy', 'rms']]
     
     # select only fixations while picture was presented
     freeview_fixations_df = all_freeview_events.query("type == 'fixation' & exp_event == 'trial'")
     
     # count how many fixations per trail   in seperate dataframe
-    fix_count_df = freeview_fixations_df.groupby(['block', 'trial', 'pic_id']).size().reset_index(name='fix_counts')
+    fix_count_df = freeview_fixations_df.groupby(['pic_id']).size().reset_index(name='fix_counts')
     
     
     return freeview_fixations_df, fix_count_df
