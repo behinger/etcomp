@@ -66,7 +66,7 @@ def plot_accuracy(raw_all_grids_df, option=None):
                 ggtitle('Comparing accuracy of conditions')).draw()
  
     
-    elif option == 'compare_subject':
+    elif option == 'facet_subjects':
         # plot mean accuracy over all blocks for each subject
         (ggplot(mean_for_each_subject_and_condition, aes(x='et', y='accuracy',color='condition')) +
                 geom_point(alpha=0.1,data=mean_for_each_subject_and_condition, position=position_dodge(width=0.5)) +
