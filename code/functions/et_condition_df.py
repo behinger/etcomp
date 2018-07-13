@@ -22,7 +22,7 @@ import logging
 
 #%% Create complete_condition_df depending on the selected condition for all subjects
 
-def get_condition_df(subjectnames, ets, condition=None, **kwargs):
+def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **kwargs):
     # make the df for the large GRID for both eyetrackers and all subjects
     # **kwargs for using different prefix i.e. using a different event detection algorithm, see et_preprocess
     
@@ -35,15 +35,24 @@ def get_condition_df(subjectnames, ets, condition=None, **kwargs):
     # create df
     complete_condition_df = pd.DataFrame()
     complete_fix_count_df = pd.DataFrame()
-       
+    if data:
+        logger.debug('Data already loaded, just applying transformations')
+        ets = data[0].eyetracker.unique()
+        subjectnames = data[0].subject.unique()
+        
+        
     for subject in subjectnames:
         for et in ets:
             logger.critical('Eyetracker: %s    Subject: %s ', et, subject)
             
             # load preprocessed data for one eyetracker and for one subject at a time
-            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True,**kwargs)
-     
-            if condition == 'LARGE_GRID' or  condition == 'LARGE_and_SMALL_GRID':
+            if not data:
+                etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True,**kwargs)
+            else:
+                etsamples,etmsgs,etevents = (d.query("eyetracker=='"+et+"'&subject=='"+subject+"'").drop(["eyetracker","subject"],axis=1) for d in data) 
+                
+                
+            if condition in ['LARGE_GRID','LARGE_and_SMALL_GRID','BEEP','SMOOTHPURSUIT']:
                 
                 # adding the messages to the event df (backward merge)                
                 merged_events = helper.add_msg_to_event(etevents, etmsgs, timefield = 'start_time', direction='backward')
@@ -53,11 +62,14 @@ def get_condition_df(subjectnames, ets, condition=None, **kwargs):
                     # (the last fixation before the new element  (used a groupby.last() to achieve that))
                     condition_df = make_df.make_large_grid_df(merged_events)          
                 
-                elif condition == 'LARGE_and_SMALL_GRID':                  
+                elif condition == 'LARGE_and_SMALL_GRID':                   
                     # make df for all grids that only contains ONE fixation per element
                     # (last fixation before the new element is shown)
                     condition_df = make_df.make_all_elements_grid_df(merged_events)                  
-                
+                elif condition == 'BEEP':
+                    condition_df =  merged_events.query("type=='blink'&condition=='BLINK'&exp_event=='beep'")
+                else:
+                    condition_df = merged_events
             
             elif condition == 'FREEVIEW':
                 # due to experimental triggers: FORWARD merge to add msgs to the events
