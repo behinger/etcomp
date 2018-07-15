@@ -82,7 +82,7 @@ def add_events_to_samples(etsamples, etevents):
         if evt == 'blink':
             # counts up the blink_id
             # Pure Magic
-            etsamples['blink_id'] = (1*(etsamples['type']=='blink')) * ((1*(etsamples['type']=='blink')).diff()==1).cumsum()
+            etsamples.loc[:,'blink_id'] = (1*(etsamples['type']=='blink')) * ((1*(etsamples['type']=='blink')).diff()==1).cumsum()
     
     return(etsamples)
         
@@ -238,7 +238,7 @@ def set_to_full_names(df):
     # df = df.rename(index=str, columns={"et": "Eye-Tracker", "pic_id": "picture id", "fix_count": "number of fixations"})
     
     #rename values
-    df['et'] = df['et'].map({'el': 'EyeLink', 'pl': 'Pupil Labs'})
+    df.loc[:,'et'] = df['et'].map({'el': 'EyeLink', 'pl': 'Pupil Labs'})
     
     return df
 

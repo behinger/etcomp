@@ -50,9 +50,8 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
                 etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=True,**kwargs)
             else:
                 etsamples,etmsgs,etevents = (d.query("eyetracker=='"+et+"'&subject=='"+subject+"'").drop(["eyetracker","subject"],axis=1) for d in data) 
-                
-                
-            if condition in ['LARGE_GRID','LARGE_and_SMALL_GRID','BEEP','SMOOTHPURSUIT']:
+                    
+            if condition in ['LARGE_GRID','LARGE_and_SMALL_GRID','SMOOTHPURSUIT']:
                 
                 # adding the messages to the event df (backward merge)                
                 merged_events = helper.add_msg_to_event(etevents, etmsgs, timefield = 'start_time', direction='backward')
@@ -66,33 +65,38 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
                     # make df for all grids that only contains ONE fixation per element
                     # (last fixation before the new element is shown)
                     condition_df = make_df.make_all_elements_grid_df(merged_events)                  
-                elif condition == 'BEEP':
-                    condition_df =  merged_events.query("type=='blink'&condition=='BLINK'&exp_event=='beep'")
+                
+
                 else:
                     condition_df = merged_events
-            
+            elif condition == 'BLINK':
+                merged_events = helper.add_msg_to_event(etevents, etmsgs.query("condition=='BLINK'&(exp_event=='stop'|exp_event=='start')"), timefield = 'start_time', direction='backward')
+                condition_df =  merged_events.query("type=='blink'&condition=='BLINK'&exp_event=='start'")
             elif condition == 'FREEVIEW':
-                # due to experimental triggers: FORWARD merge to add msgs to the events
+                # due to experimental trigger bug: FORWARD merge to add msgs to the events
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='forward')
                 
                 # freeview df
                 condition_df, fix_count_df = make_df.make_freeview_df(merged_events)          
                 
                 # add a column for eyetracker and subject
-                fix_count_df['et'] = et
-                fix_count_df['subject'] = subject
+                fix_count_df.loc[:,'et'] = et
+                fix_count_df.loc[:,'subject'] = subject
 
                 # concatenate to the complete fix_count_df                
                 complete_fix_count_df = pd.concat([complete_fix_count_df,fix_count_df])     
         
             else:
-                raise ValueError('You must specify a known condition.')
+                raise ValueError('You must specify an implemented condition.')
 
             
             # do the stuff that we need to do for all conditions anyways
             # add a column for eyetracker and subject
-            condition_df['et'] = et
-            condition_df['subject'] = subject
+            if condition_df.empty:
+                logger.critical('empty subject:%s,et:%s'%(subject,et))
+                continue
+            condition_df.loc[:,'et'] = et
+            condition_df.loc[:,'subject'] = subject
             
             # concatenate the df of one specific conditin and one specific subject to the complete_condition_df
             complete_condition_df = pd.concat([complete_condition_df, condition_df])

@@ -25,14 +25,19 @@ os.chdir(wd)
 # loop over the foldernames (subjectnames)
 # restricted to subjects that we do not exclude from analysis
 # also loop over the et
-foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 logfilepath = '/net/store/nbp/projects/etcomp/log_files/'
-# rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8']
-# ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
-# ['pilot', '007', 'log_files', 'surface', 'VP1', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14', 'VP15']
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP1', 'VP2', 'VP3', 'VP4', 'VP7', 'VP8', 'VP11', 'VP12', 'VP14']
+
+# loop over the foldernames (subjectnames)
+# restricted to subjects that we do not exclude from analysis
+# also loop over the et
+foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
+#TODO find out whats wrong with vp3 and vp12 and fix and then use vp3 again!!
+rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21','VP7']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
-subjectnames = ['VP1','VP2','VP3','VP4']   
+ets               = ['el', 'pl']
+subjectnames = [subjectnames[i] for i in [9,14]]
+
+
 print(sys.argv)
 if len(sys.argv)>1 and sys.argv[1] == 'startgrid':
     
