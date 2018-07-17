@@ -59,6 +59,7 @@ def make_events_df(etevents):
 #%% MAKE EPOCHS
 
 def make_epochs(et,msgs,td=[-2,2]):
+    import functions.et_helper as et_helper
     # formally called match_data
 
     # Input:    et(DataFrame)      input data of the eyetracker (has column smpl_time)
@@ -70,23 +71,32 @@ def make_epochs(et,msgs,td=[-2,2]):
     logger = logging.getLogger(__name__)
     
     epoched_data = pd.DataFrame()
+    msgs = msgs.sort_values(by="msg_time")
+    startsample = np.searchsorted(et['smpl_time'],msgs['msg_time']+td[0])
+    endsample   = np.searchsorted(et['smpl_time'],msgs['msg_time']+td[1])
     
-    for idx,msg in msgs.iterrows():
-        logger.debug(idx)
-        ix = ((et['smpl_time'] - msg['msg_time'])>td[0]) & ((et['smpl_time'] - msg['msg_time'])<td[1]) # ix is a boolean (0 / 1, false / true) (this way we find all samples +-td)
+    for idx,(start,end) in enumerate(zip(startsample,endsample)):
+        et_helper.tic()
+        if idx%50 == 0:
+            print("msg %i from %i"%(idx,msgs.shape[0]))
+        ix = range(start,end) 
+        msg = msgs.iloc[idx]
         if np.sum(ix) == 0:
             logger.warning('warning, no sample found for msg %i'%(idx))
             logger.warning(msg)
             continue
-        tmp= et.loc[ix]
+        
+        tmp= et.iloc[ix]
         tmp = tmp.assign(td=tmp.smpl_time-msg['msg_time'])
-    
-        msg_tmp = pd.concat([msg.to_frame()]*tmp.shape[0],axis=1).T
+        
+        #msg_tmp = pd.concat([msg.to_frame()]*tmp.shape[0],axis=1).T # <-- this step is slow
+        #print(msg)
+        msg_tmp = pd.DataFrame([msg],index=range(tmp.shape[0]),columns=msg.index)
+        #print(msg_tmp)
         msg_tmp.index = tmp.index
-                
         tmp = pd.concat([tmp,msg_tmp],axis=1)
+        
         epoched_data = epoched_data.append(tmp)
-                 
     return(epoched_data)
  
    
