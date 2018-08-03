@@ -12,7 +12,7 @@ import functions.add_path
 #import os
 
 from functions.detect_events import make_blinks,make_saccades,make_fixations
-from functions.et_import import import_pl, import_el
+from functions.et_import import import_pl
 from functions.detect_bad_samples import detect_bad_samples,remove_bad_samples
 from functions.et_helper import add_events_to_samples
 from functions.et_helper import load_file, save_file
@@ -46,6 +46,7 @@ def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=Fal
         logger.debug('Caution: etevents might be empty')
         etsamples,etmsgs,etevents = import_pl(subject=subject,datapath=datapath)
     elif et == 'el':
+        from functions.et_import import import_el
         etsamples,etmsgs,etevents = import_el(subject=subject,datapath=datapath)
     else:
         raise ValueError("Eyetracker must be el or pl!") 
