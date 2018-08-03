@@ -9,7 +9,7 @@ transformed data{
 }
 parameters {
   real<lower=0> sigma;
-  real slope;
+  real<lower=0> slope; // enforce positivity
   real offset;
   real<lower=0, upper=time[ntime]> tau; 
 
@@ -25,7 +25,7 @@ model {
     
     slope ~ normal(0,20);
     sigma ~ cauchy(0,5);
-    tau ~ normal(tauprior,1);
+    tau ~ normal(tauprior,0.3);
    
    { 
     vector[ntime] predict;  

@@ -20,8 +20,9 @@ def load_data(algorithm='hmm_'):
     #TODO find out whats wrong with vp3 and vp12 and fix and then use vp3 again!!
     rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21','VP7','all_preprocessed']
     subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
+    #subjectnames = ['VP3']
 
-
+    print('warning: removing DC offset of time-points (to semi align eyetrackers t=0)')
     datapath = '/net/store/nbp/projects/etcomp/'
     algorithm = ['hmm_']
     etsamples = pd.DataFrame()
@@ -36,9 +37,11 @@ def load_data(algorithm='hmm_'):
                 except:
                     print('warning subject %s et %s not found'%(subject,et))
                     continue
+                
                 t0 = elmsgs.query("condition=='Instruction'&exp_event=='BEGINNING_start'").msg_time.values
                 if len(t0)!=1:
                     raise error
+                    
                 elsamples.smpl_time = elsamples.smpl_time - t0
                 elmsgs.msg_time= elmsgs.msg_time - t0
                 elevents.start_time = elevents.start_time- t0
