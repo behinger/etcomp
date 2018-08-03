@@ -8,7 +8,8 @@ Created on Fri Jun 22 13:23:55 2018
 
 import functions.add_path
 
-import sys
+import sys,os
+wd = os.getcwd()
 sys.path
 import functions.init_logger as init_logger
 import logging
@@ -20,6 +21,7 @@ import time
 import functions.et_preprocess as preprocess
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
+os.chdir(wd)
 
 # loop over the foldernames (subjectnames)
 # restricted to subjects that we do not exclude from analysis
@@ -28,13 +30,15 @@ foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 logfilepath = '/net/store/nbp/projects/etcomp/log_files/'
 rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21', 'VP7']
 
-#subjectnames = [subject for subject in foldernames if subject not in rejected_subjects]
-subjectnames = ['VP3']
+subjectnames = [subject for subject in foldernames if subject not in rejected_subjects]
+#subjectnames = ['VP3']
     
-if 1 == 0:
+if len(sys.argv)>1 and sys.argv[1] == 'startgrid':
+
     import subprocess 
     subprocess.check_output(["qsub",'-cwd','-N','etcomp2','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'-q','nbp.q','grid_preprocess.sge'])
-    
+    sys.exit() 
+
 
 
 print(os.environ['SGE_TASK_ID'])

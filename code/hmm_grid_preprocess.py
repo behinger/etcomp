@@ -35,14 +35,15 @@ foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21','VP7']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['el', 'pl']
-subjectnames = [subjectnames[i] for i in [9,14]]
+#subjectnames = [subjectnames[i] for i in [9,14]]
+#subjectnames = ['VP20']
 
 
 print(sys.argv)
 if len(sys.argv)>1 and sys.argv[1] == 'startgrid':
     
     import subprocess 
-    subprocess.check_output(["qsub",'-cwd','-N','etcomp_hmm','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'hmm_grid_preprocess.sge'])
+    subprocess.check_output(["qsub",'-cwd','-N','etcomp_hmm','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'-q','nbp.q','hmm_grid_preprocess.sge'])
     sys.exit() 
 
 
