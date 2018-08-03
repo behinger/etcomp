@@ -23,9 +23,27 @@ except ImportError:
 from pyedfread import edf
 
 from functions import nbp_recalib
-
+import scipy
+import scipy.stats
 
 #%% PUPILLABS
+def pl_fix_timelag2(pl):
+    #fixes the pupillabs latency lag (which can be super large!!)
+    # there was a weird python import bug. not sure if I still need the timelag"2". Sorry :S
+    t_cam = np.asarray([p['recent_frame_timestamp'] for p in pl['notifications'] if p['subject']=='trigger'])# camera time
+    t_msg = np.asarray([p['timestamp'] for p in pl['notifications'] if p['subject']=='trigger']) # msg time
+    
+    #slope, intercept, r_value, p_value, std_err  = scipy.stats.linregress(t_msg,t_cam) # predict camera time based on msg time
+    slope,intercept,low,high = scipy.stats.theilslopes(t_cam,t_msg)
+    logger = logging.getLogger(__name__)
+    logger.warning("fixing lag (at t=0) of :%.2fms, slope of %.7f (in a perfect world this is 0ms & 1.0)"%(intercept*1000,slope))
+    # fill it back in
+    # gonna do it with a for-loop because other stuff is too voodo or not readable for me
+    
+    for ix,m in enumerate(pl['notifications']):
+        pl['notifications'][ix]['timestamp'] = pl['notifications'][ix]['timestamp']  * slope + intercept
+        
+    return(pl)
 
 def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subjectname, datapath
@@ -48,10 +66,21 @@ def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
         # where 'base_data' has a dict within a list 
         # dict_keys(['diameter', 'confidence', 'method', 'norm_pos', 'timestamp', 'id', 'topic', 'ellipse'])
         # where 'normpos' is a list (with horizon. and vert. component)
-        
+    
+    # Fix the (possible) timelag of pupillabs camera vs. computer time
+    print(type(original_pldata))
+    original_pldata = pl_fix_timelag2(original_pldata)
+    print(type(original_pldata))
     return original_pldata
 
-
+def pl_fix_timelag(pl):
+    t_cam = np.asarray([p['recent_frame_timestamp'] for p in pl['notifications'] if p['subject']=='trigger'])# camera time
+    t_msg = np.asarray([p['timestamp'] for p in pl['notifications'] if p['subject']=='trigger']) # msg time
+    #slope, intercept, r_value, p_value, std_err  = scipy.stats.linregress(t_msg,t_cam) # predict camera time based on msg time
+    slope,intercept,low,high = scipy.stats.theilslopes(t_cam,t_msg)
+    t_fixed_msg = slope*t_msg + intercept
+    print("lag found (at t=0) of :%.2fms, slope of %.7f"%(intercept*1000,slope))
+    return(t_fixed_msg)
 
 def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True, surfaceMap=True):
     # Input:    subject:         (str) name
