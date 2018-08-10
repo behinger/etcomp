@@ -28,7 +28,7 @@ os.chdir(wd)
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 logfilepath = '/net/store/nbp/projects/etcomp/log_files/'
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21', 'VP7']
+rejected_subjects = ['pilot', 'log_files', 'results','surface', '007', 'VP8', 'VP21', 'VP7']
 
 subjectnames = [subject for subject in foldernames if subject not in rejected_subjects]
 #subjectnames = ['VP3']
@@ -37,6 +37,7 @@ if len(sys.argv)>1 and sys.argv[1] == 'startgrid':
 
     import subprocess 
     subprocess.check_output(["qsub",'-cwd','-N','etcomp2','-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'-q','nbp.q','grid_preprocess.sge'])
+    #subprocess.check_output(["qsub",'-cwd','-N','etcomp','-t','11','-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'-q','nbp.q','grid_preprocess.sge'])
     sys.exit() 
 
 
