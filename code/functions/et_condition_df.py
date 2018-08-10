@@ -96,6 +96,7 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
                 logger.critical('empty subject:%s,et:%s'%(subject,et))
                 continue
             condition_df.loc[:,'et'] = et
+            condition_df.loc[:,'eyetracker'] = et # behinger added this to keep same as etsamples/etmsgs/etevents. 'et' is later renamed
             condition_df.loc[:,'subject'] = subject
             
             # concatenate the df of one specific conditin and one specific subject to the complete_condition_df
