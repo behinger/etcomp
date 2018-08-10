@@ -204,7 +204,22 @@ def display_fixations(raw_large_grid_df, option='fixations'):
             raise ValueError('You must set option to a valid string. See documentation.')
         
 
+def display_fixation_centered(raw_large_grid_df,input_subject=None,input_block=None):   
+    # plots for only one specific subject and specific block
+    if input_subject is not None:
+        raw_large_grid_df = raw_large_grid_df.query('subject == @input_subject')
+    if input_block is not None:
+        raw_large_grid_df = raw_large_grid_df.query('block == @input_block')
+        # mean_fix vs grid point elements
+    (ggplot(raw_large_grid_df, aes(x='posx-mean_gx', y='posy-mean_gy', color='factor(posx*posy)'))
+            + geom_point(show_legend=False)
+            # displayed elements
+            + annotate("point",x=0, y=0, color='black', shape = 'x')
+            + facet_wrap("~et")
+    ).draw()
 
+
+    
 
 ##%% SAVE the plot in repository
 ## TODO: make this more universal and move it to et_helper
