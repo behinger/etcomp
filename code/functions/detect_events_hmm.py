@@ -24,8 +24,10 @@ from functions.et_helper import append_eventtype_to_sample
 import nslr_hmm
 
 #%%
-
-def detect_events_hmm(etsamples,etevents,et):
+def detect_events_hmm_nosmooth(etsamples,etevents,et):
+    etsamples,etevents = detect_events_hmm(etsamples,etevents,et,smoothpursuit=False)
+    return(etsamples,etevents)
+def detect_events_hmm(etsamples,etevents,et,smoothpursuit=True):
     
     #etevents = etevents.loc[etevents.start_time < etsamples.smpl_time.iloc[-1]]
 
@@ -48,25 +50,15 @@ def detect_events_hmm(etsamples,etevents,et):
     sample_class, segmentation, seg_class = nslr_hmm.classify_gaze(t, eye,optimize_noise=False)
     toc()
     sample_class = sample_class.astype(int)
-    if 1 == 0:    
-        plt.figure()
-        COLORS = {
-                nslr_hmm.FIXATION: 'blue',
-                nslr_hmm.SACCADE: 'black',
-                nslr_hmm.SMOOTH_PURSUIT: 'green',
-                nslr_hmm.PSO: 'yellow',
-        }
-        
-        plt.plot(t, eye[:,0], '.')
-        for i, seg in enumerate(segmentation.segments):
-            cls = seg_class[i]
-            plt.plot(seg.t, np.array(seg.x)[:,0], 'o-',color=COLORS[cls])
-        
-        plt.show()
-        
-    eventtypes = np.asarray(['fixation','saccade','pso','smoothpursuit'])
+
+    
+    if smoothpursuit:
+        eventtypes = np.asarray(['fixation','saccade','pso','smoothpursuit'])
+    else:
+        eventtypes = np.asarray(['fixation','saccade','pso','fixation'])
     nonblink = etsamples.type != 'blink'
     etsamples.loc[nonblink,'type'] = eventtypes[sample_class-1]
+    
     etevents = pd.concat([etevents,
                          sampletype_to_event(etsamples,'saccade'),
                          sampletype_to_event(etsamples,'smoothpursuit'),
@@ -120,6 +112,22 @@ def sampletype_to_event(etsamples,eventtype):
     #events['end_gy']   =  list(etsamples.loc[etsamples['tmp'] == -1, 'gy'].astype(float))
 
     events['amplitude']= events.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
+    
+    
+    #startix = np.searchsorted(etsamples.smpl_time,start_times_list)
+    #endix = np.searchsorted(etsamples.smpl_time,end_times_list)
+    
+    #print('%i events of %s found'%(len(startix),eventtype))
+    # make a list of ranges to have all indices in between the startix and endix
+    #ranges = pd.DataFrame({'range':[list(range(s,e)) for s,e in zip(startix,endix)]})
+    
+    #flat_ranges = [item for sublist in ranges for item in sublist]
+    #flat_ranges = np.intersect1d(flat_ranges,range(etsamples.shape[0]))
+    #ranges.apply(lambda row:np.mean(row.gx),axis=1)
+    #events.loc[:, 'mean_gx'] = etsamples.index[flat_ranges]
+        
+        
+    
     for ix,row in events.iterrows():
         # take the mean gx/gy position over all samples that belong to that fixation
         # removed bad samples explicitly
