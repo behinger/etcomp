@@ -10,6 +10,7 @@ Created on Fri Jun 15 18:59:38 2018
 import functions.add_path
 
 import pandas as pd
+import numpy as np
 
 import matplotlib.pyplot as plt
 from plotnine import *
@@ -23,6 +24,21 @@ import functions.et_helper as  helper
 #%% different functions for analysing the Large Grid
 
 
+def plot_accuracy_be(raw_large_grid_df, agg=[np.mean,np.median]):
+    data_agg = raw_large_grid_df.groupby(['block','subject','et'],as_index=False).agg(agg[0]).groupby(['subject','et'],as_index=False).agg(agg[1])
+    
+    
+        # plot eyetracker vs  mean accuracy over all blocks
+    p = (ggplot(data_agg, aes(x='et', y='accuracy', color='subject')) 
+                  +geom_line(aes(group='subject'))
+                  +geom_point()
+                  +stat_summary(color='red',size=2)
+                  +guides(color=guide_legend(ncol=40))
+    )
+                  
+    return(p)
+    
+    
 def plot_accuracy(raw_large_grid_df, option=None):
     """
     Input:  raw df for condition
@@ -211,12 +227,12 @@ def display_fixation_centered(raw_large_grid_df,input_subject=None,input_block=N
     if input_block is not None:
         raw_large_grid_df = raw_large_grid_df.query('block == @input_block')
         # mean_fix vs grid point elements
-    (ggplot(raw_large_grid_df, aes(x='posx-mean_gx', y='posy-mean_gy', color='factor(posx*posy)'))
-            + geom_point(show_legend=False)
+    return((ggplot(raw_large_grid_df, aes(x='posx-mean_gx', y='posy-mean_gy', color='np.sqrt(posx**2+posy**2)'))
+            + geom_point(alpha=0.1)
             # displayed elements
             + annotate("point",x=0, y=0, color='black', shape = 'x')
             + facet_wrap("~et")
-    ).draw()
+    ))
 
 
     

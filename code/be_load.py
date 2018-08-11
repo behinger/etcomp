@@ -24,7 +24,7 @@ def load_data(algorithm='hmm_'):
 
     print('warning: removing DC offset of time-points (to semi align eyetrackers t=0)')
     datapath = '/net/store/nbp/projects/etcomp/'
-    algorithm = ['hmm_']
+    algorithm = [algorithm]
     etsamples = pd.DataFrame()
     etmsgs= pd.DataFrame()
     etevents = pd.DataFrame()

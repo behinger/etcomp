@@ -198,3 +198,9 @@ def plot_init_latency(smoothresult,option=''):
         pl = ggplot(smoothdiff,aes(x="taumean"))+geom_histogram(binwidth=0.005)+ggtitle('binwidth of 5ms')
         
     pl.draw()
+    
+    
+def plot_catchup_amplitudes(smooth):
+    smooth_saccade = smooth.query("type=='saccade'       & condition=='SMOOTH' & exp_event=='trialstart'") 
+    smooth_saccade_agg = smooth_saccade.groupby(["subject","et","block","trial","angle","vel"],as_index=False).agg({'amplitude':np.mean})
+    return(ggplot(smooth_saccade_agg,aes(x="vel",y="amplitude",color="et"))+stat_summary()+ylab('Number of Catchup Saccades'))

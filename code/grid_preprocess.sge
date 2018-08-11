@@ -1,8 +1,8 @@
 #!/bin/bash
 #$ -N etcomp
-#
+
 export LD_LIBRARY_PATH=/net/store/nbp/projects/lib/edfread/build/linux64:../local/build/build_ffmpeg/lib/:../local/build/build_glfw/lib/:$LD_LIBRARY_PATH
 
 
 source ../local/etcompvenv/bin/activate &&\
-python3 grid_preprocess.py
+python3 hmm_grid_preprocess.py
