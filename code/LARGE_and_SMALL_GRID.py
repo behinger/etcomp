@@ -36,14 +36,14 @@ def plot_accuracy(raw_all_grids_df, option=None):
     """
     Input:  raw condition df
             facets: None, 'subjects', 
-    Output:  ? figure(s) that visualize the difference in accuracy btw. el and pl
+    Output: figure(s) that visualize the difference in accuracy btw. el and pl
     """
 
     # Rearrange columns for better readability in temporal order of the experiment          
     condition_list = raw_all_grids_df['condition'].value_counts().index.tolist()
     condition_list_sorted = ['GRID', 'SMALLGRID_BEFORE', 'SMALLGRID_AFTER']
     if not set(condition_list).issubset(set(condition_list_sorted)) :
-        raise ValueError('are you sure evrything is okay with the condition reordering?')
+        raise ValueError('are you sure everything is okay with the condition reordering?')
         
     # Create a categorical type
     condition_cat = CategoricalDtype(categories=condition_list_sorted, ordered=True)

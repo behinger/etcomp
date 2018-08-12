@@ -207,8 +207,6 @@ def set_dtypes(df):
     E.g. set column 'et' from object to categorical
     """        
 
-    logging.debug('dtypes of the df before: %s', df.dtypes)
-
     # make all object variables categorical
     df[df.select_dtypes(['object']).columns] = df.select_dtypes(['object']).apply(lambda x: x.astype('category'))
     
@@ -221,7 +219,7 @@ def set_dtypes(df):
             df[column] = df[column].astype('category')
         
     
-    logging.debug('dtypes of the df after: %s', df.dtypes)
+    # logging.debug('dtypes of the df after: %s', df.dtypes)
     
     return df    
 
