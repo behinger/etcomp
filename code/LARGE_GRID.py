@@ -78,9 +78,9 @@ def plot_accuracy(raw_large_grid_df, option=None):
                 geom_point(alpha=0.1,data=raw_large_grid_df,position=position_dodge(width=0.7)) +
                 geom_point(position=position_dodge(width=0.7))+
                 geom_line(aes(group='block'), position=position_dodge(width=0.7)) +
-                facet_grid('.~subject') + 
+                facet_wrap('~subject',scales="free_y") + 
                 guides(color=guide_legend(ncol=40)) +
-                ggtitle('Using stat summary')).draw()
+                ggtitle('think of informative title')).draw()
 
 
     else:
@@ -148,7 +148,7 @@ def compare_accuracy_components(raw_large_grid_df, display_precision=False):
 
 
 
-def display_fixations(raw_large_grid_df, option='fixations'):
+def display_fixations(raw_large_grid_df, option='fixations',input_subject=None,input_block=None):
     """
     Displaying accuracy on grid points
     
@@ -159,8 +159,10 @@ def display_fixations(raw_large_grid_df, option='fixations'):
     if option == 'offset':
     # use terminal promt to select one subject
     # do not enter with "" !
-            input_subject = [input("Please select a subject: ")]
-            input_block = [int(input("Please select a block: "))]           
+            if input_subject is None:
+                input_subject = [input("Please select a subject: ")]
+            if input_block is None:
+                input_block = [int(input("Please select a block: "))]           
             
     
     # make separate figure for each eyetracker

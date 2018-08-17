@@ -27,7 +27,7 @@ import logging
 
 
 
-def plot_heatmap(raw_freeview_df):
+def plot_heatmap(raw_freeview_df,raw_fix_count_df):
     """
     Make a heatmap of the freeview fixation df
     """
