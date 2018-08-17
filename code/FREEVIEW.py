@@ -147,6 +147,7 @@ def plot_number_of_fixations(raw_fix_count_df, option=None):
                 + ggtitle('EyeLink vs PupilLabs: Number of fixations per picture per subject')).draw()
 
         # using violin to compare eye tracker overall
+        # using raw fixation counts
         (ggplot(raw_fix_count_df, aes(x='et', y='fix_counts')) \
                 + geom_violin(aes(color='et', fill='et'), alpha = 0.25, show_legend=False) \
                 + xlab('Eyetracker') \
@@ -199,7 +200,7 @@ def plot_fixation_durations(raw_freeview_df, option=None):
             + geom_density()
             + xlim([0,1])
             + xlab('fixation duration [s]')
-            + facet_wrap('subject', scales='free')
+            + facet_wrap('subject')
             + ggtitle('Fixation durations during the Freeviewig condition')).draw()
         
         

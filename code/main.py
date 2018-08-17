@@ -20,8 +20,19 @@ from functions.et_make_df import make_epochs
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
 
+#%% imports for plotting the analysis
 
-#%% LOAD DATA and preprocess RAW data for ALL subjects
+import LARGE_GRID 
+import LARGE_and_SMALL_GRID
+import FREEVIEW
+import functions.et_condition_df as condition_df
+
+
+from matplotlib import interactive
+interactive(True)
+
+
+#%% specify ALL subjects names
 
 # to initialize logging
 import functions.init_logger
@@ -32,8 +43,9 @@ import logging
 # restricted to subjects that we do not exclude from analysis
 # also loop over the et
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
-#TODO find out whats wrong with vp3 and vp12 and fix and then use vp3 again!!
-rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21','VP7']
+
+# TODO find out whats wrong with vp3 and vp12 and fix and then use vp3 again!!
+rejected_subjects = ['pilot', 'log_files', 'surface', 'results', '007', 'VP8', 'VP21','VP7']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['el', 'pl']    
 
@@ -64,7 +76,7 @@ elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,s
 
 
 
-#%% LOAD preprocessed data from csv file
+#%% LOAD preprocessed data for ONE subject from csv file
 
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=True)
 elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
@@ -96,7 +108,7 @@ datapath='/net/store/nbp/projects/etcomp/'
 preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
 etsamples = pd.read_csv(os.path.join(preprocessed_path,str(et_str+'_samples.csv')))
 
-
+# look at horizontal gaze component
 plt.figure()
 plt.plot(etsamples['smpl_time'],etsamples['gx'],'o')
 
@@ -105,6 +117,7 @@ plt.plot(etsamples.query('type=="saccade"')['smpl_time'],etsamples.query('type==
 plt.plot(etsamples.query('type=="fixation"')['smpl_time'],etsamples.query('type=="fixation"')['gx'],'o')
 plt.legend(['sample','blink','saccade','fixation'])
 
+# title specifies eye tracker and subject
 plt.title(str(et_str + " " + subject))
 
 # if you want to look at the not cleaned data, you should set the yaxis
@@ -120,20 +133,15 @@ plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa=
 #%% Call plots from analysis here
 
 
-
-
 # change into code folder
+# TODO this should not be necessary
 os.chdir('/net/store/nbp/users/kgross/etcomp/code')
 
-import LARGE_GRID 
-import LARGE_and_SMALL_GRID
-import FREEVIEW
-
-import functions.et_condition_df as condition_df
-
-#subjectnames      = ['VP3', 'VP4', 'VP1']
+# only for test, so you dont have to load so many
+subjectnames      = ['VP3', 'VP4', 'VP1']
 
 
+############
 # LARGE GRID
 
 # load grid df for subjectnames
@@ -161,7 +169,7 @@ LARGE_GRID.display_fixations(raw_large_grid_df, option='offset')
 
 
 
-
+######################
 # LARGE and SMALL GRID
 raw_all_grids_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_and_SMALL_GRID')
 
@@ -169,6 +177,8 @@ raw_all_grids_df = condition_df.get_condition_df(subjectnames, ets, condition='L
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option=None)
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='facet_subjects')
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='show_variance_for_blocks')
+
+# TODO!!
 # Todo well this is not what i want for my final figure :( still need to do this
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='final_figure')
 
@@ -178,7 +188,7 @@ LARGE_and_SMALL_GRID.display_fixations(raw_all_grids_df, option='fixations')
 
 
 
-
+#############
 # Freeviewing
 raw_freeview_df, raw_fix_count_df = condition_df.get_condition_df(subjectnames, ets, condition='FREEVIEW')
 
@@ -192,6 +202,7 @@ FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='eyetracker')
 FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='facet_subjects')
 
 # plot histogram of the counts
+# TODO
 FREEVIEW.plot_histogram(raw_fix_count_df)
 
 # plot fixation durations
@@ -199,7 +210,8 @@ FREEVIEW.plot_fixation_durations(raw_freeview_df)
 FREEVIEW.plot_fixation_durations(raw_freeview_df, option='facet_subjects')
 
 
-
+################
+# main sequence
 # TODO plot main sequence
 FREEVIEW.plot_main_sequence(raw_freeview_df)
 
@@ -210,6 +222,8 @@ subject = 'VP4'
 block = None
 condition = None
 
+
+# TODO compare raw signal
 
 compare_raw_signal(subject, block, condition)
 
