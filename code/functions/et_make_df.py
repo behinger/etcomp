@@ -58,9 +58,8 @@ def make_events_df(etevents):
     
 #%% MAKE EPOCHS
 
-def make_epochs(et,msgs,td=[-2,2]):
+def make_epochs(et,msgs,td=[-2,2],aggfunction=None):
     import functions.et_helper as et_helper
-    # formally called match_data
 
     # Input:    et(DataFrame)      input data of the eyetracker (has column smpl_time)
     #           msgs(DataFrame)    already parsed input messages    e.g. 'GRID element 5 pos-x 123 ...' defining experimental events (has column msg_time)
@@ -83,7 +82,7 @@ def make_epochs(et,msgs,td=[-2,2]):
         msg = msgs.iloc[idx]
         if np.sum(ix) == 0:
             logger.warning('warning, no sample found for msg %i'%(idx))
-            logger.warning(msg)
+            #logger.warning(msg)
             continue
         
         tmp= et.iloc[ix]
@@ -95,8 +94,10 @@ def make_epochs(et,msgs,td=[-2,2]):
         #print(msg_tmp)
         msg_tmp.index = tmp.index
         tmp = pd.concat([tmp,msg_tmp],axis=1)
-        
+        if aggfunction is not None:
+            tmp = aggfunction(tmp)
         epoched_data = epoched_data.append(tmp)
+    epoched_data = epoched_data.loc[:,~epoched_data.columns.duplicated()]
     return(epoched_data)
  
    

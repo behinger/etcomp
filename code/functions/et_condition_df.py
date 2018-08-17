@@ -51,7 +51,7 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
             else:
                 etsamples,etmsgs,etevents = (d.query("eyetracker=='"+et+"'&subject=='"+subject+"'").drop(["eyetracker","subject"],axis=1) for d in data) 
                     
-            if condition in ['LARGE_GRID','LARGE_and_SMALL_GRID','SMOOTHPURSUIT']:
+            if condition in ['LARGE_GRID','LARGE_and_SMALL_GRID','SMOOTHPURSUIT','MICROSACC']:
                 
                 # adding the messages to the event df (backward merge)                
                 merged_events = helper.add_msg_to_event(etevents, etmsgs, timefield = 'start_time', direction='backward')

@@ -10,6 +10,7 @@ import pandas as pd
 
 import logging
 
+from plotnine import *
 
 #%% put PUPIL LABS data into PANDAS DF
 
@@ -107,16 +108,25 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     ix_event = etevents['type']==eventtype
     
     # get list of start and end indeces in the etsamples df
-    eventstart = etevents.loc[ix_event].start_time+float(timemargin[0])
-    eventend = etevents.loc[ix_event].end_time+float(timemargin[1])
+    eventstart = etevents.loc[ix_event,'start_time']+float(timemargin[0])
+    eventend = etevents.loc[ix_event,'end_time']+float(timemargin[1])
     
+    flat_ranges = eventtime_to_sampletime(etsamples,eventstart,eventend)
+    # all etsamples with ix in ranges , will the eventype in the column type
+    if len(flat_ranges) > 0:
+        etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
+        
+
+    return etsamples
+
+def eventtime_to_sampletime(etsamples,eventstart,eventend):
     # due to timemargin strange effects can occur and we need to clip
     mintime = etsamples.smpl_time.iloc[0]
     maxtime = etsamples.smpl_time.iloc[-1]
-    eventstart[eventstart < mintime] = mintime
-    eventstart[eventstart > maxtime] = maxtime
-    eventend[eventend  < mintime] = mintime
-    eventend[eventend  > maxtime] = maxtime
+    eventstart.loc[eventstart < mintime] = mintime
+    eventstart.loc[eventstart > maxtime] = maxtime
+    eventend.loc[eventend  < mintime] = mintime
+    eventend.loc[eventend  > maxtime] = maxtime
     
     if len(eventstart)!=len(eventend):
         raise error
@@ -125,21 +135,14 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     endix = np.searchsorted(etsamples.smpl_time,eventend)
     
     
-    print('%i events of %s found'%(len(startix),eventtype))
+    #print('%i events of %s found'%(len(startix),eventtype))
     # make a list of ranges to have all indices in between the startix and endix
     ranges = [list(range(s,e)) for s,e in zip(startix,endix)]
     flat_ranges = [item for sublist in ranges for item in sublist]
     
     
     flat_ranges = np.intersect1d(flat_ranges,range(etsamples.shape[0]))
-    # all etsamples with ix in ranges , will the eventype in the column type
-    if len(flat_ranges) > 0:
-        etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
-        
-
-    return etsamples
-
-
+    return(flat_ranges)
 #%% last fixation (e.g. for large GRID)
 
 def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element']):
@@ -369,3 +372,50 @@ def toc(tempBool=True):
 def tic():
     # Records a time in TicToc, marks the beginning of a time interval
     toc(False)
+    
+    
+    
+    
+def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1)):
+    import re
+    assert(type(single_eventormsg)==pd.Series)
+    try:
+        t0 = single_eventormsg.start_time
+        eventtype = 'event'
+    except:
+        t0 = single_eventormsg.msg_time
+        eventtype = 'msg'
+    
+    tstart = t0 + plusminus[0]
+    tend = t0 + plusminus[1]
+    query = "subject == @single_eventormsg.subject & eyetracker==@single_eventormsg.eyetracker"
+    samples_query = "smpl_time>=@tstart & smpl_time <=@tend & "+query
+    msg_query     = "msg_time >=@tstart & msg_time  <=@tend & "+query
+    event_query     = "end_time >=@tstart & start_time  <=@tend & "+query
+    etmsgs = etmsgs.query(msg_query)
+    
+    longstring = etmsgs.to_string(columns=['exp_event'],na_rep='',float_format='%.1f',index=False,header=False,col_space=0)
+    longstring = re.sub(' +',' ',longstring)
+    splitstring = longstring.split(sep="\n")
+    etmsgs.loc[:,'label'] = splitstring
+
+    p = (ggplot()
+     + geom_point(aes(x='smpl_time',y='gx',color='type'),data=etsamples.query(samples_query)) # samples
+     + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
+     + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
+    )
+         
+    if etevents.query(event_query).shape[0]>0:
+        pass
+     #  p = p + geom_segment(aes(x="start_time",y=0,xend="end_time",yend=0,color='type'),size=2,data=etevents.query(event_query))
+    if eventtype == 'event':
+        p = (p   + annotate("line",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black')
+                 + annotate("point",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black'))
+        if single_eventormsg.condition == 'GRID':
+            p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)
+                   + geom_hline(yintercept=single_eventormsg.posx))
+    return(p)
+    
+    # e.g. for large grid
+    
+    
