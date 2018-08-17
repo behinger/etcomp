@@ -39,7 +39,7 @@ ets               = ['el', 'pl']
 #subjectnames = ['VP20']
 
 
-
+#venv=> python3 grid_preprocess etcomp_hmm 
 
 print(sys.argv)
 if len(sys.argv)>1:
@@ -47,9 +47,9 @@ if len(sys.argv)>1:
     assert(job_name in ['etcomp','etcomp_hmm','etcomp_hmm_nosmooth'])
     import subprocess 
     if len(sys.argv)>2:
-        subprocess.check_output(["qsub",'-cwd','-N',job_name,'-t',sys.argv[2],'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'-q','nbp.q','hmm_grid_preprocess.sge'])
+        subprocess.check_output(["qsub",'-cwd','-N',job_name,'-t',sys.argv[2],'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'-q','nbp.q','grid_preprocess.sge'])
     else:
-        subprocess.check_output(["qsub",'-cwd','-N',job_name,'-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'-q','nbp.q','hmm_grid_preprocess.sge'])
+        subprocess.check_output(["qsub",'-cwd','-N',job_name,'-t','%i:%i'%(1,len(subjectnames)),'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'-q','nbp.q','grid_preprocess.sge'])
         
     
     sys.exit() 
