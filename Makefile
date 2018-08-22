@@ -128,6 +128,23 @@ ${yasmsrc}:
 yasm: ${yasmbuild}
 	echo 'installed yasm'
 
+nodejsbuild = $(PWD)/${installfolder}/build/build_nodejs
+
+nodejs: ${nodejsbuild}
+	echo 'installed nodejs'
+
+
+${nodejsbuild}:
+		echo $(PWD) 
+		curl -L https://git.io/n-install | N_PREFIiX=${nodejsbuild} bash -s -- -y		
+
+jupytertoc: ${nodejsbuild}
+	        (\
+		. ${VENV}/bin/activate; \
+                export PATH='$(PATH):${nodejsbuild}/bin'; \
+		jupyter labextension install @jupyterlab/toc;\
+		)
+
 ${yasmbuild}: ${yasmsrc}
 		cd ${yasmsrc} && \
 		./autogen.sh && \
@@ -138,6 +155,19 @@ ${yasmbuild}: ${yasmsrc}
 cleanyasm:
 		rm -r ${yasmsrc}
 		rm -r ${installfolder}/build/build_yasm
+
+
+matlabpath := $(which matlab)
+matlabpath = /opt/matlab/bin
+matlabbuild = ${matlabpath}/../extern/engines/python
+matlab:
+	(\
+	echo ${matlabbuild};\
+	echo ${matlabpath};\
+        . ${VENV}/bin/activate; \
+	cd ${matlabbuild};\
+  	python setup.py build --build-base=$(PWD)/${installfolder}/build/build_matlab install;\
+	)
 
 path: compile-dependencies python-reqs ${VENV}
 		export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${ffmpegbuild}

@@ -22,9 +22,9 @@ from matplotlib import pyplot as plt
 
 import logging
 
-#%% WRAPPER TO DETECT SACCADES   (IN THE CASE OF PL INTERPOLATE SAMPLES FIRST)
+#%% WRAPPER TO DETECT SACCADES   (IN THE CASE OF PL SAMPLES ARE INTERPOLATED FIRST)
 
-def detect_saccades_engbert_mergenthaler(etsamples,etevents,et = None):
+def detect_saccades_engbert_mergenthaler(etsamples,etevents=None,et = None):
     # Input:      etsamples
     #             fs:   sampling frequency
     # Output:     saccades (df) with expanded / raw
@@ -39,14 +39,15 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents,et = None):
     etsamples = etsamples.copy()
     
     logger.debug('eyetracker: %s',et)
-    etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype='blink')
-    
-    logger.debug('Setting Eyeblink Data to 0')
-    etsamples.loc[etsamples.type=='blink',['gx','gy']] = np.nan
+    if etevents is not None:
+        logger.debug('Setting Eyeblink Data to 0')
+        etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype='blink')
+        etsamples.loc[etsamples.type=='blink',['gx','gy']] = np.nan
 
-    logger.debug('removing bad-samples for saccade detection')
-    assert('outside' in etsamples)
-    etsamples.loc[etsamples.outside==True,['gx','gy']] = np.nan
+    
+    if 'outside' in etsamples:
+        logger.debug('removing bad-samples for saccade detection')
+        etsamples.loc[etsamples.outside==True,['gx','gy']] = np.nan
     
     
     
@@ -56,10 +57,13 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents,et = None):
         interpgaze = interpolate_gaze(etsamples, fs=fs)
         
     elif et == 'el':
-         # Eyelink is already interpolated
-         interpgaze = etsamples
-         interpgaze['is_blink'] =  etsamples.type=='blink' 
-         fs = 500
+        # Eyelink is already interpolated
+        interpgaze = etsamples
+        if np.nansum(str(etsamples.type)=='blink')>0:
+            interpgaze['is_blink'] =  etsamples.type=='blink' 
+        else:
+            interpgaze['is_blink'] = 0
+        fs = 500
          
  
     # apply the saccade detection algorithm     
@@ -321,7 +325,10 @@ def interpolate_gaze(etsamples, fs=None):
     gazeInt['smpl_time']  = timeIX
     gazeInt['gx']  = interp(etsamples.smpl_time,etsamples.gx)
     gazeInt['gy']  = interp(etsamples.smpl_time,etsamples.gy)
-    gazeInt['is_blink']  = interp(etsamples.smpl_time,etsamples.type == 'blink')
+    if np.nansum(str(etsamples.type) == 'blink')>0:
+        gazeInt['is_blink']  = interp(etsamples.smpl_time,etsamples.type == 'blink')
+    else:
+        gazeInt['is_blink'] = 0
     
     logger.debug('Done.... Interpolating Samples')
     

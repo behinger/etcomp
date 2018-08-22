@@ -158,7 +158,14 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
 
   
 #%% EYELINK
+def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
+    # Input:    subjectname, datapath
+    # Output:   Returns pupillabs dictionary
+    filename = os.path.join(datapath,subject,'raw')
 
+    elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+    return(elsamples,elevents,elnotes)
+    
 def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
@@ -171,15 +178,13 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
      
     
     # Load edf
-    filename = os.path.join(datapath,subject,'raw')
     
     # load and preprocess data from raw data files      
     # elsamples:  contains individual EL samples
     # elevents:   contains fixation and saccade definitions
     # elnotes:    contains notes (meta data) associated with each trial
+    elsamples,elevents,elnotes = raw_el_data(subject,datapath)
     
-    
-    elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
     # TODO understand and fix this
     count = 0
     while np.any(elsamples.time>1e10) and count < 40:

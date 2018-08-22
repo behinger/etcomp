@@ -88,6 +88,8 @@ def sampletype_to_event(etsamples,eventtype):
     start_times_list = list(etsamples.loc[etsamples['tmp'] == 1, 'smpl_time'].astype(float))
     end_times_list   = list(etsamples.loc[etsamples['tmp'] == -1, 'smpl_time'].astype(float))
     
+    if len(start_times_list) == 0:
+        return(pd.DataFrame())
     # drop the temporary column
     
     # add them as columns to a fixationevent df

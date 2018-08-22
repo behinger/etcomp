@@ -180,6 +180,7 @@ def plot_single_trial(etsamples,etmsgs,etevents,subject,eyetracker,trial,block,s
         return(act.values)
 
     act = predict_stan(fit,time)
+
     [plt.plot(time,act[i,:],'k',alpha=0.1) for i in range(act.shape[0])]
     plt.plot(time,epochs.query(selectTrial).rotated)
     plt.plot(epochs.query(selectTrial+"&type=='saccade'").td,epochs.query(selectTrial+"&type=='saccade'").rotated,'go')
