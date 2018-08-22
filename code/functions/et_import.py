@@ -9,6 +9,8 @@ import os
 import logging
 
 from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
+from lib.pupil.pupil_src.shared_modules import camera_models as pl_camera_models
+
 from functions.et_helper import findFile,gaze_to_pandas
 import functions.et_parse as parse
 import functions.et_make_df as make_df
@@ -21,6 +23,8 @@ except ImportError:
 
 # parses SR research EDF data files into pandas df
 from pyedfread import edf
+
+
 
 from functions import nbp_recalib
 import scipy
@@ -87,15 +91,14 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     assert(type(subject)==str)
     
     # Get samples df
+    # (is still a dictionary here)
     original_pldata = raw_pl_data(subject, datapath)
     
     # Fix timing 
     # Pupillabs cameras have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).
     # We fix this here
     original_pldata = pl_fix_timelag(original_pldata)
-    
-    
-    
+
     # recalibrate data
     if recalib:
         original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
@@ -107,9 +110,20 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
         logger.warning('Original Data Samples: %s on surface: %s',len(original_pldata['gaze_positions']),len(gaze_on_srf))
         original_pldata['gaze_positions'] = gaze_on_srf
         
-
+    
     # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time, diameter)
     pldata = gaze_to_pandas(original_pldata['gaze_positions'])
+         
+        
+    # undistort the norm_pos (remove fisheye distortion of the worldcamera)
+    # specify camera model
+    intrinsics = pl_camera_models.load_intrinsics('','Pupil Cam1 ID2',"(1920, 1080)")
+    # undistort gaze postitions
+    print(pldata.columns)
+    undistorted_gazepoint_array = intrinsics.undistortPoints(np.asarray(pldata.loc[:, ['gx','gy']].values), use_distortion=True)
+    pldata['gx'] = undistorted_gazepoint_array[:,0]
+    pldata['gy'] = undistorted_gazepoint_array[:,1]
+
     
     if surfaceMap:   
         pldata.gx = pldata.gx*(1920 - 2*(75+18))+(75+18) # minus white border of marker & marker
