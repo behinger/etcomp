@@ -322,13 +322,15 @@ def interpolate_gaze(etsamples, fs=None):
     
     #GazeInt for GazeInterpolated
     gazeInt = pd.DataFrame()
-    gazeInt['smpl_time']  = timeIX
-    gazeInt['gx']  = interp(etsamples.smpl_time,etsamples.gx)
-    gazeInt['gy']  = interp(etsamples.smpl_time,etsamples.gy)
+    gazeInt.loc[:,'smpl_time']  = timeIX
+    gazeInt.loc[:,'gx']  = interp(etsamples.smpl_time,etsamples.gx)
+    gazeInt.loc[:,'gy']  = interp(etsamples.smpl_time,etsamples.gy)
+    if 'pa' in gazeInt.columns:
+        gazeInt.loc[:,'pa']  = interp(etsamples.smpl_time,etsamples.pa)
     if np.nansum(str(etsamples.type) == 'blink')>0:
-        gazeInt['is_blink']  = interp(etsamples.smpl_time,etsamples.type == 'blink')
+        gazeInt.loc[:,'is_blink']  = interp(etsamples.smpl_time,etsamples.type == 'blink')
     else:
-        gazeInt['is_blink'] = 0
+        gazeInt.loc[:,'is_blink'] = 0
     
     logger.debug('Done.... Interpolating Samples')
     
