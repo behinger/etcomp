@@ -117,11 +117,12 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
         
     # undistort the norm_pos (remove fisheye distortion of the worldcamera)
     # specify camera model
-    intrinsics = pl_camera_models.load_intrinsics('','Pupil Cam1 ID2',"(1280, 720)")
+    #intrinsics = pl_camera_models.load_intrinsics('','Pupil Cam1 ID2',"(1280, 720)")
+    
     # undistort gaze postitions
-    undistorted_gazepoint_array = intrinsics.undistortPoints(np.asarray(pldata.loc[:, ['gx','gy']].values), use_distortion=True)
-    pldata['gx'] = undistorted_gazepoint_array[:,0]
-    pldata['gy'] = undistorted_gazepoint_array[:,1]
+    #undistorted_gazepoint_array = intrinsics.undistortPoints(np.asarray(pldata.loc[:, ['gx','gy']].values), use_distortion=True)
+    #pldata['gx'] = undistorted_gazepoint_array[:,0]
+    #pldata['gy'] = undistorted_gazepoint_array[:,1]
 
     
     if surfaceMap:   

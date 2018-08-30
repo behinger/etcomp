@@ -92,9 +92,12 @@ def plot_accuracy(raw_all_grids_df, option=None):
         # TODO I still need to do this
         # tanking the mean
        
+        # look up which range linerange takes
+        
         # simple: eyetracker vs  mean accuracy over all blocks and subjects
-        (ggplot(mean_for_each_subject_and_condition, aes(x='condition', y='accuracy', fill='et')) +
-                  geom_boxplot(alpha=0.7) +
+        (ggplot(mean_for_each_subject_and_condition) +
+                  stat_summary(aes(x='condition', y='accuracy', fill='et'), fun_y=np.mean, geom='point')+
+                  stat_summary(aes(x='condition', y='accuracy', fill='et'), geom='linerange') +
                   ggtitle('Accuracy in different grid condition based on 13 elements')).draw()
                 
 
