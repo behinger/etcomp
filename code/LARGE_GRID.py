@@ -148,7 +148,7 @@ def compare_accuracy_components(raw_large_grid_df, display_precision=False):
 
 
 
-def display_fixations(raw_large_grid_df, option='fixations',input_subject=None,input_block=None):
+def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, input_subject=None,input_block=None):
     """
     Displaying accuracy on grid points
     
@@ -169,14 +169,35 @@ def display_fixations(raw_large_grid_df, option='fixations',input_subject=None,i
     for eyetracker in [['EyeLink'], ['Pupil Labs']]:
         et_grouped_elem_pos = raw_large_grid_df.query('et==@eyetracker')    
         
+       
         if option == 'fixations':
             # visualize fixations
-            # subjects vs blocks for each eyetracker new window
-            (ggplot(aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)'), data= et_grouped_elem_pos) +
-                    geom_point(show_legend=False) + 
-                    facet_grid('block~subject')+
-                    ggtitle(str(eyetracker)[2:-2] + ':  Large Grid: subjects vs block')).draw()
-        
+            # subjects vs blocks
+            # new window for each eyetracker
+            
+            if greyscale:
+                pass
+            
+            
+            
+                
+            else:
+                # change postion of xlab
+                old_theme = theme_get()
+                # TODO: check if there is a difference to theme_set(old_theme + theme(axis_title_x = element_text(va = "top")))
+                theme_set(old_theme + theme(axis_title_x = element_text()))
+
+                (ggplot(aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)'), data= et_grouped_elem_pos) +
+                        geom_point(show_legend=False) + 
+                        # caution that limiting the axis, could cut off fixations from plot
+                        coord_fixed(ratio=1, xlim=(-40.0,40.0), ylim=(-20.0,20.0)) +
+                        facet_grid('block~subject', labeller=lambda x: (("subject " if x.startswith('VP') else "block ") + x))+
+                        xlab("Mean horizontal fixation position [$^\circ$]") + 
+                        ylab("Mean vertical fixation position [$^\circ$]") +
+                        ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -')).draw()
+                
+                theme_set(old_theme)
+            
         
         elif option == 'accuracy_for_each_element':        
             # look which grid points have higher/lower accuracy

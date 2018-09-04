@@ -78,6 +78,10 @@ elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=False,s
 
 #%% LOAD preprocessed data for ONE subject from csv file
 
+# specify subject
+subject = 'VP4'
+
+
 plsamples, plmsgs, plevents = preprocess.preprocess_et('pl',subject,load=True)
 elsamples, elmsgs, elevents = preprocess.preprocess_et('el',subject,load=True)
 
@@ -138,7 +142,7 @@ plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa=
 os.chdir('/net/store/nbp/users/kgross/etcomp/code')
 
 # only for test, so you dont have to load so many
-subjectnames      = ['VP3', 'VP4', 'VP1']
+subjectnames      = ['VP3', 'VP4', 'VP1', 'VP14', 'VP2']
 
 
 ############
