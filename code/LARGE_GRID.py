@@ -153,6 +153,9 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
     Displaying accuracy on grid points
     
     options are: 'fixations', 'accuracy_for_each_element', 'precision_for_each_element' and 'offset'
+    
+    returns plot
+    
     """
     
     # only if offset option you need to ask user to specify    
@@ -175,29 +178,32 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
             # subjects vs blocks
             # new window for each eyetracker
             
+            
             if greyscale:
-                pass
-            
-            
-            
+                # no colors for position of element points
+                p = (ggplot(aes(x='mean_gx', y='mean_gy'), data= et_grouped_elem_pos) +
+                    geom_point(size=1.3, alpha=0.6,  show_legend=False) + 
+                    # caution: limiting the axis, could cut off fixations from plot
+                    coord_fixed(ratio=1, xlim=(-40.0,40.0), ylim=(-20.0,20.0)) +
+                    facet_grid('block~subject', labeller=lambda x: (("subject " if x.startswith('VP') else "block ") + x))+
+                    xlab("Mean horizontal fixation position [$^\circ$]") + 
+                    ylab("Mean vertical fixation position [$^\circ$]") +
+                    ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -'))
+                p.draw()
+                # save for teatime as png
+                p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.png'), height=15, width=15, units = 'in', dpi=1000)
                 
             else:
-                # change postion of xlab
-                old_theme = theme_get()
-                # TODO: check if there is a difference to theme_set(old_theme + theme(axis_title_x = element_text(va = "top")))
-                theme_set(old_theme + theme(axis_title_x = element_text()))
-
+                # color of element depends on the position of the true target element
                 (ggplot(aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)'), data= et_grouped_elem_pos) +
-                        geom_point(show_legend=False) + 
-                        # caution that limiting the axis, could cut off fixations from plot
-                        coord_fixed(ratio=1, xlim=(-40.0,40.0), ylim=(-20.0,20.0)) +
-                        facet_grid('block~subject', labeller=lambda x: (("subject " if x.startswith('VP') else "block ") + x))+
-                        xlab("Mean horizontal fixation position [$^\circ$]") + 
-                        ylab("Mean vertical fixation position [$^\circ$]") +
-                        ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -')).draw()
-                
-                theme_set(old_theme)
-            
+                    geom_point(show_legend=False) + 
+                    # caution: limiting the axis, could cut off fixations from plot
+                    coord_fixed(ratio=1, xlim=(-40.0,40.0), ylim=(-20.0,20.0)) +
+                    facet_grid('block~subject', labeller=lambda x: (("subject " if x.startswith('VP') else "block ") + x))+
+                    xlab("Mean horizontal fixation position [$^\circ$]") + 
+                    ylab("Mean vertical fixation position [$^\circ$]") +
+                    ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -')).draw()
+ 
         
         elif option == 'accuracy_for_each_element':        
             # look which grid points have higher/lower accuracy
@@ -224,19 +230,36 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
             
          
         elif option == 'offset':
+            # mean_fix vs grid point elements
             # plots for only one specific subject and specific block
             specific_subject_df = raw_large_grid_df.query('et == @eyetracker & subject == @input_subject & block == @input_block')
                       
-            
-            # mean_fix vs grid point elements
-            (ggplot(specific_subject_df, aes(x='mean_gx', y='mean_gy', color='factor(posx*posy)'))
-                    + geom_point(show_legend=False)
-                    # displayed elements
-                    + geom_point(specific_subject_df, aes(x='posx', y='posy', color='factor(posx*posy)'), shape = 'x', show_legend=False)
-                    # TODO display line to connect displayed and detected gaze position !! i f i really want to do this: try melt on gze vs displyed position and then use  group !!!
-                    #+ geom_line(group='posy')
-                    #+ geom_path()
-                    + ggtitle(str(eyetracker)[2:-2] + ': Mean fixation gaze of "last fixation" vs displayed element points')).draw()
+            if greyscale:
+                # no colors for position of element points
+                p = (ggplot(specific_subject_df, aes(x='mean_gx', y='mean_gy'))
+                        + geom_point(size=2, alpha=0.8, show_legend=False)
+                        # displayed elements
+                        + geom_point(specific_subject_df, aes(x='posx', y='posy'), alpha=0.5, size=3.5, shape = 'x', show_legend=False)
+                        # caution: limiting the axis, could cut off fixations from plot
+                        + coord_fixed(ratio=1, xlim=(-38.0,38.0), ylim=(-17.0,17.0))
+                        + xlab("Mean horizontal fixation position [$^\circ$]") 
+                        + ylab("Mean vertical fixation position [$^\circ$]") 
+                        + ggtitle(str(eyetracker)[2:-2] + ': Mean fixation position vs displayed element position'))
+                p.draw()
+                # save for teatime as png
+                p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' fixation_offset2.png'), height=5, width=10, units = 'in', dpi=1000)
+                
+            else:
+                # color of element depends on the position of the true target element
+                (ggplot(specific_subject_df, aes(x='mean_gx', y='mean_gy', color='factor(posx*posy)'))
+                        + geom_point(show_legend=False)
+                        # displayed elements
+                        + geom_point(specific_subject_df, aes(x='posx', y='posy', color='factor(posx*posy)'), shape = 'x', show_legend=False)
+                        # caution: limiting the axis, could cut off fixations from plot
+                        + coord_fixed(ratio=1, xlim=(-38.0,38.0), ylim=(-17.0,17.0))
+                        + xlab("Mean horizontal fixation position [$^\circ$]") 
+                        + ylab("Mean vertical fixation position [$^\circ$]") 
+                        + ggtitle(str(eyetracker)[2:-2] + ': Mean fixation position vs displayed element position')).draw()
 
 
         else:

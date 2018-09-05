@@ -6,7 +6,8 @@ Created on Sat May 12 13:58:59 2018
 @author:   kgross
 """
 
-
+                        # caution that limiting the axis, does not cut off fixations from plot
+                        coord_cartesian(xlim=(-37.0,37.0), ylim=(-16.0,16.0)) +
 
 #%% investigate on the position of fixations (use density)
 

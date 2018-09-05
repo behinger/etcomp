@@ -142,7 +142,7 @@ plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa=
 os.chdir('/net/store/nbp/users/kgross/etcomp/code')
 
 # only for test, so you dont have to load so many
-subjectnames      = ['VP3', 'VP4', 'VP1', 'VP14', 'VP2']
+subjectnames      = ['VP3', 'VP4', 'VP1', 'VP14', 'VP2', 'VP11', 'VP26', 'VP25']
 
 
 ############
@@ -166,9 +166,11 @@ print(table_large_grid_accuracy.to_string())
 
 # investigate on the position and properties of detected fixations
 LARGE_GRID.display_fixations(raw_large_grid_df, option='fixations')
+LARGE_GRID.display_fixations(raw_large_grid_df, option='fixations', greyscale=True)
 LARGE_GRID.display_fixations(raw_large_grid_df, option='accuracy_for_each_element')
 LARGE_GRID.display_fixations(raw_large_grid_df, option='precision_for_each_element')
 LARGE_GRID.display_fixations(raw_large_grid_df, option='offset')
+LARGE_GRID.display_fixations(raw_large_grid_df, option='offset', greyscale=True)
 
 
 
@@ -267,6 +269,15 @@ compare_raw_signal(subject, block, condition)
 #                     facet_grid("algorithm~eyetracker")).draw()
           
 
+###############################
+######### SAVING the plots##########
+
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.svg'), height=15, width=15, units = 'in', dpi=1000)
+
+# bene prefers pdfs
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.pdf'), height=15, width=15, units = 'in', dpi=1000)
 
 
-
+# subplot adjust
+p.subplot_adjust = 0.85
+p
