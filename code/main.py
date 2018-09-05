@@ -152,9 +152,8 @@ subjectnames      = ['VP3', 'VP4', 'VP1', 'VP14', 'VP2', 'VP11', 'VP26', 'VP25']
 raw_large_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_GRID')
 
 # plot accuracy    
-LARGE_GRID.plot_accuracy(raw_large_grid_df, option=None)
-LARGE_GRID.plot_accuracy(raw_large_grid_df, option='facet_subjects')
-LARGE_GRID.plot_accuracy(raw_large_grid_df, option='dodge')
+LARGE_GRID.plot_accuracy(raw_large_grid_df)
+LARGE_GRID.plot_accuracy(raw_large_grid_df, option='variance_within_block')
 
 # plot accuracy components
 LARGE_GRID.compare_accuracy_components(raw_large_grid_df)

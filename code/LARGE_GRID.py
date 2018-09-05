@@ -42,53 +42,58 @@ def plot_accuracy_be(raw_large_grid_df, agg=[np.mean,np.median]):
 def plot_accuracy(raw_large_grid_df, option=None):
     """
     Input:  raw df for condition
-            facets: None, 'subjects', 
-    Output:  ? figure(s) that visualize the difference in accuracy btw. el and pl
+            option: None or variance_within_block 
+    Output: figure that visualize the difference in accuracy btw. el and pl
     """
+       
+    # specify aggregators for different levels
     
-    # get data grouped
-    mean_for_each_subject_large_grid_df = helper.group_to_level_and_take_mean(raw_large_grid_df, lowestlevel='subject')
-    mean_for_each_block_large_grid_df =  helper.group_to_level_and_take_mean(raw_large_grid_df, lowestlevel='block')
+    #  element level   - -   block level   - -    subject level
+    #       mean               median                  mean
+    
+    # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
+    
+    agg_level=[np.mean,np.median, np.mean]
+    
+    
+    # aggregate data of the large grid df    
+    mean_over_elements_median_over_blocks = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0]).groupby(['subject','et'], as_index=False).agg(agg_level[1])
+    
+    mean_over_elements = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
+    
+    # OLD:
+    # get data aggregated/'grouped'
+    #mean_for_each_subject_large_grid_df = helper.group_to_level_and_take_mean(raw_large_grid_df, lowestlevel='subject')
+    #mean_for_each_block_large_grid_df =  helper.group_to_level_and_take_mean(raw_large_grid_df, lowestlevel='block')
     
     
     if option is None:
         # plot eyetracker vs  mean accuracy over all blocks
-        (ggplot(mean_for_each_subject_large_grid_df, aes(x='et', y='accuracy', color='subject')) +\
-                  geom_line(aes(group='subject')) +\
-                  geom_point() +\
-                  guides(color=guide_legend(ncol=40)) +\
-            
-            ggtitle('Mean spherical accuracy in visual degrees over all blocks for each subject')).draw()
-        
-    elif option == 'facet_subjects':
-        # make facets over subjects
-        # investigate how mean accuracy is changes for different subjects
-        (ggplot(mean_for_each_subject_large_grid_df, aes(x='et', y='accuracy', color='subject')) +
+        return (ggplot(mean_over_elements_median_over_blocks, aes(x='et', y='accuracy', color='subject')) +\
+                  stat_summary(color='red',size=1) +
                   geom_line(aes(group='subject')) +
                   geom_point() +
                   guides(color=guide_legend(ncol=40)) +
-                  facet_grid('.~subject')+
-                  ggtitle('Spherical accuracy in visual degrees')).draw()
+                  xlab("Eye Trackers") + 
+                  ylab("Accuracy [$^\circ$]") +
+                  ggtitle('Median-Block - Mean-Element Accuracies for each subject'))
         
         
-    elif option == 'dodge':
-        # TODO: polish
-        # Here: Learn how to use stat summary          
-        (ggplot(aes(x='et', y='accuracy',color='block'), data=mean_for_each_block_large_grid_df) +
-                geom_point(alpha=0.1,data=raw_large_grid_df,position=position_dodge(width=0.7)) +
-                geom_point(position=position_dodge(width=0.7))+
-                geom_line(aes(group='block'), position=position_dodge(width=0.7)) +
-                facet_wrap('~subject',scales="free_y") + 
-                guides(color=guide_legend(ncol=40)) +
-                ggtitle('think of informative title')).draw()
-
+    elif option == 'variance_within_block':
+        return (ggplot(aes(x='et', y='accuracy',color='factor(block)'), data=mean_over_elements) +
+                    geom_point(alpha=0.1,data=raw_large_grid_df,position=position_dodge(width=0.7)) +
+                    geom_point(position=position_dodge(width=0.7))+
+                    geom_line(aes(group='block'), position= position_dodge(width=0.7)) +
+                    facet_wrap('~subject',scales="free_y") + 
+                    guides(color=guide_legend(ncol=40)) +
+                    ggtitle('Investigating on the spread of accuracies within a block'))
 
     else:
         raise ValueError('You must set options to a valid option. See documentation.')
 
 
 
-def make_table_accuracy(raw_large_grid_df):
+def make_table_accuracy(raw_large_grid_df, concise=True):
     """
     returns a df with the mean, median and range of all calculated accuracy values
     """
@@ -110,8 +115,15 @@ def make_table_accuracy(raw_large_grid_df):
     # TODO !! careful with the median : taking the mean for the blocks in the subject, but the median over the subjects!!
     acccuracy_table.loc['EyeLink']    = pd.Series({'mean': eyelink_data.accuracy.mean(),   'median': eyelink_data.accuracy.median(),   'horizontal_mean': eyelink_data.hori_accuracy.median(),  'vertical_mean': eyelink_data.vert_accuracy.median(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
     acccuracy_table.loc['Pupil Labs'] = pd.Series({'mean': pupillabs_data.accuracy.mean(), 'median': pupillabs_data.accuracy.median(), 'horizontal_mean': pupillabs_data.hori_accuracy.median(),'vertical_mean': pupillabs_data.vert_accuracy.median(), 'subject_min_accuracy': pupillabs_data.accuracy.min(), 'subject_max_accuracy': pupillabs_data.accuracy.max(), 'mean_rms': pupillabs_data.rms.mean()})
-
-
+    
+    # convert dtypes to floats and round results
+    acccuracy_table = acccuracy_table.astype('float').round(1)
+    
+    # only report most important columns
+    if concise:
+        return acccuracy_table[['mean', 'median']]
+    
+    
     return acccuracy_table
 
 
