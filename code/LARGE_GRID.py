@@ -230,11 +230,20 @@ def display_fixation_centered(raw_large_grid_df,input_subject=None,input_block=N
         raw_large_grid_df = raw_large_grid_df.query('block == @input_block')
         # mean_fix vs grid point elements
     return((ggplot(raw_large_grid_df, aes(x='posx-mean_gx', y='posy-mean_gy', color='np.sqrt(posx**2+posy**2)'))
-            + geom_point(alpha=0.1)
+            + geom_point(alpha=0.01)
             # displayed elements
             + annotate("point",x=0, y=0, color='black', shape = 'x')
             + facet_wrap("~et")
     ))
+#
+# Density comparison: Fails because I don't know how to standardize properly
+#raw_large_grid_df.loc[:,'x_center']= raw_large_grid_df.posx - raw_large_grid_df.mean_gx
+#raw_large_grid_df.loc[:,'y_center']= raw_large_grid_df.posy - raw_large_grid_df.mean_gy
+#(ggplot(raw_large_grid_df.query("abs(x_center)<10 & abs(y_center)<10&eyetracker=='pl'"), aes(x='x_center', y='y_center',group='et',color='et',fill='et'))
+#             + geom_density_2d(levels=20)
+            # displayed elements
+            #+ annotate("point",x=0, y=0, color='black', shape = 'x')
+#)
 
 
     
@@ -244,3 +253,6 @@ def display_fixation_centered(raw_large_grid_df,input_subject=None,input_block=N
 #
 #plotname = 'GRID_' + et + '_' + subject
 #gridplot.save(filename=plotname, format=None, path='/net/store/nbp/users/kgross/etcomp/plots', dpi=600, verbose=True)
+
+
+#
