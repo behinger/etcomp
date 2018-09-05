@@ -30,6 +30,19 @@ python-reqs: ${VENV}
 compile-dependencies: pyav edfread opencv glfw printexport
 		echo 'done'
 
+uneyesrc = ${installfolder}/build/src_uneye
+
+uneye: ${VENV} 
+	(\
+	. ${VENV}/bin/activate; \
+	git clone https://github.com/berenslab/uneye ${uneyesrc};\
+	cd ${uneyesrc};\
+	pip3 install ./ -r ./requirements.txt\
+	)
+	
+git pull https://github.com/berenslab/uneye
+
+
 printexport:
 		echo 'use this command before starting python/spyder'
 		echo 'export LD_LIBRARY_PATH=${CURDIR}/${ffmpegbuild}/lib/:${CURDIR}/${glfwbuild}/lib/:$$LD_LIBRARY_PATH'
@@ -155,19 +168,6 @@ ${yasmbuild}: ${yasmsrc}
 cleanyasm:
 		rm -r ${yasmsrc}
 		rm -r ${installfolder}/build/build_yasm
-
-
-matlabpath := $(which matlab)
-matlabpath = /opt/matlab/bin
-matlabbuild = ${matlabpath}/../extern/engines/python
-matlab:
-	(\
-	echo ${matlabbuild};\
-	echo ${matlabpath};\
-        . ${VENV}/bin/activate; \
-	cd ${matlabbuild};\
-  	python setup.py build --build-base=$(PWD)/${installfolder}/build/build_matlab install;\
-	)
 
 path: compile-dependencies python-reqs ${VENV}
 		export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${ffmpegbuild}
