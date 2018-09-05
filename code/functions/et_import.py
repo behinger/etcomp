@@ -58,7 +58,7 @@ def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # with dict_keys(['notifications', 'pupil_positions', 'gaze_positions'])
     # where each value is a list that contains a dictionary
     original_pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'))
-    
+    #original_pldata = pl_file_methods.Incremental_Legacy_Pupil_Data_Loader(os.path.join(filename,'pupil_data'))
     # 'notification'
     # dict_keys(['record', 'subject', 'timestamp', 'label', 'duration'])
     
@@ -94,15 +94,15 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     # (is still a dictionary here)
     original_pldata = raw_pl_data(subject, datapath)
     
-    # Fix timing 
-    # Pupillabs cameras have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).
-    # We fix this here
-    original_pldata = pl_fix_timelag(original_pldata)
+    
 
     # recalibrate data
     if recalib:
         original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
-        
+    # Fix timing 
+    # Pupillabs cameras have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).
+    # We fix this here
+    original_pldata = pl_fix_timelag(original_pldata)    
     if surfaceMap:
         folder= os.path.join(datapath,subject,'raw')
         tracker = pl_surface.map_surface(folder)   
@@ -192,7 +192,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
         count = count + 1
         # logger.error(elsamples.time[elsamples.time>1e10])
         logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')
-        elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+        elsamples, elevents, elnotes = raw_el_data(subject,datapath)
     
     
     
