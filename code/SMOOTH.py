@@ -110,7 +110,7 @@ def fitTrial_pandas(d,sm,etevents):
     except Exception as err:
         logger.exception('Error smooth model fit single trial'+str(err))
         return(pd.Series({'taumean':np.nan,'taustd':np.nan,'summary':np.nan}))
-    return(pd.Series({'taumean':np.mean(fit.extract()['tau']),'taustd':np.std(fit.extract()['tau']),'summary':fit.summary()}))
+    return(pd.Series({'taumean':np.mean(fit.extract()['tau']),'taustd':np.std(fit.extract()['tau']),'summary':fit.summary(),'velomean':np.mean(fit.extract()['slope'])}))
 
 
 def get_smooth_data(etsamples,etmsgs,select=''):
@@ -188,18 +188,23 @@ def plot_single_trial(etsamples,etmsgs,etevents,subject,eyetracker,trial,block,s
     #print(np.mean(fit.extract()['tau']))
     return fit
 
-def plot_init_latency(smoothresult,option=''):
+def plot_modelresults(smoothresult,field="taumean",option=''):
     
-    smoothgroup = smoothresult.groupby(['eyetracker','subject'],as_index=False).apply(np.mean).reset_index()
+    smoothgroup = smoothresult.groupby(['eyetracker','subject'],as_index=False).agg(np.mean)
     
+    if field == 'taumean':
+        binwidth = 0.001
+    else:
+        binwidth = 0.1
+        
     if option == '':
-        pl = ggplot(smoothgroup,aes(x="eyetracker",y="taumean"))+geom_point(alpha=0.1)+stat_summary(color='red')
+        pl = ggplot(smoothgroup,aes(x="eyetracker",y=field))+geom_point(alpha=0.1)+stat_summary(color='red')
     if option=='difference':
-        smoothdiff = smoothgroup.groupby("subject").agg({'taumean':{'taudiff':np.diff}})
-        pl = ggplot(smoothdiff,aes(x="taumean"))+geom_histogram(binwidth=0.005)+ggtitle('binwidth of 5ms')
+        smoothdiff = smoothgroup.groupby("subject").agg(np.diff)
+        pl = ggplot(smoothdiff,aes(x=field))+geom_histogram(binwidth=binwidth)+ggtitle('binwidth of %.3f'%(binwidth))
         
     pl.draw()
-    
+
     
 def plot_catchup_amplitudes(smooth):
     smooth_saccade = smooth.query("type=='saccade'       & condition=='SMOOTH' & exp_event=='trialstart'") 

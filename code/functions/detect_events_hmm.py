@@ -47,7 +47,7 @@ def detect_events_hmm(etsamples,etevents,et,smoothpursuit=True):
     eye = etsamples.query('type!="blink"')[['gx','gy']].values
 
     tic()
-    sample_class, segmentation, seg_class = nslr_hmm.classify_gaze(t, eye,optimize_noise=False)
+    sample_class, segmentation, seg_class = nslr_hmm.classify_gaze(t, eye,optimize_noise=True)
     toc()
     sample_class = sample_class.astype(int)
 
