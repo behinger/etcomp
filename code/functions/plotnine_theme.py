@@ -21,7 +21,8 @@ theme_set(theme_minimal(base_size=12) + theme(text = element_text(),\
                panel_border = element_rect(colour = 'None'),\
                axis_title = element_text(size = 10),\
                axis_title_y = element_text(angle=90,vjust =0),\
-               axis_title_x = element_text(vjust = -0.2),\
+               # with va you can move xlab title matplotlibstyle
+               axis_title_x = element_text(),\
                axis_text = element_text(),\
                axis_line = element_line(colour="black"),\
                axis_ticks = element_line(),\

@@ -218,8 +218,11 @@ def set_dtypes(df):
     
     # set columns to correct dtype
     for column in categorial_var:
+        
         if column in df:
-            df[column] = df[column].astype('category')
+            df[column] = pd.to_numeric(df[column], downcast='integer')
+            df[column] = df[column].round(0).astype(int)
+            #df[column] = df[column].astype('category')
         
     
     # logging.debug('dtypes of the df after: %s', df.dtypes)
