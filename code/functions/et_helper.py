@@ -288,13 +288,16 @@ def sph2cart(theta_sph,phi_sph,rho_sph=1):
 
 #%% LOAD & SAVE & FIND file
     
-def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix=''):
+def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix='',cleaned=True):
     
     # filepath for preprocessed folder
     preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
     et = outputprefix+et
     try:
-        filename_samples = str(et)  + '_cleaned_samples.csv'
+        if cleaned:
+            filename_samples = str(et)  + '_cleaned_samples.csv'
+        else:
+            filename_samples = str(et)  + '_samples.csv'
         filename_msgs    = str(et)  + '_msgs.csv'
         filename_events  = str(et)  + '_events.csv'
         
@@ -374,7 +377,7 @@ def tic():
     
     
     
-def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1)):
+def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True):
     import re
     assert(type(single_eventormsg)==pd.Series)
     try:
@@ -386,7 +389,11 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
     
     tstart = t0 + plusminus[0]
     tend = t0 + plusminus[1]
-    query = "subject == @single_eventormsg.subject & eyetracker==@single_eventormsg.eyetracker"
+    query = '1==1'
+    if ("subject" in etsamples.columns) & ("subject" in single_eventormsg.index):
+        query = query+"& subject == @single_eventormsg.subject"
+    if not bothET:
+        query = query+"& eyetracker==@single_eventormsg.eyetracker"
     samples_query = "smpl_time>=@tstart & smpl_time <=@tend & "+query
     msg_query     = "msg_time >=@tstart & msg_time  <=@tend & "+query
     event_query     = "end_time >=@tstart & start_time  <=@tend & "+query
@@ -405,10 +412,12 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
          
     if etevents.query(event_query).shape[0]>0:
         pass
-     #  p = p + geom_segment(aes(x="start_time",y=0,xend="end_time",yend=0,color='type'),size=2,data=etevents.query(event_query))
+    if plotevents:
+        p = p + geom_segment(aes(x="start_time",y=0,xend="end_time",yend=0,color='type'),alpha=0.5,size=2,data=etevents.query(event_query))
     if eventtype == 'event':
         p = (p   + annotate("line",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black')
                  + annotate("point",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black'))
+    if eventtype=='msg':
         if single_eventormsg.condition == 'GRID':
             p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)
                    + geom_hline(yintercept=single_eventormsg.posx))
