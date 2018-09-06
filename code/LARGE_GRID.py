@@ -63,11 +63,11 @@ def plot_accuracy(raw_large_grid_df, option=None, agg_level=None):
     
     if option is None:
         # plot eyetracker vs  mean accuracy over all blocks
-        return (ggplot(mean_over_elements_median_over_blocks, aes(x='et', y='accuracy', color='subject')) +\
-                  geom_line(aes(group='subject')) +
-                  geom_point() +
-                  stat_summary(color='red',size=1) +
-                  guides(color=guide_legend(ncol=8)) +
+        return (ggplot(mean_over_elements_median_over_blocks, aes(x='et', y='accuracy')) +\
+                  geom_line(aes(group='subject'), color='lightblue') +
+                  geom_point(color='lightblue') +
+                  stat_summary(color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
+                  #guides(color=guide_legend(ncol=8)) +
                   xlab("Eye Trackers") + 
                   ylab("Accuracy [$^\circ$]") +
                   ggtitle('Mean-Element  Median-Block  Accuracies for each subject'))
@@ -100,36 +100,37 @@ def make_table_accuracy(raw_large_grid_df, concise=False):
     # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
     agg_level=[np.mean, np.median, np.mean]
     
-    # aggregate data of the large grid df    
+    # aggregate data of the large grid df  according to agg_level list  
     mean_over_elements = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
-    mean_over_elements_median_over_blocks = mean_over_elements.groupby(['subject','et'], as_index=False).agg(agg_level[1])
-    
-    
-    acccuracy_table = pd.DataFrame(columns=['mean','median', 'horizontal_mean', 'vertical_mean', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','Pupil Labs'])
-   
+    mean_over_elements_median_over_blocks = mean_over_elements.groupby(['subject','et'], as_index=False).agg(agg_level[1])   
+
+    # separate the data for each Eyetracker
+    # we get subjectwise median overblocks mean over lements df
+    eyelink_data = mean_over_elements_median_over_blocks.query('et == "EyeLink"')
+    pupillabs_data = mean_over_elements_median_over_blocks.query('et == "Pupil Labs"')
+       
+    # get mean-mean aggregated data
+    mm_eyelink_data   = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(np.mean).groupby(['subject','et'], as_index=False).agg(np.mean).query('et == "EyeLink"')
+    mm_pupillabs_data = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(np.mean).groupby(['subject','et'], as_index=False).agg(np.mean).query('et == "Pupil Labs"')
+
+    # init df
+    acccuracy_table = pd.DataFrame(columns=['mean-mean-mean','mean-median-mean', 'horizontal_accuracy', 'vertical_accuracy', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','Pupil Labs'])
+
     # just calculating the mean, median and range:
     # as there might be elements where we didn"t detect a fixation, 
-    # we first calculate the mean accuracy for each subject and then take the mean over all subjects
-
-    # get a grouped df (grouped by et and subject)
-    mean_for_each_subject_large_grid_df = helper.group_to_level_and_take_mean(raw_large_grid_df, 'subject')
-    
-    # separate the data for each Eyetracker
-    eyelink_data = mean_for_each_subject_large_grid_df.query('et == "EyeLink"')
-    pupillabs_data = mean_for_each_subject_large_grid_df.query('et == "Pupil Labs"')
-    
-
+    # we first calculate the mean accuracy over the elements for each subject and then take the mean over all subjects
     # TODO !! careful with the median : taking the mean for the blocks in the subject, but the median over the subjects!!
-    acccuracy_table.loc['EyeLink']    = pd.Series({'mean': eyelink_data.accuracy.mean(),   'median': eyelink_data.accuracy.median(),   'horizontal_mean': eyelink_data.hori_accuracy.median(),  'vertical_mean': eyelink_data.vert_accuracy.median(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
-    acccuracy_table.loc['Pupil Labs'] = pd.Series({'mean': pupillabs_data.accuracy.mean(), 'median': pupillabs_data.accuracy.median(), 'horizontal_mean': pupillabs_data.hori_accuracy.median(),'vertical_mean': pupillabs_data.vert_accuracy.median(), 'subject_min_accuracy': pupillabs_data.accuracy.min(), 'subject_max_accuracy': pupillabs_data.accuracy.max(), 'mean_rms': pupillabs_data.rms.mean()})
+    acccuracy_table.loc['EyeLink']    = pd.Series({'mean-mean-mean': mm_eyelink_data.accuracy.mean(), 'mean-median-mean': eyelink_data.accuracy.mean(),   'horizontal_accuracy': eyelink_data.hori_accuracy.mean(),  'vertical_accuracy': eyelink_data.vert_accuracy.mean(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
+    acccuracy_table.loc['Pupil Labs'] = pd.Series({'mean-mean-mean': mm_pupillabs_data.accuracy.mean(), 'mean-median-mean': pupillabs_data.accuracy.mean(), 'horizontal_accuracy': pupillabs_data.hori_accuracy.mean(),'vertical_accuracy': pupillabs_data.vert_accuracy.mean(), 'subject_min_accuracy': pupillabs_data.accuracy.min(), 'subject_max_accuracy': pupillabs_data.accuracy.max(), 'mean_rms': pupillabs_data.rms.mean()})
+    
+    #print(eyelink_data)
     
     # convert dtypes to floats and round results
-    acccuracy_table = acccuracy_table.astype('float').round(1)
+    acccuracy_table = acccuracy_table.astype('float').round(2)
     
     # only report most important columns
     if concise:
-        return acccuracy_table[['mean', 'median']]
-    
+        return acccuracy_table[['mean-mean-mean', 'mean-median-mean']].round(1) 
     
     return acccuracy_table
 

@@ -22,20 +22,26 @@ default_theme = (theme_minimal(base_size=12) + theme(text = element_text(),\
                plot_background = element_rect(colour = 'None'),\
                
                # title position
-               plot_title = element_text(va = 'center'),\
+               plot_title = element_text(size=16, va = 'center'),\
                panel_border = element_rect(colour = 'None'),\
                
                axis_title = element_text(size = 10),\
 
                # with va you can move xlab title matplotlibstyle
-               axis_title_y = element_text(angle=90, vjust=0),\
-               axis_title_x = element_text(),\
+               axis_title_x = element_text(size=12),\
+               axis_title_y = element_text(size=12, angle=90, vjust=0),\
                
                # style of Koordinatenachsen und deren Beschriftungen
                axis_text = element_text(colour="black"),\
             
                axis_line = element_line(colour="black"),\
+               
+               # axis ticks
                axis_ticks = element_line(colour="black"),\
+               
+               axis_ticks_length=8,\
+               axis_ticks_length_minor=5,\
+               axis_ticks_length_major=8,\
 
                axis_ticks_pad_minor=1,\
                
@@ -65,6 +71,9 @@ theme_set(default_theme)
 
 
 #%% saving different themes for different plots
+
+
+
 
 # show large grid fixations (no grid in background)
 display_fixation_theme = (theme_minimal(base_size=12) + theme(text = element_text(),\
@@ -113,6 +122,7 @@ display_fixation_theme = (theme_minimal(base_size=12) + theme(text = element_tex
 
 
 
+
 """
 Possibility to change position of the xlab title:
     
@@ -132,3 +142,31 @@ And with this you can move the zahlen an der koordinatenachse further away from 
 axis_text = element_text(margin={'t': 15, 'r': 15}),\
 
 """
+
+
+
+
+#%% convert df table into latex pdf and png
+
+import pandas as pd
+import numpy as np
+import subprocess
+
+filename = 'out.tex'
+pdffile = 'out.pdf'
+outname = 'out.png'
+
+template = r'''\documentclass[preview]{{standalone}}
+\usepackage{{booktabs}}
+\begin{{document}}
+{}
+\end{{document}}
+'''
+
+with open(filename, 'wb') as f:
+    f.write(bytes(template.format(table_large_grid_accuracy.to_latex()),'UTF-8'))
+
+subprocess.call(['pdflatex', filename])
+subprocess.call(['convert', '-density', '300', pdffile, '-quality', '90', outname])
+
+

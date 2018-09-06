@@ -153,7 +153,7 @@ raw_large_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='
 
 # plot accuracy    
 p = LARGE_GRID.plot_accuracy(raw_large_grid_df)
-p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' +' accuracies_mean_elem_median_block3.pdf'), height=6, width=8, units = 'in', dpi=500)
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' +' accuracies_mean_elem_median_block.png'), height=8, width=5, units = 'in', dpi=500)
 
 LARGE_GRID.plot_accuracy(raw_large_grid_df, option='variance_within_block')
 
@@ -163,7 +163,9 @@ LARGE_GRID.compare_accuracy_components(raw_large_grid_df, display_precision=True
 
 # look at numerical accuracies in table
 table_large_grid_accuracy = LARGE_GRID.make_table_accuracy(raw_large_grid_df)
+table_large_grid_accuracy = LARGE_GRID.make_table_accuracy(raw_large_grid_df, concise=True)
 print(table_large_grid_accuracy.to_string())
+
 
 # investigate on the position and properties of detected fixations
 LARGE_GRID.display_fixations(raw_large_grid_df, option='fixations')
