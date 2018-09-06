@@ -142,7 +142,7 @@ plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa=
 os.chdir('/net/store/nbp/users/kgross/etcomp/code')
 
 # only for test, so you dont have to load so many
-subjectnames      = ['VP3', 'VP4', 'VP1', 'VP14', 'VP2', 'VP11', 'VP26', 'VP25']
+# subjectnames      = ['VP3', 'VP4', 'VP1', 'VP14', 'VP2', 'VP11', 'VP26', 'VP25']
 
 
 ############
@@ -152,7 +152,9 @@ subjectnames      = ['VP3', 'VP4', 'VP1', 'VP14', 'VP2', 'VP11', 'VP26', 'VP25']
 raw_large_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_GRID')
 
 # plot accuracy    
-LARGE_GRID.plot_accuracy(raw_large_grid_df)
+p = LARGE_GRID.plot_accuracy(raw_large_grid_df)
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' +' accuracies_mean_elem_median_block3.pdf'), height=6, width=8, units = 'in', dpi=500)
+
 LARGE_GRID.plot_accuracy(raw_large_grid_df, option='variance_within_block')
 
 # plot accuracy components
@@ -184,7 +186,6 @@ LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='facet_subjects')
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='show_variance_for_blocks')
 
 # TODO!!
-# Todo well this is not what i want for my final figure :( still need to do this
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='final_figure')
 
 # investigate on the position and properties of detected fixations
@@ -272,6 +273,7 @@ compare_raw_signal(subject, block, condition)
 ######### SAVING the plots##########
 
 p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.svg'), height=15, width=15, units = 'in', dpi=1000)
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' meanelem_medianblock.png'), height=15, width=10, units = 'in', dpi=500)
 
 # bene prefers pdfs
 p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.pdf'), height=15, width=15, units = 'in', dpi=1000)

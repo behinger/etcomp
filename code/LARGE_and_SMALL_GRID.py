@@ -87,19 +87,16 @@ def plot_accuracy(raw_all_grids_df, option=None):
         ggtitle('Comparing accuracy of conditions')).draw()
 
 
-    elif option == 'final_figure':
-        # plot that we wanted: See "Schmierzettel"
-        # TODO I still need to do this
-        # tanking the mean
-       
-        # look up which range linerange takes
+    elif option == 'final_figure':     
+        # look up which range pointrange takes
         
         # simple: eyetracker vs  mean accuracy over all blocks and subjects
-        (ggplot(mean_for_each_subject_and_condition) +
-                  stat_summary(aes(x='condition', y='accuracy', fill='et'), fun_y=np.mean, geom='point')+
-                  stat_summary(aes(x='condition', y='accuracy', fill='et'), geom='linerange') +
-                  ggtitle('Accuracy in different grid condition based on 13 elements')).draw()
-                
+        return (ggplot(mean_for_each_subject_and_condition,aes(x='condition', y='accuracy', fill='et',group='et')) +
+                      stat_summary(fun_y=np.mean, geom='line',position=position_dodge(width=0.1))+
+                      stat_summary(geom='pointrange',position=position_dodge(width=0.1)) +
+                      #geom_path(aes(group="subject"),data=mean_for_each_subject_and_condition.query("et=='Pupil Labs'"),alpha=0.5,color='blue')+
+                      #geom_path(aes(group="subject"),data=mean_for_each_subject_and_condition.query("et=='EyeLink'"),alpha=0.5,color='red')+
+                      ggtitle('Accuracy in different grid condition based on 13 elements'))                
 
     else:
         raise ValueError('You must set facets to a valid option. See documentation.')

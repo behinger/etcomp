@@ -39,44 +39,38 @@ def plot_accuracy_be(raw_large_grid_df, agg=[np.mean,np.median]):
     return(p)
     
     
-def plot_accuracy(raw_large_grid_df, option=None):
+def plot_accuracy(raw_large_grid_df, option=None, agg_level=None):
     """
     Input:  raw df for condition
-            option: None or variance_within_block 
+            option: None; variance_within_block 
     Output: figure that visualize the difference in accuracy btw. el and pl
     """
        
     # specify aggregators for different levels
     
-    #  element level   - -   block level   - -    subject level
-    #       mean               median                  mean
+    #  element level   - -   block level   - -    (subject level)
+    #       mean               median                  (mean)
     
-    # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
+    if agg_level is None:
+        # as default we use the mean over the elements (so that also elements in the periphery influence the performance)
+        # and the median over the blocks (so that 'outlier blocks' do not influence the overall accuracy)
+        agg_level=[np.mean, np.median]
     
-    agg_level=[np.mean,np.median, np.mean]
-    
-    
-    # aggregate data of the large grid df    
-    mean_over_elements_median_over_blocks = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0]).groupby(['subject','et'], as_index=False).agg(agg_level[1])
-    
-    mean_over_elements = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
-    
-    # OLD:
-    # get data aggregated/'grouped'
-    #mean_for_each_subject_large_grid_df = helper.group_to_level_and_take_mean(raw_large_grid_df, lowestlevel='subject')
-    #mean_for_each_block_large_grid_df =  helper.group_to_level_and_take_mean(raw_large_grid_df, lowestlevel='block')
+    # aggregate data of the large grid df
+    mean_over_elements                    = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
+    mean_over_elements_median_over_blocks = mean_over_elements.groupby(['subject','et'], as_index=False).agg(agg_level[1])
     
     
     if option is None:
         # plot eyetracker vs  mean accuracy over all blocks
         return (ggplot(mean_over_elements_median_over_blocks, aes(x='et', y='accuracy', color='subject')) +\
-                  stat_summary(color='red',size=1) +
                   geom_line(aes(group='subject')) +
                   geom_point() +
-                  guides(color=guide_legend(ncol=40)) +
+                  stat_summary(color='red',size=1) +
+                  guides(color=guide_legend(ncol=8)) +
                   xlab("Eye Trackers") + 
                   ylab("Accuracy [$^\circ$]") +
-                  ggtitle('Median-Block - Mean-Element Accuracies for each subject'))
+                  ggtitle('Mean-Element  Median-Block  Accuracies for each subject'))
         
         
     elif option == 'variance_within_block':
@@ -85,7 +79,7 @@ def plot_accuracy(raw_large_grid_df, option=None):
                     geom_point(position=position_dodge(width=0.7))+
                     geom_line(aes(group='block'), position= position_dodge(width=0.7)) +
                     facet_wrap('~subject',scales="free_y") + 
-                    guides(color=guide_legend(ncol=40)) +
+                    guides(color=guide_legend(ncol=8)) +
                     ggtitle('Investigating on the spread of accuracies within a block'))
 
     else:
@@ -93,10 +87,23 @@ def plot_accuracy(raw_large_grid_df, option=None):
 
 
 
-def make_table_accuracy(raw_large_grid_df, concise=True):
+def make_table_accuracy(raw_large_grid_df, concise=False):
     """
     returns a df with the mean, median and range of all calculated accuracy values
     """
+    
+    # specify aggregators for different levels
+    
+    #  element level   - -   block level   - -    subject level
+    #       mean               median                  mean
+    
+    # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
+    agg_level=[np.mean, np.median, np.mean]
+    
+    # aggregate data of the large grid df    
+    mean_over_elements = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
+    mean_over_elements_median_over_blocks = mean_over_elements.groupby(['subject','et'], as_index=False).agg(agg_level[1])
+    
     
     acccuracy_table = pd.DataFrame(columns=['mean','median', 'horizontal_mean', 'vertical_mean', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','Pupil Labs'])
    
