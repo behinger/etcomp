@@ -220,13 +220,22 @@ def set_dtypes(df):
     for column in categorial_var:
         
         if column in df:
-            df[column] = pd.to_numeric(df[column], downcast='integer')
+            # fill none values to not have problems with integers
+            df[column] = df[column].fillna(-1)
+            
+            # convert ids to interger and round them to make them look nicely
+            df[column] = pd.to_numeric(df[column], downcast='integer')            
             df[column] = df[column].round(0).astype(int)
+            
+            # convert -1 back to None
+            df[column] = df[column].astype(str)
+            df[column] = df[column].replace('-1', np.nan)
+            
+            # old version
             #df[column] = df[column].astype('category')
         
     
-    # logging.debug('dtypes of the df after: %s', df.dtypes)
-    
+    # logging.debug('dtypes of the df after: %s', df.dtypes)    
     return df    
 
 
@@ -310,7 +319,7 @@ def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix
 
     except FileNotFoundError as e:
         print(e)
-        raise('Error: Could not read file')
+        raise e
 
     return etsamples,etmsgs,etevents
 

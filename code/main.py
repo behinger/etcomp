@@ -152,8 +152,7 @@ os.chdir('/net/store/nbp/users/kgross/etcomp/code')
 raw_large_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_GRID')
 
 # plot accuracy    
-p = LARGE_GRID.plot_accuracy(raw_large_grid_df)
-p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' +' accuracies_mean_elem_median_block.png'), height=8, width=5, units = 'in', dpi=500)
+LARGE_GRID.plot_accuracy(raw_large_grid_df)
 
 LARGE_GRID.plot_accuracy(raw_large_grid_df, option='variance_within_block')
 
@@ -170,10 +169,13 @@ print(table_large_grid_accuracy.to_string())
 # investigate on the position and properties of detected fixations
 LARGE_GRID.display_fixations(raw_large_grid_df, option='fixations')
 LARGE_GRID.display_fixations(raw_large_grid_df, option='fixations', greyscale=True)
-LARGE_GRID.display_fixations(raw_large_grid_df, option='accuracy_for_each_element')
-LARGE_GRID.display_fixations(raw_large_grid_df, option='precision_for_each_element')
 LARGE_GRID.display_fixations(raw_large_grid_df, option='offset')
 LARGE_GRID.display_fixations(raw_large_grid_df, option='offset', greyscale=True)
+
+
+# TODO check the ones below
+LARGE_GRID.display_fixations(raw_large_grid_df, option='accuracy_for_each_element')
+LARGE_GRID.display_fixations(raw_large_grid_df, option='precision_for_each_element')
 
 
 
@@ -182,13 +184,14 @@ LARGE_GRID.display_fixations(raw_large_grid_df, option='offset', greyscale=True)
 # LARGE and SMALL GRID
 raw_all_grids_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_and_SMALL_GRID')
 
+
 # plot accuracy  
+p = LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='final_figure')
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' +'course_of_accuracy.png'), height=8, width=7, units = 'in', dpi=500)
+
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option=None)
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='facet_subjects')
 LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='show_variance_for_blocks')
-
-# TODO!!
-LARGE_and_SMALL_GRID.plot_accuracy(raw_all_grids_df, option='final_figure')
 
 # investigate on the position and properties of detected fixations
 LARGE_and_SMALL_GRID.display_fixations(raw_all_grids_df, option='fixations')
@@ -206,16 +209,20 @@ FREEVIEW.plot_heatmap(raw_freeview_df)
 
 # plot fixation counts
 FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option=None)
-FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='eyetracker')
+FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='violin')
+
+# just to have a look at the different fix_counts for each picture in each subject
 FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='facet_subjects')
 
-# plot histogram of the counts
 # TODO
+# plot histogram of the counts
 FREEVIEW.plot_histogram(raw_fix_count_df)
 
 # plot fixation durations
 FREEVIEW.plot_fixation_durations(raw_freeview_df)
 FREEVIEW.plot_fixation_durations(raw_freeview_df, option='facet_subjects')
+
+
 
 
 ################
@@ -233,46 +240,62 @@ condition = None
 
 # TODO compare raw signal
 
-compare_raw_signal(subject, block, condition)
 
-#
-#def compare_raw_signal(subject, block, condition, algorithm=None):
-#    """
-#    TODO
-#    shows raw signal for each eyetracker.
-#    Colors indicate detected events
-#    """
-#    
-#
-#    datapath = '/net/store/nbp/projects/etcomp/'
-#    etsamples = pd.DataFrame()
-#    etmsgs= pd.DataFrame()
-#    etevents = pd.DataFrame()
-#
-#    etgrid   = pd.DataFrame()
-#    for et in ['el','pl']:
-#
-#        etsamples, etmsgs, etevents = preprocess.preprocess_et(et, subject,load=True)
-#
-#        etsamples = pd.concat([etsamples,elsamples.assign(eyetracker=et)],ignore_index=True, sort=False)
-#        etmsgs    = pd.concat([etmsgs,      elmsgs.assign(eyetracker=et],ignore_index=True, sort=False)
-#        etevents  = pd.concat([etevents,  elevents.assign(eyetracker=et],ignore_index=True, sort=False)
-#        
-#        etgrid  = pd.concat([etgrid,  rawGRID.assign(eyetracker=et],ignore_index=True, sort=False)
-#            
-#                    
-#        # time window depends on condition and block
-#        # TODO        
-#        tstart = 220
-#        tdur =50
-#        
-#        (ggplot(etsamples.query("smpl_time>%i & smpl_time<%i"%(tstart,tstart+tdur)),aes(x="smpl_time",y="gx",color="type"))+
-#                     geom_point()+
-#                     facet_grid("algorithm~eyetracker")).draw()
-          
 
-###############################
-######### SAVING the plots##########
+def compare_raw_signal(subject, block, condition, algorithm=None):
+    """
+    TODO
+    shows raw signal for each eyetracker.
+    Colors indicate detected events
+    """
+    
+
+    datapath = '/net/store/nbp/projects/etcomp/'
+    all_samples = pd.DataFrame()
+    etmsgs= pd.DataFrame()
+    etevents = pd.DataFrame()
+
+    etgrid   = pd.DataFrame()
+
+
+    for et in ['el','pl']:
+
+        etsamples, elmsgs, etevents = preprocess.preprocess_et(et, subject,load=True)
+
+        # time window depends on condition and block
+        # TODO
+        t0 = elmsgs.query("condition=='Instruction'&exp_event=='BEGINNING_start'").msg_time.values
+        if len(t0)!=1:
+            raise error
+        etsamples.smpl_time = etsamples.smpl_time - t0
+
+        tstart = 220
+        tdur =50
+        
+        
+        all_samples = pd.concat([all_samples,etsamples.assign(eyetracker=et)],ignore_index=True, sort=False)
+        etmsgs    = pd.concat([etmsgs,      elmsgs.assign(eyetracker=et)],ignore_index=True, sort=False)
+        etevents  = pd.concat([etevents,  etevents.assign(eyetracker=et)],ignore_index=True, sort=False)
+        
+        etgrid  = pd.concat([etgrid,  etgrid.assign(eyetracker=et)],ignore_index=True, sort=False)
+            
+
+    return (ggplot(all_samples.query("smpl_time>%i & smpl_time<%i"%(tstart,tstart+tdur)),aes(x="smpl_time",y="gx",color="type"))+
+                 geom_point()+
+                 facet_grid("eyetracker~."))
+
+      
+
+
+compare_raw_signal("VP1", 1, 1)
+
+
+
+
+
+
+
+######## SAVING the plots##########
 
 p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.svg'), height=15, width=15, units = 'in', dpi=1000)
 p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' meanelem_medianblock.png'), height=15, width=10, units = 'in', dpi=500)

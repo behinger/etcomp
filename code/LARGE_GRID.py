@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from plotnine import *
 from plotnine.data import *
 # specify costumed minimal theme
-import functions.plotnine_theme
+import functions.plotnine_theme as mythemes
 
 import functions.et_helper as  helper
 
@@ -123,7 +123,6 @@ def make_table_accuracy(raw_large_grid_df, concise=False):
     acccuracy_table.loc['EyeLink']    = pd.Series({'mean-mean-mean': mm_eyelink_data.accuracy.mean(), 'mean-median-mean': eyelink_data.accuracy.mean(),   'horizontal_accuracy': eyelink_data.hori_accuracy.mean(),  'vertical_accuracy': eyelink_data.vert_accuracy.mean(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
     acccuracy_table.loc['Pupil Labs'] = pd.Series({'mean-mean-mean': mm_pupillabs_data.accuracy.mean(), 'mean-median-mean': pupillabs_data.accuracy.mean(), 'horizontal_accuracy': pupillabs_data.hori_accuracy.mean(),'vertical_accuracy': pupillabs_data.vert_accuracy.mean(), 'subject_min_accuracy': pupillabs_data.accuracy.min(), 'subject_max_accuracy': pupillabs_data.accuracy.max(), 'mean_rms': pupillabs_data.rms.mean()})
     
-    #print(eyelink_data)
     
     # convert dtypes to floats and round results
     acccuracy_table = acccuracy_table.astype('float').round(2)
@@ -198,6 +197,9 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
             # subjects vs blocks
             # new window for each eyetracker
             
+            # save old theme and set the one for fixation plotting
+            old_theme = theme_get()
+            theme_set(mythemes.display_fixation_theme)
             
             if greyscale:
                 # no colors for position of element points
@@ -211,7 +213,7 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                     ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -'))
                 p.draw()
                 # save for teatime as png
-                p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.png'), height=15, width=15, units = 'in', dpi=1000)
+                #p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.png'), height=15, width=15, units = 'in', dpi=1000)
                 
             else:
                 # color of element depends on the position of the true target element
@@ -223,6 +225,11 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                     xlab("Mean horizontal fixation position [$^\circ$]") + 
                     ylab("Mean vertical fixation position [$^\circ$]") +
                     ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -')).draw()
+                
+            
+            # restore old theme
+            theme_set(old_theme)
+            
  
         
         elif option == 'accuracy_for_each_element':        

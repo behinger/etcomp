@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 from plotnine import *
 from plotnine.data import *
 # specify costumed minimal theme
-import functions.plotnine_theme
+import functions.plotnine_theme as mythemes
 
 import functions.et_preprocess as preprocess
 import functions.et_helper as  helper
@@ -55,9 +55,18 @@ def plot_accuracy(raw_all_grids_df, option=None):
     element_pairs = raw_all_grids_df.query('condition=="SMALLGRID_BEFORE"').loc[:,['posx', 'posy']]
     only_13_elements = pd.merge(raw_all_grids_df, element_pairs, on=['posx', 'posy'], how='inner')
    
-    # get data grouped
-    mean_for_each_subject_and_condition = helper.group_to_level_and_take_mean(only_13_elements, lowestlevel='condition')
+  
+    # specify aggregators for different levels    
+    #  element level   - -   block level   - -    (subject level)
+    #       mean               median                  (mean)
+    
+    agg_level=[np.mean, np.median]
+    
+    # aggregate data of only_13_elements
+    mean_over_elements                    = only_13_elements.groupby(['condition', 'block','subject','et'], as_index=False).agg(agg_level[0])
+    mean_over_elements_median_over_blocks = mean_over_elements.groupby(['condition', 'subject','et'], as_index=False).agg(agg_level[1])
 
+    
     if option is None:
         # compare accuracy values btw eyetrackers. Taking the mean over the subjects
         (ggplot(mean_for_each_subject_and_condition, aes(x='et', y='accuracy',color='condition')) +
@@ -88,16 +97,26 @@ def plot_accuracy(raw_all_grids_df, option=None):
 
 
     elif option == 'final_figure':     
-        # look up which range pointrange takes
         
+        # save old theme and set the one for fixation plotting
+        old_theme = theme_get()
+        theme_set(mythemes.before_after_grid_theme)
+
+            
         # simple: eyetracker vs  mean accuracy over all blocks and subjects
-        return (ggplot(mean_for_each_subject_and_condition,aes(x='condition', y='accuracy', fill='et',group='et')) +
-                      stat_summary(fun_y=np.mean, geom='line',position=position_dodge(width=0.1))+
-                      stat_summary(geom='pointrange',position=position_dodge(width=0.1)) +
+        return (ggplot(mean_over_elements_median_over_blocks,aes(x='condition', y='accuracy', fill='et',group='et', color='et')) +
+                      stat_summary(fun_y=np.mean, geom='line',position=position_dodge(width=0.1)) +
+                      # pointrange makes a 0.95 bootstrap CI
+                      stat_summary(geom='pointrange', position=position_dodge(width=0.1)) +
                       #geom_path(aes(group="subject"),data=mean_for_each_subject_and_condition.query("et=='Pupil Labs'"),alpha=0.5,color='blue')+
                       #geom_path(aes(group="subject"),data=mean_for_each_subject_and_condition.query("et=='EyeLink'"),alpha=0.5,color='red')+
-                      ggtitle('Accuracy in different grid condition based on 13 elements'))                
-
+                      ylab("Accuracy [$^\circ$]") +
+                      labs(title='Course of Accuracy'))                
+    
+        # restore old theme
+        theme_set(old_theme)
+    
+    
     else:
         raise ValueError('You must set facets to a valid option. See documentation.')
 
