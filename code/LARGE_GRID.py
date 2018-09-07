@@ -129,7 +129,7 @@ def make_table_accuracy(raw_large_grid_df, concise=False):
     
     # only report most important columns
     if concise:
-        return acccuracy_table[['mean-mean-mean', 'mean-median-mean']].round(1) 
+        return acccuracy_table[['mean-median-mean']].round(1) 
     
     return acccuracy_table
 
@@ -213,7 +213,7 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                     ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -'))
                 p.draw()
                 # save for teatime as png
-                #p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.png'), height=15, width=15, units = 'in', dpi=1000)
+                p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.png'), height=10, width=13, units = 'in', dpi=500)
                 
             else:
                 # color of element depends on the position of the true target element

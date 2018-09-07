@@ -19,6 +19,9 @@ import functions.pl_detect_blinks as pl_blinks
 from functions.et_make_df import make_epochs
 from functions.detect_events import make_blinks,make_saccades,make_fixations
 
+import functions.plotnine_theme as mythemes
+
+
 
 #%% imports for plotting the analysis
 
@@ -142,7 +145,7 @@ plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa=
 os.chdir('/net/store/nbp/users/kgross/etcomp/code')
 
 # only for test, so you dont have to load so many
-# subjectnames      = ['VP3', 'VP4', 'VP1', 'VP14', 'VP2', 'VP11', 'VP26', 'VP25']
+#subjectnames      = ['VP4', 'VP1', 'VP14', 'VP2', 'VP11']
 
 
 ############
@@ -219,7 +222,9 @@ FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='facet_subjects')
 FREEVIEW.plot_histogram(raw_fix_count_df)
 
 # plot fixation durations
-FREEVIEW.plot_fixation_durations(raw_freeview_df)
+p = FREEVIEW.plot_fixation_durations(raw_freeview_df)
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/fixation_durations.png'), height=4.32, width=4, units = 'in', dpi=500)
+
 FREEVIEW.plot_fixation_durations(raw_freeview_df, option='facet_subjects')
 
 
@@ -233,14 +238,9 @@ FREEVIEW.plot_main_sequence(raw_freeview_df)
 
 
 
-subject = 'VP4'
-block = None
-condition = None
 
 
-# TODO compare raw signal
-
-
+#%% Compare the raw signals of the two eyetrackers
 
 def compare_raw_signal(subject, block, condition, algorithm=None):
     """
@@ -248,8 +248,6 @@ def compare_raw_signal(subject, block, condition, algorithm=None):
     shows raw signal for each eyetracker.
     Colors indicate detected events
     """
-    
-
     datapath = '/net/store/nbp/projects/etcomp/'
     all_samples = pd.DataFrame()
     etmsgs= pd.DataFrame()
@@ -257,45 +255,57 @@ def compare_raw_signal(subject, block, condition, algorithm=None):
 
     etgrid   = pd.DataFrame()
 
-
     for et in ['el','pl']:
 
         etsamples, elmsgs, etevents = preprocess.preprocess_et(et, subject,load=True)
 
         # time window depends on condition and block
         # TODO
+        # look at be_load
+        # determine time window on basis of condition and block info
         t0 = elmsgs.query("condition=='Instruction'&exp_event=='BEGINNING_start'").msg_time.values
         if len(t0)!=1:
             raise error
         etsamples.smpl_time = etsamples.smpl_time - t0
 
-        tstart = 220
-        tdur =50
+        tstart = 1050
+        tdur = 45
         
         
-        all_samples = pd.concat([all_samples,etsamples.assign(eyetracker=et)],ignore_index=True, sort=False)
-        etmsgs    = pd.concat([etmsgs,      elmsgs.assign(eyetracker=et)],ignore_index=True, sort=False)
-        etevents  = pd.concat([etevents,  etevents.assign(eyetracker=et)],ignore_index=True, sort=False)
+        all_samples = pd.concat([all_samples,etsamples.assign(et=et)],ignore_index=True, sort=False)
+        etmsgs    = pd.concat([etmsgs,      elmsgs.assign(et=et)],ignore_index=True, sort=False)
+        etevents  = pd.concat([etevents,  etevents.assign(et=et)],ignore_index=True, sort=False)
         
-        etgrid  = pd.concat([etgrid,  etgrid.assign(eyetracker=et)],ignore_index=True, sort=False)
-            
+        etgrid  = pd.concat([etgrid,  etgrid.assign(et=et)],ignore_index=True, sort=False)
 
+    
+    # rename for plotting
+    all_samples = helper.set_to_full_names(all_samples)
+    
+    # set theme
+    theme_set(mythemes.raw_signal_theme)            
+    
     return (ggplot(all_samples.query("smpl_time>%i & smpl_time<%i"%(tstart,tstart+tdur)),aes(x="smpl_time",y="gx",color="type"))+
-                 geom_point()+
-                 facet_grid("eyetracker~."))
+                 geom_point() +
+                 scale_color_brewer('qual', 'Set1') +
+                 facet_grid("et~.") +
+                 xlab("Time [s]") +
+                 ylab("X-Position [$^\circ$]") +
+                 labs(title='Raw signal: EyeLink vs. Pupil Labs'))  
 
       
+subject = 'VP2'
+block = None
+condition = None
+
+p = compare_raw_signal(subject, block, condition)
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/compare_et_signals.png'), height=5, width=11, units = 'in', dpi=1000)
 
 
-compare_raw_signal("VP1", 1, 1)
+# good raw signal: VP4 btw 45 and 105 seconds
+# bad raw signal:
 
-
-
-
-
-
-
-######## SAVING the plots##########
+#%% SAVING the plots
 
 p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.svg'), height=15, width=15, units = 'in', dpi=1000)
 p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' meanelem_medianblock.png'), height=15, width=10, units = 'in', dpi=500)
