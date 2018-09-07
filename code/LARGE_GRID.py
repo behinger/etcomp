@@ -39,7 +39,7 @@ def plot_accuracy_be(raw_large_grid_df, agg=[np.mean,np.median]):
     return(p)
     
     
-def plot_accuracy(raw_large_grid_df, option=None, agg_level=None):
+def plot_accuracy(raw_large_grid_df, option=None, agg_level=None, depvar = 'accuracy'):
     """
     Input:  raw df for condition
             option: None; variance_within_block 
@@ -63,18 +63,18 @@ def plot_accuracy(raw_large_grid_df, option=None, agg_level=None):
     
     if option is None:
         # plot eyetracker vs  mean accuracy over all blocks
-        return (ggplot(mean_over_elements_median_over_blocks, aes(x='et', y='accuracy')) +\
+        return (ggplot(mean_over_elements_median_over_blocks, aes(x='et', y=depvar)) +\
                   geom_line(aes(group='subject'), color='lightblue') +
                   geom_point(color='lightblue') +
                   stat_summary(color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
                   #guides(color=guide_legend(ncol=8)) +
                   xlab("Eye Trackers") + 
-                  ylab("Accuracy [$^\circ$]") +
+                  ylab(depvar.capitalize()+" [$^\circ$]") +
                   ggtitle('Mean-Element  Median-Block  Accuracies for each subject'))
         
         
     elif option == 'variance_within_block':
-        return (ggplot(aes(x='et', y='accuracy',color='factor(block)'), data=mean_over_elements) +
+        return (ggplot(aes(x='et', y=depvar,color='factor(block)'), data=mean_over_elements) +
                     geom_point(alpha=0.1,data=raw_large_grid_df,position=position_dodge(width=0.7)) +
                     geom_point(position=position_dodge(width=0.7))+
                     geom_line(aes(group='block'), position= position_dodge(width=0.7)) +
