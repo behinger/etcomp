@@ -211,9 +211,10 @@ raw_freeview_df, raw_fix_count_df = condition_df.get_condition_df(subjectnames, 
 FREEVIEW.plot_heatmap(raw_freeview_df)
 
 # plot fixation counts
-FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option=None)
-FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='violin')
+g = FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option=None)
+g.save(filename = str('../plots/2018-09-05_tea_time_presentation/number_of_fixations.png'), height=5.0, width=4.5, units = 'in', dpi=500)
 
+FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='violin')
 # just to have a look at the different fix_counts for each picture in each subject
 FREEVIEW.plot_number_of_fixations(raw_fix_count_df, option='facet_subjects')
 
@@ -223,7 +224,7 @@ FREEVIEW.plot_histogram(raw_fix_count_df)
 
 # plot fixation durations
 p = FREEVIEW.plot_fixation_durations(raw_freeview_df)
-p.save(filename = str('../plots/2018-09-05_tea_time_presentation/fixation_durations.png'), height=4.32, width=4, units = 'in', dpi=500)
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/fixation_durations.png'), height=5.0, width=4.5, units = 'in', dpi=500)
 
 FREEVIEW.plot_fixation_durations(raw_freeview_df, option='facet_subjects')
 

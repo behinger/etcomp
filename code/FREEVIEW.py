@@ -189,7 +189,7 @@ def plot_fixation_durations(raw_freeview_df, option=None):
                     + geom_density()
                     + xlim([0,1])
                     + xlab('fixation duration [s]')
-                    + ggtitle('Fixation durations during the Freeviewig condition'))
+                    + ggtitle('Fixation durations'))
                 
         
     elif option == 'facet_subjects':        
@@ -199,7 +199,7 @@ def plot_fixation_durations(raw_freeview_df, option=None):
                 + xlim([0,1])
                 + xlab('fixation duration [s]')
                 + facet_wrap('subject')
-                + ggtitle('Fixation durations during the Freeviewig condition'))
+                + ggtitle('Fixation durations'))
             
         
     else:

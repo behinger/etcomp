@@ -52,14 +52,14 @@ default_theme = (theme_minimal(base_size=12) + theme(text = element_text(),\
     
             
                legend_key = element_rect(colour = 'None'),\
-               legend_position = "right",\
+               legend_position = "bottom",\
                legend_background=element_rect(fill='None',color='None'),\
-               legend_direction = "vertical",\
+               legend_direction = "horizontal",\
                legend_box = 'horizontal',\
                legend_margin = 10,\
-               #legend_title = element_text(size=10),\
-               legend_title = element_blank(),\
-               legend_title_align = 'left',\
+               legend_title = element_text(size=10),\
+               #legend_title = element_blank(size=10),\
+               legend_title_align = 'top',\
 
                strip_background=element_rect(colour="#ffffff",fill="#ffffff"),\
                strip_text = element_text(face="bold")))
