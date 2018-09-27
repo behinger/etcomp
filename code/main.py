@@ -145,7 +145,7 @@ plt.plot(etsamples.query('zero_pa==True')['smpl_time'],etsamples.query('zero_pa=
 os.chdir('/net/store/nbp/users/kgross/etcomp/code')
 
 # only for test, so you dont have to load so many
-#subjectnames      = ['VP4', 'VP1', 'VP14', 'VP2', 'VP11']
+subjectnames      = ['VP4', 'VP1', 'VP14', 'VP2', 'VP11', 'VP25']
 
 
 ############
@@ -153,6 +153,8 @@ os.chdir('/net/store/nbp/users/kgross/etcomp/code')
 
 # load grid df for subjectnames
 raw_large_grid_df = condition_df.get_condition_df(subjectnames, ets, condition='LARGE_GRID')
+
+
 
 # plot accuracy    
 LARGE_GRID.plot_accuracy(raw_large_grid_df)
@@ -269,8 +271,8 @@ def compare_raw_signal(subject, block, condition, algorithm=None):
             raise error
         etsamples.smpl_time = etsamples.smpl_time - t0
 
-        tstart = 1050
-        tdur = 45
+        tstart = 46
+        tdur = 52
         
         
         all_samples = pd.concat([all_samples,etsamples.assign(et=et)],ignore_index=True, sort=False)
@@ -295,16 +297,16 @@ def compare_raw_signal(subject, block, condition, algorithm=None):
                  labs(title='Raw signal: EyeLink vs. Pupil Labs'))  
 
       
-subject = 'VP2'
+subject = 'VP4'
 block = None
 condition = None
 
 p = compare_raw_signal(subject, block, condition)
-p.save(filename = str('../plots/2018-09-05_tea_time_presentation/compare_et_signals.png'), height=5, width=11, units = 'in', dpi=1000)
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/good_compare_et_signals.png'), height=5, width=11, units = 'in', dpi=400)
 
 
-# good raw signal: VP4 btw 45 and 105 seconds
-# bad raw signal:
+# good raw signal: VP4 start 42 seconds  duration 55 seconds
+# bad raw signal:  VP2 start 1049 seconds duration  40 seconds
 
 #%% SAVING the plots
 

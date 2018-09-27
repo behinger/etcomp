@@ -173,6 +173,13 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
     
     options are: 'fixations', 'accuracy_for_each_element', 'precision_for_each_element' and 'offset'
     
+    
+    example promt LARGE_GRID.display_fixations(raw_large_grid_df, option='offset', greyscale=True)
+
+    Please select a subject: VP4
+
+    Please select a block: 1
+    
     returns plot
     
     """
@@ -184,11 +191,11 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
             if input_subject is None:
                 input_subject = [input("Please select a subject: ")]
             if input_block is None:
-                input_block = [int(input("Please select a block: "))]           
+                input_block = [input("Please select a block: ")]           
             
     
     # make separate figure for each eyetracker
-    for eyetracker in [['EyeLink'], ['Pupil Labs']]:
+    for eyetracker in [["EyeLink"], ["Pupil Labs"]]:
         et_grouped_elem_pos = raw_large_grid_df.query('et==@eyetracker')    
         
        
@@ -263,6 +270,7 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                       
             if greyscale:
                 # no colors for position of element points
+                 
                 p = (ggplot(specific_subject_df, aes(x='mean_gx', y='mean_gy'))
                         + geom_point(size=2, alpha=0.8, show_legend=False)
                         # displayed elements
@@ -274,7 +282,7 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                         + ggtitle(str(eyetracker)[2:-2] + ': Mean fixation position vs displayed element position'))
                 p.draw()
                 # save for teatime as png
-                p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' fixation_offset2.png'), height=5, width=10, units = 'in', dpi=1000)
+                p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' fixation_offset2.png'), height=5, width=10, units = 'in', dpi=400)
                 
             else:
                 # color of element depends on the position of the true target element
