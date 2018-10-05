@@ -406,14 +406,16 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
         query = query+"& subject == @single_eventormsg.subject"
     if not bothET:
         query = query+"& eyetracker==@single_eventormsg.eyetracker"
-    samples_query = "smpl_time>=@tstart & smpl_time <=@tend & "+query
-    msg_query     = "msg_time >=@tstart & msg_time  <=@tend & "+query
+    samples_query   = "smpl_time>=@tstart & smpl_time   <=@tend & "+query
+    msg_query       = "msg_time >=@tstart & msg_time    <=@tend & "+query
     event_query     = "end_time >=@tstart & start_time  <=@tend & "+query
     etmsgs = etmsgs.query(msg_query)
-    
     longstring = etmsgs.to_string(columns=['exp_event'],na_rep='',float_format='%.1f',index=False,header=False,col_space=0)
     longstring = re.sub(' +',' ',longstring)
     splitstring = longstring.split(sep="\n")
+    if len(splitstring) == etmsgs.shape[0]-1:
+        # last element was a Nan blank and got removed
+        splitstring.append(' ')   
     etmsgs.loc[:,'label'] = splitstring
 
     p = (ggplot()
