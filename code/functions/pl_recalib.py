@@ -43,7 +43,10 @@ tryimport, builtins.__import__ = builtins.__import__, realimport
 class global_container():
   pass
 
-
+def list_to_stream(gaze_list):
+    import msgpack
+    gaze_serialized = [msgpack.packb(gaze, use_bin_type=True) for gaze in gaze_list]
+    return(gaze_serialized)
 
 def notify_all(self,notification=''):
         print(notification)
@@ -88,9 +91,9 @@ def pl_recalibV2(pupil_list,ref_list,inp_gaze,calibration_mode='2d',eyeID=None):
         #from calibration_routines.gaze_mappers import Vector_Gaze_Mapper
         import copy
         import sys
-        pupil = copy.copy(pupil_list)
-        ref = copy.copy(ref_list)
-        gaze = copy.copy(inp_gaze)
+        pupil = list_to_stream(copy.copy(pupil_list))
+        ref   = (copy.copy(ref_list))
+        gaze  = list_to_stream(copy.copy(inp_gaze))
         if eyeID is not None: #remove everthing nonspecified
             pupil = [p for p in pupil if p['id']==eyeID]
             

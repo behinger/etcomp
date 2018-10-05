@@ -47,6 +47,7 @@ def map_surface(folder,loadCache = True,loadSurface = True):
     
     # Step 1.    
     print('Starting Tracker - WARNING: ROBUST_DETECTION IS CURRENTLY FALSE')
+    
     # TODO Decide robust detection (not really sure what it does)
     tracker = offline_surface_tracker.Offline_Surface_Tracker(fake_gpool,min_marker_perimeter=30,robust_detection=False)
     tracker.timeline = None
@@ -141,7 +142,7 @@ def map_surface(folder,loadCache = True,loadSurface = True):
         
     file_permissions_groupreadwrite(fake_gpool.rec_dir)
     
-    return(surface)
+    return(tracker)
 
 def fake_gpool_surface(folder = None):
     if not folder:
@@ -163,14 +164,25 @@ def fake_gpool_surface(folder = None):
     fake_gpool.timeline = global_container()
     return(fake_gpool)
     
+def list_to_stream(gaze_list):
+    import msgpack
+    gaze_serialized = [msgpack.packb(gaze, use_bin_type=True) for gaze in gaze_list]
+    return(gaze_serialized)
+
 def surface_map_data(tracker,data):
-    if not (type(data) == list):
-        raise 'Did you forget to select what data? I expected a list here'
-    
+    #if not (type(data) == list):
+    # can also be lib.pupil.pupil_src.shared_modules.player_methods.Bisector
+    #    raise 'Did you forget to select what data? I expected a list here'
+    #data = list_to_stream(data)
     # get the gaze positions in world-camera units
+    
+    import lib.pupil.pupil_src.shared_modules.player_methods as player_methods
+    
+    tmp = player_methods.Bisector(data,[p['timestamp'] for p in data])
+    
     fake_gpool = tracker.g_pool
-    fake_gpool.gaze_positions = data
-    fake_gpool.gaze_positions_by_frame = correlate_data(fake_gpool.gaze_positions, fake_gpool.timestamps)
+    fake_gpool.gaze_positions = tmp
+    fake_gpool.gaze_positions_by_frame = correlate_data(data, fake_gpool.timestamps)
     
     if not(len(tracker.surfaces) == 1):
         raise 'expected only a single surface!'
