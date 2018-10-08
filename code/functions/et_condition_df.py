@@ -51,9 +51,12 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
             else:
                 etsamples,etmsgs,etevents = (d.query("eyetracker=='"+et+"'&subject=='"+subject+"'").drop(["eyetracker","subject"],axis=1) for d in data) 
                     
-            if condition in ['LARGE_GRID','LARGE_and_SMALL_GRID','SMOOTHPURSUIT','MICROSACC']:
+            if condition in ['LARGE_GRID','LARGE_and_SMALL_GRID','SMOOTHPURSUIT','MICROSACC','SHAKE','TILT']:
                 
-                # adding the messages to the event df (backward merge)                
+                # adding the messages to the event df (backward merge)   
+                if condition in ['TILT','SHAKE']:
+                    etmsgs.loc[:,'element'] = etmsgs.groupby(['block','condition','exp_event']).cumcount()
+
                 merged_events = helper.add_msg_to_event(etevents, etmsgs, timefield = 'start_time', direction='backward')
                  
                 if condition == 'LARGE_GRID':
@@ -65,13 +68,18 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
                     # make df for all grids that only contains ONE fixation per element
                     # (last fixation before the new element is shown)
                     condition_df = make_df.make_all_elements_grid_df(merged_events)                  
-                
-
+                    
+                elif condition in ['SHAKE']:
+                    condition_df = make_df.make_condition(merged_events,condition=condition)                  
+                elif condition == 'TILT':
+                    condition_df = merged_events.query('condition=="TILT"')
                 else:
                     condition_df = merged_events
+                    
             elif condition == 'BLINK':
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query("condition=='BLINK'&(exp_event=='stop'|exp_event=='start')"), timefield = 'start_time', direction='backward')
                 condition_df =  merged_events.query("type=='blink'&condition=='BLINK'&exp_event=='start'")
+                
             elif condition == 'FREEVIEW':
                 # due to experimental trigger bug: FORWARD merge to add msgs to the events
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='forward')

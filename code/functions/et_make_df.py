@@ -79,6 +79,7 @@ def make_epochs(et,msgs,td=[-2,2],aggfunction=None):
         if idx%50 == 0:
             print("msg %i from %i"%(idx,msgs.shape[0]))
         ix = range(start,end) 
+    
         msg = msgs.iloc[idx]
         if np.sum(ix) == 0:
             logger.warning('warning, no sample found for msg %i'%(idx))
@@ -153,10 +154,51 @@ def make_large_grid_df(merged_events):
     return large_grid_df
 
 
-   
-#%% Make df for FREEVIEW condition
 
-# TODO
+
+def make_condition(merged_events,condition=None):
+    
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    # use the last exp_event fixation as element 50
+    stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
+    large_grid_events.loc[stopevents.index] = stopevents
+    
+    
+    if condition == "LARGE_GRID":
+        out_df = large_grid_events
+        
+    elif condition == 'LARGE_AND_SMALL_GRID':
+         # only small grid before condition
+        small_grid_before_events = merged_events.query('condition == "SMALLGRID_BEFORE"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    
+        # only small grid after condition
+        small_grid_after_events = merged_events.query('condition == "SMALLGRID_AFTER"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+        
+
+        # take only elements that are in small and large grid
+        out_df = pd.concat([large_grid_events, small_grid_before_events, small_grid_after_events], ignore_index=True)
+   
+    elif condition == 'SHAKE':
+        
+        out_df = merged_events.query('condition == "SHAKE"').loc[:,['type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'shake_x', 'shake_y']]
+        out_df.loc[:,'posx'] = out_df.shake_x
+        out_df.loc[:,'posy'] = out_df.shake_y
+    
+        
+    #print(out_df)        
+    out_df = helper.only_last_fix(out_df, next_stim = ['condition','block', 'element'])
+    
+    # use absolute value of difference in angle (horizontal)
+    out_df['hori_accuracy'] = out_df.apply(calc_horizontal_accuracy, axis=1)
+    # use absolute value of difference in angle (vertical)
+    out_df['vert_accuracy'] = out_df.apply(calc_vertical_accuracy, axis=1)
+    # calculate the spherical angle
+    out_df['accuracy']      = out_df.apply(calc_3d_angle_onerow, axis=1)
+   
+        
+    return out_df
+
+    
 def make_all_elements_grid_df(merged_events):
     # Input:    merged_events have info from msgs df AND event df
     #           (see add_msg_to_event in et_helper)

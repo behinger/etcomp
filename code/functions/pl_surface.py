@@ -178,7 +178,13 @@ def surface_map_data(tracker,data):
     
     import lib.pupil.pupil_src.shared_modules.player_methods as player_methods
     
-    tmp = player_methods.Bisector(data,[p['timestamp'] for p in data])
+    
+    tmp = data
+    if hasattr(player_methods, 'Bisector'):
+        # pupil labs starting from v1.8 needs the data as a Bisector
+        tmp = player_methods.Bisector(data,[p['timestamp'] for p in data])
+    
+    
     
     fake_gpool = tracker.g_pool
     fake_gpool.gaze_positions = tmp

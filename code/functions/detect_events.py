@@ -73,6 +73,7 @@ def make_saccades(etsamples,etevents,et):
 
     
 def make_fixations(etsamples, etevents,et):
+    from functions.et_helper import winmean
     # this happened already:  
     # etsamples, etevents = make_blinks(etsamples, etevents, et)
     # etsamples, etevents = make_saccades(etsamples, etevents, et)
@@ -130,8 +131,8 @@ def make_fixations(etsamples, etevents,et):
         # take the mean gx/gy position over all samples that belong to that fixation
         # removed bad samples explicitly
         ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time) & (etsamples.zero_pa==False)  & (etsamples.neg_time==False)
-        fixationevents.loc[ix, 'mean_gx'] =  np.mean(etsamples.loc[ix_fix, 'gx'])    
-        fixationevents.loc[ix, 'mean_gy'] =  np.mean(etsamples.loc[ix_fix, 'gy'])
+        fixationevents.loc[ix, 'mean_gx'] =  winmean(etsamples.loc[ix_fix, 'gx'])    
+        fixationevents.loc[ix, 'mean_gy'] =  winmean(etsamples.loc[ix_fix, 'gy'])
 
         fix_samples = etsamples.loc[ix_fix,['gx', 'gy']]
 

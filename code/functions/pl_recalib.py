@@ -91,9 +91,18 @@ def pl_recalibV2(pupil_list,ref_list,inp_gaze,calibration_mode='2d',eyeID=None):
         #from calibration_routines.gaze_mappers import Vector_Gaze_Mapper
         import copy
         import sys
-        pupil = list_to_stream(copy.copy(pupil_list))
-        ref   = (copy.copy(ref_list))
-        gaze  = list_to_stream(copy.copy(inp_gaze))
+        
+        pupil = copy.copy(pupil_list)
+        ref   = copy.copy(ref_list)
+        gaze  = copy.copy(inp_gaze)
+
+        # to check pupil labs version 
+        import lib.pupil.pupil_src.shared_modules.player_methods
+        if hasattr(lib.pupil.pupil_src.shared_modules.player_methods, 'Bisector'):
+            # pupillab v1.8 or newer needs the data serialized
+            pupil = list_to_stream(pupil)
+            gaze = list_to_stream(gaze)
+        
         if eyeID is not None: #remove everthing nonspecified
             pupil = [p for p in pupil if p['id']==eyeID]
             
