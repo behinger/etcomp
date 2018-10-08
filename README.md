@@ -16,7 +16,8 @@ git submodule update --init
 ```
 The latter is necessary to get the files from pupillabs, which we partially will make use of.
 
-
+# Change pupil labs code
+- We need to comment out the 4 lines in references_surface init related to fonts (at least on Ubuntu)
 
 # NEW INSTALLATION
 
