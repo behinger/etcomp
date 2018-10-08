@@ -12,6 +12,11 @@ import logging
 
 from plotnine import *
 
+
+from scipy.stats.mstats import winsorize
+from plotnine.stats.stat_summary import bootstrap_statistics
+
+
 #%% put PUPIL LABS data into PANDAS DF
 
 def gaze_to_pandas(gaze):
@@ -437,6 +442,19 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
                    + geom_hline(yintercept=single_eventormsg.posx))
     return(p)
     
-    # e.g. for large grid
-    
-    
+ 
+ 
+
+
+# define 20% winsorized means 
+
+def winmean(x,perc = 0.2,axis=0):
+    return(np.mean(winsorize(x,perc,axis=axis),axis=axis))
+
+def winmean_cl_boot(series, n_samples=1000, confidence_interval=0.95,
+                 random_state=None):
+    print('used the winsorized mean function')
+    return bootstrap_statistics(series, winmean,
+                                n_samples=n_samples,
+                                confidence_interval=confidence_interval,
+                                random_state=random_state)

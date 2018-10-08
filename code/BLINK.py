@@ -9,6 +9,7 @@ Created on Fri Jul 13 18:20:44 2018
 import functions.plotnine_theme
 from plotnine import *
 import numpy as np
+from functions.et_helper import winmean,winmean_cl_boot
 #%%
 
 def plot_duration(beep,option=''):
@@ -17,7 +18,7 @@ def plot_duration(beep,option=''):
     if option == '':
         pl = pl+\
         geom_jitter(width=0.2,alpha=0.1)+\
-        stat_summary(data=beep.groupby(["subject","et"],as_index=False).agg({"duration":np.median}))+ggtitle('Median Blink Duration per block, subjectwise mean + subjectwise 95%CI')
+        stat_summary(fun_data=winmean_cl_boot,data=beep.groupby(["subject","et"],as_index=False).agg({"duration":winmean}))+ggtitle('Median Blink Duration per block, subjectwise mean + subjectwise 95%CI')
     if option == 'facet_subjects':
         pl = ggplot(beep,aes(x="block",y="duration",fill="et",color="et"))+geom_point(position=position_dodge(width=0.2))+facet_wrap("~subject")
         
@@ -30,7 +31,7 @@ def plot_count(beep,option=''):
     if option == '':
             pl = ggplot(beep,aes(x="et",y="n_blinks"))+\
                 geom_jitter(width=0.2,alpha=0.1)+\
-                stat_summary(data=beep.groupby(["subject","et"],as_index=False).agg({"n_blinks":np.mean}))+ggtitle('Mean number of blinks per block, subjectwise mean + subjectwise 95%CI')
+                stat_summary(fun_data=winmean_cl_boot,data=beep.groupby(["subject","et"],as_index=False).agg({"n_blinks":winmean}))+ggtitle('Mean number of blinks per block, subjectwise mean + subjectwise 95%CI')
     
     if option == 'facet_subjects':
             pl = ggplot(beep,aes(x="block",y="n_blinks",color="et"))+\

@@ -19,12 +19,12 @@ from plotnine.data import *
 import functions.plotnine_theme as mythemes
 
 import functions.et_helper as  helper
-
+from functions.et_helper import winmean
 
 #%% different functions for analysing the Large Grid
 
 
-def plot_accuracy_be(raw_large_grid_df, agg=[np.mean,np.median]):
+def plot_accuracy_be(raw_large_grid_df, agg=[winmean,winmean,]):
     data_agg = raw_large_grid_df.groupby(['block','subject','et'],as_index=False).agg(agg[0]).groupby(['subject','et'],as_index=False).agg(agg[1])
     
     
@@ -32,7 +32,7 @@ def plot_accuracy_be(raw_large_grid_df, agg=[np.mean,np.median]):
     p = (ggplot(data_agg, aes(x='et', y='accuracy', color='subject')) 
                   +geom_line(aes(group='subject'))
                   +geom_point()
-                  +stat_summary(color='red',size=2)
+                  +stat_summary(fun_data=winmean_cl_boot,color='red',size=2)
                   +guides(color=guide_legend(ncol=40))
     )
                   
@@ -54,7 +54,7 @@ def plot_accuracy(raw_large_grid_df, option=None, agg_level=None, depvar = 'accu
     if agg_level is None:
         # as default we use the mean over the elements (so that also elements in the periphery influence the performance)
         # and the median over the blocks (so that 'outlier blocks' do not influence the overall accuracy)
-        agg_level=[np.mean, np.median]
+        agg_level=[winmean,winmean]
     
     # aggregate data of the large grid df
     mean_over_elements                    = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
@@ -66,11 +66,11 @@ def plot_accuracy(raw_large_grid_df, option=None, agg_level=None, depvar = 'accu
         return (ggplot(mean_over_elements_median_over_blocks, aes(x='et', y=depvar)) +\
                   geom_line(aes(group='subject'), color='lightblue') +
                   geom_point(color='lightblue') +
-                  stat_summary(color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
+                  stat_summary(fun_data=winmean_cl_boot,color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
                   #guides(color=guide_legend(ncol=8)) +
                   xlab("Eye Trackers") + 
                   ylab(depvar.capitalize()+" [$^\circ$]") +
-                  ggtitle('Mean-Element  Median-Block  Accuracies for each subject'))
+                  ggtitle('Winsorized Mean Accuracies'))
         
         
     elif option == 'variance_within_block':
@@ -86,6 +86,52 @@ def plot_accuracy(raw_large_grid_df, option=None, agg_level=None, depvar = 'accu
         raise ValueError('You must set options to a valid option. See documentation.')
 
 
+def make_table_accuracy_winmean(raw_large_grid_df, concise=False):
+    """
+    returns a df with the mean, median and range of all calculated accuracy values
+    """
+    
+    # specify aggregators for different levels
+    
+    #  element level   - -   block level   - -    subject level
+    #       mean               median                  mean
+    
+    # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
+    def apply_agg_level(df,agg_level):
+        block = df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
+        subject = block.groupby(['subject','et'], as_index=False).agg(agg_level[1])
+        group = subject.groupby('et',as_index=False).agg(agg_level[0])
+        return(block,subject,group)
+    
+    
+    meanMedianMean_block       ,meanMedianMean_subject       ,meanMedianMean_group        =apply_agg_level(raw_large_grid_df,[np.mean, np.median, np.mean])
+    meanMeanMean_block         ,meanMeanMean_subject         ,meanMeanMean_group          =apply_agg_level(raw_large_grid_df,[np.mean, np.mean,   np.mean])
+    winmeanWinmeanWinmean_block,winmeanWinmeanWinmean_subject,winmeanWinmeanWinmean_group =apply_agg_level(raw_large_grid_df,[winmean, winmean,   winmean])
+    
+    
+    acccuracy_table = pd.concat([meanMedianMean_group.assign(cumtype='meanMedianMean'),
+                                meanMeanMean_group.assign(cumtype='meanMeanMean'),
+                                winmeanWinmeanWinmean_group.assign(cumtype='winmeanWinmeanWinmean')
+                                
+                               ])
+    
+    # init df
+    #acccuracy_table = pd.DataFrame(columns=['mean-mean-mean','mean-median-mean', 'horizontal_accuracy', 'vertical_accuracy', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','Pupil Labs'])
+
+    
+    #acccuracy_table.loc['EyeLink']    = pd.Series({'mean-mean-mean': mm_eyelink_data.accuracy.mean(), 'mean-median-mean': eyelink_data.accuracy.mean(),   'horizontal_accuracy': eyelink_data.hori_accuracy.mean(),  'vertical_accuracy': eyelink_data.vert_accuracy.mean(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
+    #acccuracy_table.loc['Pupil Labs'] = pd.Series({'mean-mean-mean': mm_pupillabs_data.accuracy.mean(), 'mean-median-mean': pupillabs_data.accuracy.mean(), 'horizontal_accuracy': pupillabs_data.hori_accuracy.mean(),'vertical_accuracy': pupillabs_data.vert_accuracy.mean(), 'subject_min_accuracy': pupillabs_data.accuracy.min(), 'subject_max_accuracy': pupillabs_data.accuracy.max(), 'mean_rms': pupillabs_data.rms.mean()})
+    
+    
+    # convert dtypes to floats and round results
+    acccuracy_table = acccuracy_table..round(2)
+    
+    # only report most important columns
+    if concise:
+        print('to be done bene was lasy')
+    #    return acccuracy_table[['mean-median-mean']].round(1) 
+    
+    return acccuracy_table
 
 def make_table_accuracy(raw_large_grid_df, concise=False):
     """

@@ -21,6 +21,7 @@ from plotnine import *
 import functions.plotnine_theme as mythemes
 
 import functions.et_helper as  helper
+from functions.et_helper import winmean,winmean_cl_boot
 
 import logging
 
@@ -135,7 +136,7 @@ def plot_number_of_fixations(raw_fix_count_df, option=None):
         return (ggplot(mean_fixcount_per_pic, aes(x='et', y='fix_counts')) +
                  geom_line(aes(group='subject'), color='lightblue') +
                  geom_point(color='lightblue') +
-                 stat_summary(color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
+                 stat_summary(fun_data=winmean_cl_boot,color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
                  xlab("Eye Tracker") + 
                  ylab("Mean number of fixations per picture") +
                  ggtitle('Subjectwise mean number of fixations'))

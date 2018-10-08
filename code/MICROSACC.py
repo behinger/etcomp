@@ -48,7 +48,8 @@ def detect_microsaccades(etsamples,etevents,etmsgs):
     return(all_microsaccades)
 
 def group_microsaccades(microsaccades):
-    microsaccades_grouped = microsaccades.groupby(["eyetracker","subject"],as_index=False).agg({'amplitude':['count','mean']})
+    from functions.et_helper import winmean
+    microsaccades_grouped = microsaccades.groupby(["eyetracker","subject"],as_index=False).agg({'amplitude':['count',winmean]})
     microsaccades_grouped.columns = [' '.join(col).strip() for col in microsaccades_grouped.columns.values]
     microsaccades_grouped = microsaccades_grouped.rename(index=str,columns={"amplitude count":"count"})
     print(microsaccades_grouped.columns)
