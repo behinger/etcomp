@@ -9,7 +9,7 @@ import logging
 
 from plotnine import *
 from matplotlib import pyplot as plt
-from functions.et_helper import winmean
+from functions.et_helper import winmean,winmean_cl_boot
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +200,7 @@ def plot_modelresults(smoothresult,field="taumean",option=''):
         binwidth = 0.1
         
     if option == '':
-        pl = ggplot(smoothgroup,aes(x="eyetracker",y=field))+geom_point(alpha=0.1)+stat_summary(color='red')
+        pl = ggplot(smoothgroup,aes(x="eyetracker",y=field))+geom_point(alpha=0.1)+stat_summary(fun_data=winmean_cl_boot,color='red')
     if option=='difference':
         smoothdiff = smoothgroup.groupby("subject").agg(np.diff)
         pl = ggplot(smoothdiff,aes(x=field))+geom_histogram(binwidth=binwidth)+ggtitle('binwidth of %.3f'%(binwidth))
@@ -211,4 +211,4 @@ def plot_modelresults(smoothresult,field="taumean",option=''):
 def plot_catchup_amplitudes(smooth):
     smooth_saccade = smooth.query("type=='saccade'       & condition=='SMOOTH' & exp_event=='trialstart'") 
     smooth_saccade_agg = smooth_saccade.groupby(["subject","et","block","trial","angle","vel"],as_index=False).agg({'amplitude':winmean})
-    return(ggplot(smooth_saccade_agg,aes(x="vel",y="amplitude",color="et"))+stat_summary()+ylab('Number of Catchup Saccades'))
+    return(ggplot(smooth_saccade_agg,aes(x="vel",y="amplitude",color="et"))+stat_summary(fun_data=winmean_cl_boot)+ylab('Number of Catchup Saccades'))

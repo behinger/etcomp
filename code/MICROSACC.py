@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import functions.detect_events as detect_events
 import functions.et_helper as helper
+from functions.et_helper import winmean_cl_boot
+
 import functions.et_condition_df as condition_df
 import logging
 from plotnine import *
@@ -59,7 +61,7 @@ def plot_default(microsaccades,subtype="count"):
     # subtype can be "count"  or "mean"
     microsaccades_grouped = group_microsaccades(microsaccades)
     p = (ggplot(microsaccades_grouped,aes(x="eyetracker",y=subtype))
-        +geom_point(alpha=0.3)+stat_summary(color='red'))
+        +geom_point(alpha=0.3)+stat_summary(fun_data=winmean_cl_boot,color='red'))
     return(p)
 
 def plot_densities(microsaccades,x="amplitude"):

@@ -19,7 +19,7 @@ from plotnine.data import *
 import functions.plotnine_theme as mythemes
 
 import functions.et_helper as  helper
-from functions.et_helper import winmean
+from functions.et_helper import winmean,winmean_cl_boot
 
 #%% different functions for analysing the Large Grid
 
@@ -124,7 +124,7 @@ def make_table_accuracy_winmean(raw_large_grid_df, concise=False):
     
     
     # convert dtypes to floats and round results
-    acccuracy_table = acccuracy_table..round(2)
+    acccuracy_table = acccuracy_table.round(2)
     
     # only report most important columns
     if concise:

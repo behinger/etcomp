@@ -304,7 +304,9 @@ def fix_smallgrid_parser(etmsgs):
     etmsgs.loc[ix,'condition'] = replaceGrid
     
     # this here fixes that all buttonpresses and stop messages etc. were send as GRID and not SMALLGG 
-    for blockid in etmsgs.block.unique():
+    for blockid in etmsgs.block.dropna().unique():
+        if blockid == 0:
+            continue
         tmp = etmsgs.query('block==@blockid')
         t_before_start = tmp.query('condition=="DILATION"& exp_event=="stop"').msg_time.values
         t_before_end   = tmp.query('condition=="SHAKE"   & exp_event=="stop"').msg_time.values
