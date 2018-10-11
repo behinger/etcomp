@@ -34,8 +34,13 @@ def detect_microsaccades(etsamples,etevents,etmsgs):
 
             sel_etsamples = sel_etsamples.query("microsaccade==1")
 
+            if eyetracker == 'el':
+                engbert_lambda = 5
+            elif eyetracker == 'pl':
+                engbert_lambda  = 15
+                
             # Run the microsaccade detection
-            sel_etsamples,sel_etevents = detect_events.make_saccades(sel_etsamples,etevents=None,et=eyetracker)
+            sel_etsamples,sel_etevents = detect_events.make_saccades(sel_etsamples,etevents=None,et=eyetracker,engbert_lambda = engbert_lambda)
             # fill in some details
             sel_etevents = sel_etevents.assign(subject=subject)
             sel_etevents = sel_etevents.assign(eyetracker=eyetracker)

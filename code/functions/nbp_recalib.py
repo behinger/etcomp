@@ -10,12 +10,10 @@ Output:
 """
 
 
-#import pandas as pd
+
 import numpy as np
-#import matplotlib.pyplot as plt
 import functions.pl_recalib as pl
-from imp import reload
-#import file_methods
+
 
 
 def nbp_recalib(pupil,calibration_mode='2d',eyeID=None):
@@ -27,7 +25,6 @@ def nbp_recalib(pupil,calibration_mode='2d',eyeID=None):
     calib_data = [note for note in pupil['notifications'] if 'subject' in note.keys() and note['subject'] == 'calibration.calibration_data']
     
     calib_data = sort_pupil(calib_data)
-    
     recalib_data = []
     for calib_idx,single_calib in enumerate(calib_data):
 
@@ -61,9 +58,8 @@ def nbp_recalib(pupil,calibration_mode='2d',eyeID=None):
             print('recalibrating for %.2fs, %i samples'%(pupil['pupil_positions'][-1]['timestamp'] - np.max(tsCalib),sum(idx)))
             
         pupilPosition_cut =[pupil['pupil_positions'][i] for i in np.where(idx)[0].tolist()]
-        
-        
-        
+        print(len(single_calib))
+
         single_recalib_data = pl.pl_recalibV2(single_calib['pupil_list'],single_calib['ref_list'],pupilPosition_cut,calibration_mode=calibration_mode,eyeID = eyeID)        
         
         recalib_data = recalib_data + single_recalib_data

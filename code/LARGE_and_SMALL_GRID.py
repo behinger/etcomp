@@ -108,15 +108,21 @@ def plot_accuracy(raw_all_grids_df, option=None):
                       stat_summary(fun_y=winmean, geom='line',position=position_dodge(width=0.1)) +
                       # pointrange makes a 0.95 bootstrap CI
                       stat_summary(fun_data=winmean_cl_boot, geom='pointrange', position=position_dodge(width=0.1)) +
-                      #geom_path(aes(group="subject"),data=winmean_over_elements_winmean_over_blocks.query("et=='Pupil Labs'"),alpha=0.5,color='blue')+
-                      #geom_path(aes(group="subject"),data=winmean_over_elements_winmean_over_blocks.query("et=='EyeLink'"),alpha=0.5,color='red')+
+                      #geom_point(aes(group="subject"),data=winmean_over_elements_winmean_over_blocks.query("et=='Pupil Labs'"),alpha=0.5,color='blue')+
+                      #geom_point(aes(group="subject"),data=winmean_over_elements_winmean_over_blocks.query("et=='EyeLink'"),alpha=0.5,color='red')+
                       ylab("Accuracy [$^\circ$]") +
                       labs(title='Course of Accuracy'))                
     
         # restore old theme
         theme_set(old_theme)
     
-    
+    elif option == 'subjectvariance':
+        mean_over_elements.loc[:,'group'] = mean_over_elements.et + mean_over_elements.block
+        return (ggplot(mean_over_elements,aes(x='condition', y='accuracy', fill='et',group='group', color='et')) +
+                    geom_point(alpha=0.5)+
+                    geom_line()+
+                      ylab("Accuracy [$^\circ$]") +
+                      labs(title='Course of Accuracy'))+facet_wrap('subject',scales='free')  
     else:
         raise ValueError('You must set facets to a valid option. See documentation.')
 
