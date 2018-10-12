@@ -95,7 +95,8 @@ def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=Tr
     # Fix timing 
     # Pupillabs cameras have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).
     # We fix this here
-    original_pldata = pl_fix_timelag(original_pldata)    
+    original_pldata = pl_fix_timelag(original_pldata)  
+    
     if surfaceMap:
         try:
             import functions.pl_surface as pl_surface
@@ -158,14 +159,15 @@ def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     from pyedfread import edf # parses SR research EDF data files into pandas df
 
     elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
-    return(elsamples,elevents,elnotes)
+    
+    return (elsamples,elevents,elnotes)
+    
     
 def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
-    # Output:   Returns list of 2 el df (elsamples, elmsgs)
-    
-    
+    # Output:   Returns list of 3 el df (elsamples, elmsgs, elevents)
+
     assert(type(subject)==str)
     
     # get a logger
@@ -195,8 +197,8 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     logger.warning('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
     logger.warning('Deleting %.4f%% due to other errors in the import process'%(100*np.mean((elsamples.errors !=8) & (elsamples.errors!=0))))
     elsamples = elsamples.loc[elsamples.errors == 0]
-    # We had issues with samples with negative time
     
+    # We had issues with samples with negative time
     logger.warning('Deleting %.4f%% samples due to time<=0'%(100*np.mean(elsamples.time<=0)))
     elsamples = elsamples.loc[elsamples.time > 0]
     
@@ -283,6 +285,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
     elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
     elmsgs = fix_smallgrid_parser(elmsgs)
+    
     return elsamples, elmsgs, elevents
     
 
