@@ -457,3 +457,12 @@ def winmean_cl_boot(series, n_samples=1000, confidence_interval=0.95,
                                 n_samples=n_samples,
                                 confidence_interval=confidence_interval,
                                 random_state=random_state)
+
+def mad(arr):
+    """ Median Absolute Deviation: a "Robust" version of standard deviation.
+        Indices variabililty of the sample.
+        https://en.wikipedia.org/wiki/Median_absolute_deviation 
+    """
+    arr = np.ma.array(arr).compressed() # should be faster to not use masked arrays.
+    med = np.median(arr)
+    return np.median(np.abs(arr - med))
