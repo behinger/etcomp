@@ -424,7 +424,7 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
     etmsgs.loc[:,'label'] = splitstring
 
     p = (ggplot()
-     + geom_point(aes(x='smpl_time',y='gx',color='type'),data=etsamples.query(samples_query)) # samples
+     + geom_point(aes(x='smpl_time',y='gx',color='type',shape='eyetracker'),data=etsamples.query(samples_query)) # samples
      + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
      + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
     )
@@ -453,7 +453,6 @@ def winmean(x,perc = 0.2,axis=0):
 
 def winmean_cl_boot(series, n_samples=1000, confidence_interval=0.95,
                  random_state=None):
-    print('used the winsorized mean function')
     return bootstrap_statistics(series, winmean,
                                 n_samples=n_samples,
                                 confidence_interval=confidence_interval,

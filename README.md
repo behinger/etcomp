@@ -18,7 +18,7 @@ The latter is necessary to get the files from pupillabs, which we partially will
 
 # Change pupil labs code
 - We need to comment out the 4 lines in references_surface init related to fonts (at least on Ubuntu)
-
+- With our pyav we need to update ``` mode='time'``` to ```whence='time'```. This is in the file ```video_capture/file_backend.py``` twice
 # NEW INSTALLATION
 
 We have a large list of dependencies. Easiest is to install using:

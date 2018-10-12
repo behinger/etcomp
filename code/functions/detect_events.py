@@ -50,9 +50,9 @@ def make_blinks(etsamples,etevents,et):
 
 
 
-def make_saccades(etsamples,etevents,et):
+def make_saccades(etsamples,etevents,et,engbert_lambda=5):
 
-    saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et)
+    saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et,engbert_lambda=engbert_lambda)
 
     # select only interesting columns: keep only the raw
     keepcolumns = [s for s in saccadeevents.columns if "raw" in s]
@@ -90,9 +90,9 @@ def make_fixations(etsamples, etevents,et):
     etsamples.loc[ix_fix, 'type'] = 'fixation'
     
     # use magic to get start and end times of fixations in a temporary column
-    etsamples['tmp_fix'] = ((1*(etsamples['type'] == 'fixation')).diff())
-    etsamples['tmp_fix'].iloc[0] = 0
-    etsamples['tmp_fix'] = etsamples['tmp_fix'].astype(int)
+    etsamples.loc[:,'tmp_fix'] = ((1*(etsamples['type'] == 'fixation')).diff())
+    etsamples.loc[:,'tmp_fix'].iloc[0] = 0
+    etsamples.loc[:,'tmp_fix'] = etsamples['tmp_fix'].astype(int)
     
     # first sample should be fix start?
     if etsamples['tmp_fix'][np.argmax(etsamples['tmp_fix'] != 0)] == -1:  #argmax stops at first true
@@ -119,8 +119,8 @@ def make_fixations(etsamples, etevents,et):
     fixationevents.dropna(subset=['start_time', 'end_time'], inplace=True)
 
     # add the type    
-    fixationevents['type'] = 'fixation'
-    fixationevents['duration'] = fixationevents['end_time'] - fixationevents['start_time']
+    fixationevents.loc[:,'type'] = 'fixation'
+    fixationevents.loc[:,'duration'] = fixationevents['end_time'] - fixationevents['start_time']
 
     # delete fixationevents shorter than 50 ms
     logger.warning("Deleted %s fixationsevents of %s fixationsevents in total cause they were shorter than 50ms", np.sum(fixationevents.duration <= 0.05), len(fixationevents))
@@ -151,6 +151,11 @@ def make_fixations(etsamples, etevents,et):
             #print('fixdf : %s', len(fixdf))
             #print('np.sqrt((np.square(thetas)).mean()) : %s', np.sqrt((np.square(thetas)).mean()))
             fixationevents.loc[ix, 'rms'] = np.sqrt((np.square(thetas)).mean())
+            
+            fixdf = pd.DataFrame({'x0':fix_samples.gx.mean(),'y0':fix_samples.gy.mean(),'x1':fix_samples.gx.values,'y1':fix_samples.gy.values})
+            thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
+            
+            fixationevents.loc[ix, 'sd'] = np.sqrt(np.mean(np.square(thetas)))
 
 
 

@@ -8,25 +8,13 @@ import pandas as pd
 import os
 import logging
 
-from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
-from lib.pupil.pupil_src.shared_modules import camera_models as pl_camera_models
-
 from functions.et_helper import findFile,gaze_to_pandas
 import functions.et_parse as parse
 import functions.et_make_df as make_df
 import functions.et_helper as  helper
-import imp
-try:
-    import functions.pl_surface as pl_surface
-except ImportError:
-    print('Could not import pl_surface')
-
-# parses SR research EDF data files into pandas df
-from pyedfread import edf
 
 
 
-from functions import nbp_recalib
 import scipy
 import scipy.stats
 
@@ -49,12 +37,16 @@ def pl_fix_timelag(pl):
         
     return(pl)
 
-def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
+def raw_pl_data(subject='',datapath='/net/store/nbp/projects/etcomp/',postfix='raw'):
     # Input:    subjectname, datapath
     # Output:   Returns pupillabs dictionary
+    from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
     
-    filename = os.path.join(datapath,subject,'raw')
-
+    if subject == '':
+        filename = datapath
+    else:
+        filename = os.path.join(datapath,subject,postfix)
+    print(os.path.join(filename,'pupil_data'))
     # with dict_keys(['notifications', 'pupil_positions', 'gaze_positions'])
     # where each value is a list that contains a dictionary
     original_pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'))
@@ -78,7 +70,7 @@ def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     return original_pldata
 
 
-def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True, surfaceMap=True):
+def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=True, surfaceMap=True,parsemsg=True):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
     #           surfaceMap:
@@ -92,12 +84,13 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     
     # Get samples df
     # (is still a dictionary here)
-    original_pldata = raw_pl_data(subject, datapath)
+    original_pldata = raw_pl_data(subject=subject, datapath=datapath)
     
     
 
     # recalibrate data
     if recalib:
+        from functions import nbp_recalib
         original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
     # Fix timing 
     # Pupillabs cameras have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).
@@ -105,6 +98,11 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     original_pldata = pl_fix_timelag(original_pldata)  
     
     if surfaceMap:
+        try:
+            import functions.pl_surface as pl_surface
+        except ImportError:
+            print('Could not import pl_surface')
+
         folder= os.path.join(datapath,subject,'raw')
         tracker = pl_surface.map_surface(folder)   
         gaze_on_srf  = pl_surface.surface_map_data(tracker,original_pldata['gaze_positions'])
@@ -114,17 +112,8 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     
     # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time, diameter)
     pldata = gaze_to_pandas(original_pldata['gaze_positions'])
-         
-        
-    # undistort the norm_pos (remove fisheye distortion of the worldcamera)
-    # specify camera model
-    #intrinsics = pl_camera_models.load_intrinsics('','Pupil Cam1 ID2',"(1280, 720)")
     
-    # undistort gaze postitions
-    #undistorted_gazepoint_array = intrinsics.undistortPoints(np.asarray(pldata.loc[:, ['gx','gy']].values), use_distortion=True)
-    #pldata['gx'] = undistorted_gazepoint_array[:,0]
-    #pldata['gy'] = undistorted_gazepoint_array[:,1]
-
+    
     
     if surfaceMap:   
         pldata.gx = pldata.gx*(1920 - 2*(75+18))+(75+18) # minus white border of marker & marker
@@ -139,19 +128,23 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     # get the nice samples df
     plsamples = make_df.make_samples_df(pldata) #
     
-
-    # Get msgs df      
-    # make a list of gridnotes that contain all notifications of original_pldata if they contain 'label'
-    gridnotes = [note for note in original_pldata['notifications'] if 'label' in note.keys()]
-    plmsgs = pd.DataFrame();
-    for note in gridnotes:
-        msg = parse.parse_message(note)
-        if not msg.empty:
-            plmsgs = plmsgs.append(msg, ignore_index=True)
     
-    plevents = pd.DataFrame()
-    plmsgs = fix_smallgrid_parser(plmsgs)
+    if parsemsg:
+        # Get msgs df      
+        # make a list of gridnotes that contain all notifications of original_pldata if they contain 'label'
+        gridnotes = [note for note in original_pldata['notifications'] if 'label' in note.keys()]
+        plmsgs = pd.DataFrame();
+        for note in gridnotes:
+            msg = parse.parse_message(note)
+            if not msg.empty:
+                plmsgs = plmsgs.append(msg, ignore_index=True)
+
         
+        plmsgs = fix_smallgrid_parser(plmsgs)
+    else:
+        plmsgs = original_pldata['notifications']
+        
+    plevents = pd.DataFrame()
     return plsamples, plmsgs,plevents
 
 
@@ -163,6 +156,7 @@ def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subjectname, datapath
     # Output:   Returns pupillabs dictionary
     filename = os.path.join(datapath,subject,'raw')
+    from pyedfread import edf # parses SR research EDF data files into pandas df
 
     elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
     
