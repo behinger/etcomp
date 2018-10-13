@@ -35,6 +35,7 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
     # create df
     complete_condition_df = pd.DataFrame()
     complete_fix_count_df = pd.DataFrame()
+    
     if data:
         logger.debug('Data already loaded, just applying transformations')
         ets = data[0].eyetracker.unique()
@@ -69,9 +70,11 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
 
                 else:
                     condition_df = merged_events
+            
             elif condition == 'BLINK':
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query("condition=='BLINK'&(exp_event=='stop'|exp_event=='start')"), timefield = 'start_time', direction='backward')
                 condition_df =  merged_events.query("type=='blink'&condition=='BLINK'&exp_event=='start'")
+            
             elif condition == 'FREEVIEW':
                 # due to experimental trigger bug: FORWARD merge to add msgs to the events
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='forward')
@@ -113,7 +116,6 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
     
     # Sanity check
     # there must not be any NaN values
-    # TODO: solve this problem
     # last time rms caused problems
 #    if complete_condition_df.isnull().values.any():
 #       logger.error((complete_condition_df.columns[complete_condition_df.isna().any()].tolist()))
