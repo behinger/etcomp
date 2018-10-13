@@ -4,7 +4,7 @@ spyder
 scipy
 pyopengl
 patsy
-pandas
+pandas>=0.23.1
 numpy
 ipython
 matplotlib

@@ -5,4 +5,4 @@ export LD_LIBRARY_PATH=/net/store/nbp/projects/lib/edfread/build/linux64:../loca
 
 
 source ../local/etcompvenv/bin/activate &&\
-python3 hmm_grid_preprocess.py
+python3 grid_preprocess.py

@@ -2,8 +2,6 @@
 
 import numpy as np
 
-
-
 # Pretty serious workaround. Ignores errors in imports :S
 import builtins
 from types import ModuleType
@@ -30,8 +28,14 @@ def tryimport(name, *args, **kwargs):
 
 realimport, builtins.__import__ = builtins.__import__, tryimport
 try:
+    
     from lib.pupil.pupil_src.shared_modules.calibration_routines.finish_calibration import finish_calibration,select_calibration_method
+    
     from lib.pupil.pupil_src.shared_modules.gaze_producers import calibrate_and_map
+    
+    import lib.pupil.pupil_src.shared_modules.player_methods
+    
+
 except Exception as e:
     print('-------------------')
     print(e)
@@ -41,9 +45,12 @@ tryimport, builtins.__import__ = builtins.__import__, realimport
 #raise 
 
 class global_container():
-  pass
+    pass
 
-
+def list_to_stream(gaze_list):
+    import msgpack
+    gaze_serialized = [msgpack.packb(gaze, use_bin_type=True) for gaze in gaze_list]
+    return(gaze_serialized)
 
 def notify_all(self,notification=''):
         print(notification)
@@ -88,9 +95,17 @@ def pl_recalibV2(pupil_list,ref_list,inp_gaze,calibration_mode='2d',eyeID=None):
         #from calibration_routines.gaze_mappers import Vector_Gaze_Mapper
         import copy
         import sys
+        
         pupil = copy.copy(pupil_list)
-        ref = copy.copy(ref_list)
-        gaze = copy.copy(inp_gaze)
+        ref   = copy.copy(ref_list)
+        gaze  = copy.copy(inp_gaze)
+
+        # to check pupil labs version 
+        if hasattr(lib.pupil.pupil_src.shared_modules.player_methods, 'Bisector'):
+            # pupillab v1.8 or newer needs the data serialized
+            pupil = list_to_stream(pupil)
+            gaze = list_to_stream(gaze)
+        
         if eyeID is not None: #remove everthing nonspecified
             pupil = [p for p in pupil if p['id']==eyeID]
             
@@ -98,7 +113,7 @@ def pl_recalibV2(pupil_list,ref_list,inp_gaze,calibration_mode='2d',eyeID=None):
         fake_gpool = gen_fakepool(gaze,calibration_mode)
         
         #method, result = select_calibration_method(fake_gpool, pupil_list, ref_list)
-        
+        print(calibrate_and_map)
         calib_generator = calibrate_and_map(fake_gpool,ref,pupil,gaze,0,0)
         tmp = next(calib_generator) # start once
         output = []

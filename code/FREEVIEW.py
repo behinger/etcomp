@@ -18,16 +18,17 @@ from scipy.ndimage.filters import gaussian_filter
 
 from plotnine import *
 # specify costumed minimal theme
-import functions.plotnine_theme
+import functions.plotnine_theme as mythemes
 
 import functions.et_helper as  helper
+from functions.et_helper import winmean,winmean_cl_boot
 
 import logging
 
 
 
 
-def plot_heatmap(raw_freeview_df):
+def plot_heatmap(raw_freeview_df,raw_fix_count_df):
     """
     Make a heatmap of the freeview fixation df
     """
@@ -129,40 +130,36 @@ def plot_number_of_fixations(raw_fix_count_df, option=None):
 
     if option is None:
         # mean number of fixations for each subject
-        mean_for_each_subject_df = helper.group_to_level_and_take_mean(raw_fix_count_df, lowestlevel='subject').drop('pic_id', axis=1)
+        mean_fixcount_per_pic = raw_fix_count_df.groupby(['et', 'subject'],as_index=False).mean()
         
         # plotting mean number of detected fixation during freeview condition for each subject
-        (ggplot(mean_for_each_subject_df, aes(x='et', y='fix_counts', color='subject')) +
-             geom_line(aes(group='subject')) +
-             geom_point() +
-             guides(color=guide_legend(ncol=40)) +
-             ggtitle('Mean number of fixations over all pictures for each subject')).draw()
-              
+        return (ggplot(mean_fixcount_per_pic, aes(x='et', y='fix_counts')) +
+                 geom_line(aes(group='subject'), color='lightblue') +
+                 geom_point(color='lightblue') +
+                 stat_summary(fun_data=winmean_cl_boot,color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
+                 xlab("Eye Tracker") + 
+                 ylab("Mean number of fixations per picture") +
+                 ggtitle('Subjectwise mean number of fixations'))
+                  
     
-    elif option == 'eyetracker':       
-        # using boxplot to compare eye tracker overall
-        (ggplot(raw_fix_count_df, aes(x='et', y='fix_counts')) \
-                + geom_boxplot(aes(fill='et'), color='k', alpha=0.2, outlier_color='r', outlier_size=1.5, show_legend=False) \
-                + ylab('Number of fixations per picture') \
-                + ggtitle('EyeLink vs PupilLabs: Number of fixations per picture per subject')).draw()
-
+    elif option == 'violin':       
         # using violin to compare eye tracker overall
-        (ggplot(raw_fix_count_df, aes(x='et', y='fix_counts')) \
+        # using raw fixation counts
+        return (ggplot(raw_fix_count_df, aes(x='et', y='fix_counts')) \
                 + geom_violin(aes(color='et', fill='et'), alpha = 0.25, show_legend=False) \
-                + xlab('Eyetracker') \
-                + ylab('Number of fixations') \
-                + ggtitle('EyeLink vs PupilLabs: Number of fixations')).draw()
+                + xlab("Eye Tracker") \
+                + ylab('Number of fixations per picture') \
+                + ggtitle('Distribution of number of fixations'))
 
         
     elif option == 'facet_subjects':        
         # shows number of fixations per picture for each eye tracker (facets over subjects)   
-        (ggplot(raw_fix_count_df, aes(x='et', y='fix_counts', color = 'factor(pic_id)')) \
+        return (ggplot(raw_fix_count_df, aes(x='et', y='fix_counts', color = 'factor(pic_id)')) \
                 + geom_point(alpha=0.4) \
                 + geom_line(aes(group='pic_id')) \
-                + guides(color=guide_legend(ncol=40)) \
                 + facet_grid('.~subject') \
-                + xlab('Eyetracker') \
-                + ylab('Number of fixations') \
+                + xlab('Eye Tracker') \
+                + ylab('Number of fixations per picture') \
                 + ggtitle('EyeLink vs PupilLabs: Number of fixations for each picture')).draw()
               
     else:
@@ -182,26 +179,29 @@ def plot_fixation_durations(raw_freeview_df, option=None):
     makes a density plot to investigate on the fixation durations
     compares EyeLink and Pupil Labs in same figure
     """
-
+    
+    # set theme to default
+    theme_set(mythemes.default_theme)
+    
     if option is None:
         # use all detected fixations of all subjects and plot desity for each eyetracker
         # Caution: ets might have different number of detected saccades as basis!
-        (ggplot(raw_freeview_df, aes(x='duration', color='et'))
-            + geom_density()
-            + xlim([0,1])
-            + xlab('fixation duration [s]')
-            + ggtitle('Fixation durations during the Freeviewig condition')).draw()
-        
+        return (ggplot(raw_freeview_df, aes(x='duration', color='et'))
+                    + geom_density()
+                    + xlim([0,1])
+                    + xlab('fixation duration [s]')
+                    + ggtitle('Fixation durations'))
+                
         
     elif option == 'facet_subjects':        
         # shows fixation duration densities (facets over subjects)   
-        (ggplot(raw_freeview_df, aes(x='duration', color='et'))
-            + geom_density()
-            + xlim([0,1])
-            + xlab('fixation duration [s]')
-            + facet_wrap('subject', scales='free')
-            + ggtitle('Fixation durations during the Freeviewig condition')).draw()
-        
+        return (ggplot(raw_freeview_df, aes(x='duration', color='et'))
+                + geom_density()
+                + xlim([0,1])
+                + xlab('fixation duration [s]')
+                + facet_wrap('subject')
+                + ggtitle('Fixation durations'))
+            
         
     else:
         raise ValueError('You must set options to a valid option. See documentation.')

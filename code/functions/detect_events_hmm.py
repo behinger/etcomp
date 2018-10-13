@@ -47,7 +47,7 @@ def detect_events_hmm(etsamples,etevents,et,smoothpursuit=True):
     eye = etsamples.query('type!="blink"')[['gx','gy']].values
 
     tic()
-    sample_class, segmentation, seg_class = nslr_hmm.classify_gaze(t, eye,optimize_noise=False)
+    sample_class, segmentation, seg_class = nslr_hmm.classify_gaze(t, eye,optimize_noise=True)
     toc()
     sample_class = sample_class.astype(int)
 
@@ -69,7 +69,7 @@ def detect_events_hmm(etsamples,etevents,et,smoothpursuit=True):
     return(etsamples,etevents)
     
 def sampletype_to_event(etsamples,eventtype):
-
+    from functions.et_helper import winmean
    
     # use magic to get start and end times of fixations in a temporary column
     etsamples['tmp'] = (1*(etsamples['type'] == eventtype)).diff()
@@ -88,6 +88,8 @@ def sampletype_to_event(etsamples,eventtype):
     start_times_list = list(etsamples.loc[etsamples['tmp'] == 1, 'smpl_time'].astype(float))
     end_times_list   = list(etsamples.loc[etsamples['tmp'] == -1, 'smpl_time'].astype(float))
     
+    if len(start_times_list) == 0:
+        return(pd.DataFrame())
     # drop the temporary column
     
     # add them as columns to a fixationevent df
@@ -132,8 +134,8 @@ def sampletype_to_event(etsamples,eventtype):
         # take the mean gx/gy position over all samples that belong to that fixation
         # removed bad samples explicitly
         ix_samples = etsamples.index[(etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time)]
-        events.loc[ix, 'mean_gx'] =  np.mean(etsamples.loc[ix_samples, 'gx'])    
-        events.loc[ix, 'mean_gy'] =  np.mean(etsamples.loc[ix_samples, 'gy'])
+        events.loc[ix, 'mean_gx'] =  winmean(etsamples.loc[ix_samples, 'gx'])    
+        events.loc[ix, 'mean_gy'] =  winmean(etsamples.loc[ix_samples, 'gy'])
                 
         eventdf= pd.DataFrame({'x0':etsamples.loc[ix_samples].iloc[:-1].gx.values,'y0':etsamples.loc[ix_samples].iloc[:-1].gy.values,'x1':etsamples.loc[ix_samples].iloc[1:].gx.values,'y1':etsamples.loc[ix_samples].iloc[1:].gy.values})
         thetas = eventdf.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.x0,localrow.y0,localrow.x1,localrow.y1),axis=1)

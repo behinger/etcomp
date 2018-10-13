@@ -8,21 +8,13 @@ import pandas as pd
 import os
 import logging
 
-from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
 from functions.et_helper import findFile,gaze_to_pandas
 import functions.et_parse as parse
 import functions.et_make_df as make_df
 import functions.et_helper as  helper
-import imp
-try:
-    import functions.pl_surface as pl_surface
-except ImportError:
-    print('Could not import pl_surface')
 
-# parses SR research EDF data files into pandas df
-from pyedfread import edf
 
-from functions import nbp_recalib
+
 import scipy
 import scipy.stats
 
@@ -45,16 +37,20 @@ def pl_fix_timelag(pl):
         
     return(pl)
 
-def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
+def raw_pl_data(subject='',datapath='/net/store/nbp/projects/etcomp/',postfix='raw'):
     # Input:    subjectname, datapath
     # Output:   Returns pupillabs dictionary
+    from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
     
-    filename = os.path.join(datapath,subject,'raw')
-
+    if subject == '':
+        filename = datapath
+    else:
+        filename = os.path.join(datapath,subject,postfix)
+    print(os.path.join(filename,'pupil_data'))
     # with dict_keys(['notifications', 'pupil_positions', 'gaze_positions'])
     # where each value is a list that contains a dictionary
     original_pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'))
-    
+    #original_pldata = pl_file_methods.Incremental_Legacy_Pupil_Data_Loader(os.path.join(filename,'pupil_data'))
     # 'notification'
     # dict_keys(['record', 'subject', 'timestamp', 'label', 'duration'])
     
@@ -74,7 +70,7 @@ def raw_pl_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     return original_pldata
 
 
-def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True, surfaceMap=True):
+def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=True, surfaceMap=True,parsemsg=True):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
     #           surfaceMap:
@@ -87,29 +83,37 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     assert(type(subject)==str)
     
     # Get samples df
-    original_pldata = raw_pl_data(subject, datapath)
+    # (is still a dictionary here)
+    original_pldata = raw_pl_data(subject=subject, datapath=datapath)
     
+    
+
+    # recalibrate data
+    if recalib:
+        from functions import nbp_recalib
+        original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
     # Fix timing 
     # Pupillabs cameras have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).
     # We fix this here
-    original_pldata = pl_fix_timelag(original_pldata)
+    original_pldata = pl_fix_timelag(original_pldata)  
     
-    
-    
-    # recalibrate data
-    if recalib:
-        original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
-        
     if surfaceMap:
+        try:
+            import functions.pl_surface as pl_surface
+        except ImportError:
+            print('Could not import pl_surface')
+
         folder= os.path.join(datapath,subject,'raw')
         tracker = pl_surface.map_surface(folder)   
         gaze_on_srf  = pl_surface.surface_map_data(tracker,original_pldata['gaze_positions'])
         logger.warning('Original Data Samples: %s on surface: %s',len(original_pldata['gaze_positions']),len(gaze_on_srf))
         original_pldata['gaze_positions'] = gaze_on_srf
         
-
+    
     # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time, diameter)
     pldata = gaze_to_pandas(original_pldata['gaze_positions'])
+    
+    
     
     if surfaceMap:   
         pldata.gx = pldata.gx*(1920 - 2*(75+18))+(75+18) # minus white border of marker & marker
@@ -124,19 +128,23 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
     # get the nice samples df
     plsamples = make_df.make_samples_df(pldata) #
     
-
-    # Get msgs df      
-    # make a list of gridnotes that contain all notifications of original_pldata if they contain 'label'
-    gridnotes = [note for note in original_pldata['notifications'] if 'label' in note.keys()]
-    plmsgs = pd.DataFrame();
-    for note in gridnotes:
-        msg = parse.parse_message(note)
-        if not msg.empty:
-            plmsgs = plmsgs.append(msg, ignore_index=True)
     
-    plevents = pd.DataFrame()
-    plmsgs = fix_smallgrid_parser(plmsgs)
+    if parsemsg:
+        # Get msgs df      
+        # make a list of gridnotes that contain all notifications of original_pldata if they contain 'label'
+        gridnotes = [note for note in original_pldata['notifications'] if 'label' in note.keys()]
+        plmsgs = pd.DataFrame();
+        for note in gridnotes:
+            msg = parse.parse_message(note)
+            if not msg.empty:
+                plmsgs = plmsgs.append(msg, ignore_index=True)
+
         
+        plmsgs = fix_smallgrid_parser(plmsgs)
+    else:
+        plmsgs = original_pldata['notifications']
+        
+    plevents = pd.DataFrame()
     return plsamples, plmsgs,plevents
 
 
@@ -144,11 +152,21 @@ def import_pl(subject, datapath='/net/store/nbp/projects/etcomp/', recalib=True,
 
   
 #%% EYELINK
+def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
+    # Input:    subjectname, datapath
+    # Output:   Returns pupillabs dictionary
+    filename = os.path.join(datapath,subject,'raw')
+    from pyedfread import edf # parses SR research EDF data files into pandas df
 
+    elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+    
+    return (elsamples,elevents,elnotes)
+    
+    
 def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
-    # Output:   Returns list of 2 el df (elsamples, elmsgs)
+    # Output:   Returns list of 3 el df (elsamples, elmsgs, elevents)
 
     assert(type(subject)==str)
     
@@ -157,15 +175,13 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
      
     
     # Load edf
-    filename = os.path.join(datapath,subject,'raw')
     
     # load and preprocess data from raw data files      
     # elsamples:  contains individual EL samples
     # elevents:   contains fixation and saccade definitions
     # elnotes:    contains notes (meta data) associated with each trial
+    elsamples,elevents,elnotes = raw_el_data(subject,datapath)
     
-    
-    elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
     # TODO understand and fix this
     count = 0
     while np.any(elsamples.time>1e10) and count < 40:
@@ -173,7 +189,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
         count = count + 1
         # logger.error(elsamples.time[elsamples.time>1e10])
         logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')
-        elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+        elsamples, elevents, elnotes = raw_el_data(subject,datapath)
     
     
     
@@ -181,8 +197,8 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     logger.warning('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
     logger.warning('Deleting %.4f%% due to other errors in the import process'%(100*np.mean((elsamples.errors !=8) & (elsamples.errors!=0))))
     elsamples = elsamples.loc[elsamples.errors == 0]
-    # We had issues with samples with negative time
     
+    # We had issues with samples with negative time
     logger.warning('Deleting %.4f%% samples due to time<=0'%(100*np.mean(elsamples.time<=0)))
     elsamples = elsamples.loc[elsamples.time > 0]
     
@@ -269,12 +285,14 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
     elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
     elmsgs = fix_smallgrid_parser(elmsgs)
+    
     return elsamples, elmsgs, elevents
     
 
 
 
 def fix_smallgrid_parser(etmsgs):
+    # This fixes the missing separation between smallgrid before and small grid after. During experimental sending both were named identical.
     replaceGrid = pd.Series([k for l in [13*['SMALLGRID_BEFORE'],13*['SMALLGRID_AFTER']]*6 for k in l])
     ix = etmsgs.query('grid_size==13').index
     if len(ix) is not  156:
@@ -282,6 +300,23 @@ def fix_smallgrid_parser(etmsgs):
 
     replaceGrid.index = ix
     etmsgs.loc[ix,'condition'] = replaceGrid
+    
+    # this here fixes that all buttonpresses and stop messages etc. were send as GRID and not SMALLGG 
+    for blockid in etmsgs.block.dropna().unique():
+        if blockid == 0:
+            continue
+        tmp = etmsgs.query('block==@blockid')
+        t_before_start = tmp.query('condition=="DILATION"& exp_event=="stop"').msg_time.values
+        t_before_end   = tmp.query('condition=="SHAKE"   & exp_event=="stop"').msg_time.values
+        t_after_start  = tmp.query('condition=="SHAKE"   & exp_event=="stop"').msg_time.values
+        t_after_end    =tmp.iloc[-1].msg_time
+
+        ix = tmp.query('condition=="GRID"&msg_time>@t_before_start & msg_time<=@t_before_end').index
+        etmsgs.loc[ix,'condition'] = 'SMALLGRID_BEFORE'
+        
+        ix = tmp.query('condition=="GRID"&msg_time>@t_after_start  & msg_time<=@t_after_end').index
+        etmsgs.loc[ix,'condition'] = 'SMALLGRID_AFTER'
+        
     return(etmsgs)
     
     

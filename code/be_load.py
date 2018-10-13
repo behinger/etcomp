@@ -7,7 +7,8 @@ import numpy as np
 
 import functions.et_preprocess as preprocess
 import functions.et_helper as  helper
-
+import scipy
+import scipy.stats
 
 
 
@@ -42,6 +43,8 @@ def load_data(algorithm='hmm_'):
                 if len(t0)!=1:
                     raise error
                     
+                
+                    
                 elsamples.smpl_time = elsamples.smpl_time - t0
                 elmsgs.msg_time= elmsgs.msg_time - t0
                 elevents.start_time = elevents.start_time- t0
@@ -53,5 +56,53 @@ def load_data(algorithm='hmm_'):
                 etsamples = pd.concat([etsamples,elsamples.assign(subject=subject,eyetracker=et,algorithm=outputtype)],ignore_index=True, sort=False)
                 etmsgs    = pd.concat([etmsgs,      elmsgs.assign(subject=subject,eyetracker=et,algorithm=outputtype)],ignore_index=True, sort=False)
                 etevents  = pd.concat([etevents,  elevents.assign(subject=subject,eyetracker=et,algorithm=outputtype)],ignore_index=True, sort=False)
-                
+    #regress pupillabs against eyelink, use triggers as identical timers
+
+    for subject in etmsgs.subject.unique():
+        print("fixing subject %s"%(subject))
+        etsamples,etevents,etmsgs = regress_eyetracker(etsamples,etevents,etmsgs,subject)
     return(etsamples,etmsgs,etevents)
+
+
+  
+def regress_eyetracker(etsamples,etevents,etmsgs,subject):
+    ix_m = (etmsgs.eyetracker=='pl')&(etmsgs.subject==subject)
+    ix_e = (etevents.eyetracker=='pl')&(etevents.subject==subject)
+    ix_s = (etsamples.eyetracker=='pl')&(etsamples.subject==subject)
+    
+    
+    # remove nans
+    etmsgs_regress = etmsgs[etmsgs.exp_event.notnull()]
+    # select the right ET & subject
+    etmsgs_regress_el = etmsgs_regress.query("subject==@subject&eyetracker=='el'&condition!='Connect'")
+    etmsgs_regress_pl = etmsgs_regress.query("subject==@subject&eyetracker=='pl'&condition!='Connect'")
+    
+    # remove the non common items
+    
+    remove_el = []
+    remove_pl = []
+    if subject=='VP4':
+        remove_el = [874,874+713,474+874+713]
+    if subject=='VP15':
+        remove_el = [1878]
+    if subject=='VP19':
+                remove_el =[180] 
+    if subject=='VP24':
+        remove_el = [46,162]
+    etmsgs_regress_el = etmsgs_regress_el[~etmsgs_regress_el.index.isin(etmsgs_regress_el.index[remove_el])]
+    etmsgs_regress_pl = etmsgs_regress_pl[~etmsgs_regress_pl.index.isin(etmsgs_regress_el.index[remove_pl])]
+    
+    
+    y = etmsgs_regress_el.msg_time.values
+    x = etmsgs_regress_pl.msg_time.values
+    assert(len(x)==len(y),'Error, there seems to be more or less messages in el than pl')
+    slope,intercept,low,high = scipy.stats.theilslopes(y,x)
+
+    #transform all pl timestamps
+    etmsgs.loc[ix_m,'msg_time']     = etmsgs.loc[ix_m,'msg_time'].values*slope + intercept
+    etsamples.loc[ix_s,'smpl_time'] = etsamples.loc[ix_s,'smpl_time'].values*slope + intercept
+    etevents.loc[ix_e,'start_time'] = etevents.loc[ix_e,'start_time'].values*slope + intercept
+    etevents.loc[ix_e,'end_time']   = etevents.loc[ix_e,'end_time'].values*slope + intercept
+    # we do not recalculate durations & velocity because the local change is so small (~0.1ms / 1s)
+    
+    return(etsamples,etevents,etmsgs)

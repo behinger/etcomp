@@ -82,8 +82,8 @@ def pl_detect_blinks(plsamples):
                     blink_id +=1
                     
                     if classification > 0:
-                         state = 'blink started'
-                         startidx = idx
+                        state = 'blink started'
+                        startidx = idx
                     else:
                         state = 'no blink'
     
@@ -104,7 +104,7 @@ def pl_detect_blinks(plsamples):
         starttime = plsamples_blink.iloc[startIdx].smpl_time 
         endtime   = plsamples_blink.iloc[endIdx].smpl_time 
 
-        ix = (plsamples_blink.smpl_time >= (starttime-0.1)) & (plsamples_blink.smpl_time < (endtime +0.1))
+        ix = (plsamples_blink.smpl_time >= (starttime)) & (plsamples_blink.smpl_time < (endtime))
         plsamples_blink.loc[ix,'is_blink'] = 1
         
 

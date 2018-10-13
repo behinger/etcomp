@@ -30,6 +30,19 @@ python-reqs: ${VENV}
 compile-dependencies: pyav edfread opencv glfw printexport
 		echo 'done'
 
+uneyesrc = ${installfolder}/build/src_uneye
+
+uneye: ${VENV} 
+	(\
+	. ${VENV}/bin/activate; \
+	git clone https://github.com/berenslab/uneye ${uneyesrc};\
+	cd ${uneyesrc};\
+	pip3 install ./ -r ./requirements.txt\
+	)
+	
+git pull https://github.com/berenslab/uneye
+
+
 printexport:
 		echo 'use this command before starting python/spyder'
 		echo 'export LD_LIBRARY_PATH=${CURDIR}/${ffmpegbuild}/lib/:${CURDIR}/${glfwbuild}/lib/:$$LD_LIBRARY_PATH'
@@ -127,6 +140,23 @@ ${yasmsrc}:
 
 yasm: ${yasmbuild}
 	echo 'installed yasm'
+
+nodejsbuild = $(PWD)/${installfolder}/build/build_nodejs
+
+nodejs: ${nodejsbuild}
+	echo 'installed nodejs'
+
+
+${nodejsbuild}:
+		echo $(PWD) 
+		curl -L https://git.io/n-install | N_PREFIiX=${nodejsbuild} bash -s -- -y		
+
+jupytertoc: ${nodejsbuild}
+	        (\
+		. ${VENV}/bin/activate; \
+                export PATH='$(PATH):${nodejsbuild}/bin'; \
+		jupyter labextension install @jupyterlab/toc;\
+		)
 
 ${yasmbuild}: ${yasmsrc}
 		cd ${yasmsrc} && \

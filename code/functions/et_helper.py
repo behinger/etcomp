@@ -10,6 +10,12 @@ import pandas as pd
 
 import logging
 
+from plotnine import *
+
+
+from scipy.stats.mstats import winsorize
+from plotnine.stats.stat_summary import bootstrap_statistics
+
 
 #%% put PUPIL LABS data into PANDAS DF
 
@@ -107,16 +113,25 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     ix_event = etevents['type']==eventtype
     
     # get list of start and end indeces in the etsamples df
-    eventstart = etevents.loc[ix_event].start_time+float(timemargin[0])
-    eventend = etevents.loc[ix_event].end_time+float(timemargin[1])
+    eventstart = etevents.loc[ix_event,'start_time']+float(timemargin[0])
+    eventend = etevents.loc[ix_event,'end_time']+float(timemargin[1])
     
+    flat_ranges = eventtime_to_sampletime(etsamples,eventstart,eventend)
+    # all etsamples with ix in ranges , will the eventype in the column type
+    if len(flat_ranges) > 0:
+        etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
+        
+
+    return etsamples
+
+def eventtime_to_sampletime(etsamples,eventstart,eventend):
     # due to timemargin strange effects can occur and we need to clip
     mintime = etsamples.smpl_time.iloc[0]
     maxtime = etsamples.smpl_time.iloc[-1]
-    eventstart[eventstart < mintime] = mintime
-    eventstart[eventstart > maxtime] = maxtime
-    eventend[eventend  < mintime] = mintime
-    eventend[eventend  > maxtime] = maxtime
+    eventstart.loc[eventstart < mintime] = mintime
+    eventstart.loc[eventstart > maxtime] = maxtime
+    eventend.loc[eventend  < mintime] = mintime
+    eventend.loc[eventend  > maxtime] = maxtime
     
     if len(eventstart)!=len(eventend):
         raise error
@@ -125,21 +140,14 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     endix = np.searchsorted(etsamples.smpl_time,eventend)
     
     
-    print('%i events of %s found'%(len(startix),eventtype))
+    #print('%i events of %s found'%(len(startix),eventtype))
     # make a list of ranges to have all indices in between the startix and endix
     ranges = [list(range(s,e)) for s,e in zip(startix,endix)]
     flat_ranges = [item for sublist in ranges for item in sublist]
     
     
     flat_ranges = np.intersect1d(flat_ranges,range(etsamples.shape[0]))
-    # all etsamples with ix in ranges , will the eventype in the column type
-    if len(flat_ranges) > 0:
-        etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
-        
-
-    return etsamples
-
-
+    return(flat_ranges)
 #%% last fixation (e.g. for large GRID)
 
 def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element']):
@@ -207,8 +215,6 @@ def set_dtypes(df):
     E.g. set column 'et' from object to categorical
     """        
 
-    logging.debug('dtypes of the df before: %s', df.dtypes)
-
     # make all object variables categorical
     df[df.select_dtypes(['object']).columns] = df.select_dtypes(['object']).apply(lambda x: x.astype('category'))
     
@@ -217,12 +223,24 @@ def set_dtypes(df):
     
     # set columns to correct dtype
     for column in categorial_var:
+        
         if column in df:
-            df[column] = df[column].astype('category')
+            # fill none values to not have problems with integers
+            df[column] = df[column].fillna(-1)
+            
+            # convert ids to interger and round them to make them look nicely
+            df[column] = pd.to_numeric(df[column], downcast='integer')            
+            df[column] = df[column].round(0).astype(int)
+            
+            # convert -1 back to None
+            df[column] = df[column].astype(str)
+            df[column] = df[column].replace('-1', np.nan)
+            
+            # old version
+            #df[column] = df[column].astype('category')
         
     
-    logging.debug('dtypes of the df after: %s', df.dtypes)
-    
+    # logging.debug('dtypes of the df after: %s', df.dtypes)    
     return df    
 
 
@@ -287,13 +305,16 @@ def sph2cart(theta_sph,phi_sph,rho_sph=1):
 
 #%% LOAD & SAVE & FIND file
     
-def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix=''):
+def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix='',cleaned=True):
     
     # filepath for preprocessed folder
     preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
     et = outputprefix+et
     try:
-        filename_samples = str(et)  + '_cleaned_samples.csv'
+        if cleaned:
+            filename_samples = str(et)  + '_cleaned_samples.csv'
+        else:
+            filename_samples = str(et)  + '_samples.csv'
         filename_msgs    = str(et)  + '_msgs.csv'
         filename_events  = str(et)  + '_events.csv'
         
@@ -303,7 +324,7 @@ def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix
 
     except FileNotFoundError as e:
         print(e)
-        raise('Error: Could not read file')
+        raise e
 
     return etsamples,etmsgs,etevents
 
@@ -369,3 +390,79 @@ def toc(tempBool=True):
 def tic():
     # Records a time in TicToc, marks the beginning of a time interval
     toc(False)
+    
+    
+    
+    
+def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True):
+    import re
+    assert(type(single_eventormsg)==pd.Series)
+    try:
+        t0 = single_eventormsg.start_time
+        eventtype = 'event'
+    except:
+        t0 = single_eventormsg.msg_time
+        eventtype = 'msg'
+    
+    tstart = t0 + plusminus[0]
+    tend = t0 + plusminus[1]
+    query = '1==1'
+    if ("subject" in etsamples.columns) & ("subject" in single_eventormsg.index):
+        query = query+"& subject == @single_eventormsg.subject"
+    if not bothET:
+        query = query+"& eyetracker==@single_eventormsg.eyetracker"
+    samples_query   = "smpl_time>=@tstart & smpl_time   <=@tend & "+query
+    msg_query       = "msg_time >=@tstart & msg_time    <=@tend & "+query
+    event_query     = "end_time >=@tstart & start_time  <=@tend & "+query
+    etmsgs = etmsgs.query(msg_query)
+    longstring = etmsgs.to_string(columns=['exp_event'],na_rep='',float_format='%.1f',index=False,header=False,col_space=0)
+    longstring = re.sub(' +',' ',longstring)
+    splitstring = longstring.split(sep="\n")
+    if len(splitstring) == etmsgs.shape[0]-1:
+        # last element was a Nan blank and got removed
+        splitstring.append(' ')   
+    etmsgs.loc[:,'label'] = splitstring
+
+    p = (ggplot()
+     + geom_point(aes(x='smpl_time',y='gx',color='type',shape='eyetracker'),data=etsamples.query(samples_query)) # samples
+     + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
+     + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
+    )
+         
+    if etevents.query(event_query).shape[0]>0:
+        pass
+    if plotevents:
+        p = p + geom_segment(aes(x="start_time",y=0,xend="end_time",yend=0,color='type'),alpha=0.5,size=2,data=etevents.query(event_query))
+    if eventtype == 'event':
+        p = (p   + annotate("line",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black')
+                 + annotate("point",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black'))
+    if eventtype=='msg':
+        if single_eventormsg.condition == 'GRID':
+            p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)
+                   + geom_hline(yintercept=single_eventormsg.posx))
+    return(p)
+    
+ 
+ 
+
+
+# define 20% winsorized means 
+
+def winmean(x,perc = 0.2,axis=0):
+    return(np.mean(winsorize(x,perc,axis=axis),axis=axis))
+
+def winmean_cl_boot(series, n_samples=1000, confidence_interval=0.95,
+                 random_state=None):
+    return bootstrap_statistics(series, winmean,
+                                n_samples=n_samples,
+                                confidence_interval=confidence_interval,
+                                random_state=random_state)
+
+def mad(arr):
+    """ Median Absolute Deviation: a "Robust" version of standard deviation.
+        Indices variabililty of the sample.
+        https://en.wikipedia.org/wiki/Median_absolute_deviation 
+    """
+    arr = np.ma.array(arr).compressed() # should be faster to not use masked arrays.
+    med = np.median(arr)
+    return np.median(np.abs(arr - med))

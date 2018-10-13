@@ -8,6 +8,42 @@ Created on Sat May 12 13:58:59 2018
 
 
 
+
+
+#%% convert df table into latex pdf and png
+
+"""
+import pandas as pd
+import numpy as np
+import subprocess
+
+filename = 'out.tex'
+pdffile = 'out.pdf'
+outname = 'out.png'
+
+template = r'''\documentclass[preview]{{standalone}}
+\usepackage{{booktabs}}
+\begin{{document}}
+{}
+\end{{document}}
+'''
+
+with open(filename, 'wb') as f:
+    f.write(bytes(template.format(df.to_latex()),'UTF-8'))
+
+subprocess.call(['pdflatex', filename])
+subprocess.call(['convert', '-density', '300', pdffile, '-quality', '90', outname])
+"""
+
+
+
+
+
+
+
+                        # caution that limiting the axis, does not cut off fixations from plot
+                        coord_cartesian(xlim=(-37.0,37.0), ylim=(-16.0,16.0)) +
+
 #%% investigate on the position of fixations (use density)
 
 # only for sanity:
