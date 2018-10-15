@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import functions.detect_events as detect_events
 import functions.et_helper as helper
+from functions.et_helper import winmean_cl_boot
+
 import functions.et_condition_df as condition_df
 import logging
 from plotnine import *
@@ -32,8 +34,13 @@ def detect_microsaccades(etsamples,etevents,etmsgs):
 
             sel_etsamples = sel_etsamples.query("microsaccade==1")
 
+            if eyetracker == 'el':
+                engbert_lambda = 5
+            elif eyetracker == 'pl':
+                engbert_lambda  = 15
+                
             # Run the microsaccade detection
-            sel_etsamples,sel_etevents = detect_events.make_saccades(sel_etsamples,etevents=None,et=eyetracker)
+            sel_etsamples,sel_etevents = detect_events.make_saccades(sel_etsamples,etevents=None,et=eyetracker,engbert_lambda = engbert_lambda)
             # fill in some details
             sel_etevents = sel_etevents.assign(subject=subject)
             sel_etevents = sel_etevents.assign(eyetracker=eyetracker)
@@ -48,7 +55,8 @@ def detect_microsaccades(etsamples,etevents,etmsgs):
     return(all_microsaccades)
 
 def group_microsaccades(microsaccades):
-    microsaccades_grouped = microsaccades.groupby(["eyetracker","subject"],as_index=False).agg({'amplitude':['count','mean']})
+    from functions.et_helper import winmean
+    microsaccades_grouped = microsaccades.groupby(["eyetracker","subject"],as_index=False).agg({'amplitude':['count',winmean]})
     microsaccades_grouped.columns = [' '.join(col).strip() for col in microsaccades_grouped.columns.values]
     microsaccades_grouped = microsaccades_grouped.rename(index=str,columns={"amplitude count":"count"})
     print(microsaccades_grouped.columns)
@@ -58,7 +66,7 @@ def plot_default(microsaccades,subtype="count"):
     # subtype can be "count"  or "mean"
     microsaccades_grouped = group_microsaccades(microsaccades)
     p = (ggplot(microsaccades_grouped,aes(x="eyetracker",y=subtype))
-        +geom_point(alpha=0.3)+stat_summary(color='red'))
+        +geom_point(alpha=0.3)+stat_summary(fun_data=winmean_cl_boot,color='red'))
     return(p)
 
 def plot_densities(microsaccades,x="amplitude"):

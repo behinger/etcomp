@@ -16,15 +16,15 @@ import matplotlib.pyplot as plt
 from plotnine import *
 from plotnine.data import *
 # specify costumed minimal theme
-import functions.plotnine_theme
+import functions.plotnine_theme as mythemes
 
 import functions.et_helper as  helper
-
+from functions.et_helper import winmean,winmean_cl_boot
 
 #%% different functions for analysing the Large Grid
 
 
-def plot_accuracy_be(raw_large_grid_df, agg=[np.mean,np.median]):
+def plot_accuracy_be(raw_large_grid_df, agg=[winmean,winmean,]):
     data_agg = raw_large_grid_df.groupby(['block','subject','et'],as_index=False).agg(agg[0]).groupby(['subject','et'],as_index=False).agg(agg[1])
     
     
@@ -32,97 +32,150 @@ def plot_accuracy_be(raw_large_grid_df, agg=[np.mean,np.median]):
     p = (ggplot(data_agg, aes(x='et', y='accuracy', color='subject')) 
                   +geom_line(aes(group='subject'))
                   +geom_point()
-                  +stat_summary(color='red',size=2)
+                  +stat_summary(fun_data=winmean_cl_boot,color='red',size=2)
                   +guides(color=guide_legend(ncol=40))
     )
                   
     return(p)
     
     
-def plot_accuracy(raw_large_grid_df, option=None):
+def plot_accuracy(raw_large_grid_df, option=None, agg_level=None, depvar = 'accuracy'):
     """
     Input:  raw df for condition
-            option: None or variance_within_block 
+            option: None; variance_within_block 
     Output: figure that visualize the difference in accuracy btw. el and pl
     """
        
     # specify aggregators for different levels
     
-    #  element level   - -   block level   - -    subject level
-    #       mean               median                  mean
+    #  element level   - -   block level   - -    (subject level)
+    #       mean               median                  (mean)
     
-    # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
+    if agg_level is None:
+        # as default we use the mean over the elements (so that also elements in the periphery influence the performance)
+        # and the median over the blocks (so that 'outlier blocks' do not influence the overall accuracy)
+        agg_level=[winmean,winmean]
     
-    agg_level=[np.mean,np.median, np.mean]
-    
-    
-    # aggregate data of the large grid df    
-    mean_over_elements_median_over_blocks = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0]).groupby(['subject','et'], as_index=False).agg(agg_level[1])
-    
-    mean_over_elements = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
-    
-    # OLD:
-    # get data aggregated/'grouped'
-    #mean_for_each_subject_large_grid_df = helper.group_to_level_and_take_mean(raw_large_grid_df, lowestlevel='subject')
-    #mean_for_each_block_large_grid_df =  helper.group_to_level_and_take_mean(raw_large_grid_df, lowestlevel='block')
+    # aggregate data of the large grid df
+    mean_over_elements                    = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
+    mean_over_elements_median_over_blocks = mean_over_elements.groupby(['subject','et'], as_index=False).agg(agg_level[1])
     
     
     if option is None:
         # plot eyetracker vs  mean accuracy over all blocks
-        return (ggplot(mean_over_elements_median_over_blocks, aes(x='et', y='accuracy', color='subject')) +\
-                  stat_summary(color='red',size=1) +
-                  geom_line(aes(group='subject')) +
-                  geom_point() +
-                  guides(color=guide_legend(ncol=40)) +
+        return (ggplot(mean_over_elements_median_over_blocks, aes(x='et', y=depvar)) +\
+                  geom_line(aes(group='subject'), color='lightblue') +
+                  geom_point(color='lightblue') +
+                  stat_summary(fun_data=winmean_cl_boot,color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
+                  #guides(color=guide_legend(ncol=8)) +
                   xlab("Eye Trackers") + 
-                  ylab("Accuracy [$^\circ$]") +
-                  ggtitle('Median-Block - Mean-Element Accuracies for each subject'))
+                  ylab(depvar.capitalize()+" [$^\circ$]") +
+                  ggtitle('Winsorized Mean Accuracies'))
         
         
     elif option == 'variance_within_block':
-        return (ggplot(aes(x='et', y='accuracy',color='factor(block)'), data=mean_over_elements) +
+        return (ggplot(aes(x='et', y=depvar,color='factor(block)'), data=mean_over_elements) +
                     geom_point(alpha=0.1,data=raw_large_grid_df,position=position_dodge(width=0.7)) +
                     geom_point(position=position_dodge(width=0.7))+
                     geom_line(aes(group='block'), position= position_dodge(width=0.7)) +
                     facet_wrap('~subject',scales="free_y") + 
-                    guides(color=guide_legend(ncol=40)) +
+                    guides(color=guide_legend(ncol=8)) +
                     ggtitle('Investigating on the spread of accuracies within a block'))
 
     else:
         raise ValueError('You must set options to a valid option. See documentation.')
 
 
-
-def make_table_accuracy(raw_large_grid_df, concise=True):
+def make_table_accuracy_winmean(raw_large_grid_df, concise=False):
     """
     returns a df with the mean, median and range of all calculated accuracy values
     """
     
-    acccuracy_table = pd.DataFrame(columns=['mean','median', 'horizontal_mean', 'vertical_mean', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','Pupil Labs'])
-   
-    # just calculating the mean, median and range:
-    # as there might be elements where we didn"t detect a fixation, 
-    # we first calculate the mean accuracy for each subject and then take the mean over all subjects
-
-    # get a grouped df (grouped by et and subject)
-    mean_for_each_subject_large_grid_df = helper.group_to_level_and_take_mean(raw_large_grid_df, 'subject')
+    # specify aggregators for different levels
     
-    # separate the data for each Eyetracker
-    eyelink_data = mean_for_each_subject_large_grid_df.query('et == "EyeLink"')
-    pupillabs_data = mean_for_each_subject_large_grid_df.query('et == "Pupil Labs"')
+    #  element level   - -   block level   - -    subject level
+    #       mean               median                  mean
     
+    # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
+    def apply_agg_level(df,agg_level):
+        block = df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
+        subject = block.groupby(['subject','et'], as_index=False).agg(agg_level[1])
+        group = subject.groupby('et',as_index=False).agg(agg_level[0])
+        return(block,subject,group)
+    
+    
+    meanMedianMean_block       ,meanMedianMean_subject       ,meanMedianMean_group        =apply_agg_level(raw_large_grid_df,[np.mean, np.median, np.mean])
+    meanMeanMean_block         ,meanMeanMean_subject         ,meanMeanMean_group          =apply_agg_level(raw_large_grid_df,[np.mean, np.mean,   np.mean])
+    winmeanWinmeanWinmean_block,winmeanWinmeanWinmean_subject,winmeanWinmeanWinmean_group =apply_agg_level(raw_large_grid_df,[winmean, winmean,   winmean])
+    
+    
+    acccuracy_table = pd.concat([meanMedianMean_group.assign(cumtype='meanMedianMean'),
+                                meanMeanMean_group.assign(cumtype='meanMeanMean'),
+                                winmeanWinmeanWinmean_group.assign(cumtype='winmeanWinmeanWinmean')
+                                
+                               ])
+    
+    # init df
+    #acccuracy_table = pd.DataFrame(columns=['mean-mean-mean','mean-median-mean', 'horizontal_accuracy', 'vertical_accuracy', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','Pupil Labs'])
 
-    # TODO !! careful with the median : taking the mean for the blocks in the subject, but the median over the subjects!!
-    acccuracy_table.loc['EyeLink']    = pd.Series({'mean': eyelink_data.accuracy.mean(),   'median': eyelink_data.accuracy.median(),   'horizontal_mean': eyelink_data.hori_accuracy.median(),  'vertical_mean': eyelink_data.vert_accuracy.median(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
-    acccuracy_table.loc['Pupil Labs'] = pd.Series({'mean': pupillabs_data.accuracy.mean(), 'median': pupillabs_data.accuracy.median(), 'horizontal_mean': pupillabs_data.hori_accuracy.median(),'vertical_mean': pupillabs_data.vert_accuracy.median(), 'subject_min_accuracy': pupillabs_data.accuracy.min(), 'subject_max_accuracy': pupillabs_data.accuracy.max(), 'mean_rms': pupillabs_data.rms.mean()})
+    
+    #acccuracy_table.loc['EyeLink']    = pd.Series({'mean-mean-mean': mm_eyelink_data.accuracy.mean(), 'mean-median-mean': eyelink_data.accuracy.mean(),   'horizontal_accuracy': eyelink_data.hori_accuracy.mean(),  'vertical_accuracy': eyelink_data.vert_accuracy.mean(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
+    #acccuracy_table.loc['Pupil Labs'] = pd.Series({'mean-mean-mean': mm_pupillabs_data.accuracy.mean(), 'mean-median-mean': pupillabs_data.accuracy.mean(), 'horizontal_accuracy': pupillabs_data.hori_accuracy.mean(),'vertical_accuracy': pupillabs_data.vert_accuracy.mean(), 'subject_min_accuracy': pupillabs_data.accuracy.min(), 'subject_max_accuracy': pupillabs_data.accuracy.max(), 'mean_rms': pupillabs_data.rms.mean()})
+    
     
     # convert dtypes to floats and round results
-    acccuracy_table = acccuracy_table.astype('float').round(1)
+    acccuracy_table = acccuracy_table.round(2)
     
     # only report most important columns
     if concise:
-        return acccuracy_table[['mean', 'median']]
+        print('to be done bene was lasy')
+    #    return acccuracy_table[['mean-median-mean']].round(1) 
     
+    return acccuracy_table
+
+def make_table_accuracy(raw_large_grid_df, concise=False):
+    """
+    returns a df with the mean, median and range of all calculated accuracy values
+    """
+    
+    # specify aggregators for different levels
+    
+    #  element level   - -   block level   - -    subject level
+    #       mean               median                  mean
+    
+    # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
+    agg_level=[np.mean, np.median, np.mean]
+    
+    # aggregate data of the large grid df  according to agg_level list  
+    mean_over_elements = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
+    mean_over_elements_median_over_blocks = mean_over_elements.groupby(['subject','et'], as_index=False).agg(agg_level[1])   
+
+    # separate the data for each Eyetracker
+    # we get subjectwise median overblocks mean over lements df
+    eyelink_data = mean_over_elements_median_over_blocks.query('et == "EyeLink"')
+    pupillabs_data = mean_over_elements_median_over_blocks.query('et == "Pupil Labs"')
+       
+    # get mean-mean aggregated data
+    mm_eyelink_data   = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(np.mean).groupby(['subject','et'], as_index=False).agg(np.mean).query('et == "EyeLink"')
+    mm_pupillabs_data = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(np.mean).groupby(['subject','et'], as_index=False).agg(np.mean).query('et == "Pupil Labs"')
+
+    # init df
+    acccuracy_table = pd.DataFrame(columns=['mean-mean-mean','mean-median-mean', 'horizontal_accuracy', 'vertical_accuracy', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','Pupil Labs'])
+
+    # just calculating the mean, median and range:
+    # as there might be elements where we didn"t detect a fixation, 
+    # we first calculate the mean accuracy over the elements for each subject and then take the mean over all subjects
+    # TODO !! careful with the median : taking the mean for the blocks in the subject, but the median over the subjects!!
+    acccuracy_table.loc['EyeLink']    = pd.Series({'mean-mean-mean': mm_eyelink_data.accuracy.mean(), 'mean-median-mean': eyelink_data.accuracy.mean(),   'horizontal_accuracy': eyelink_data.hori_accuracy.mean(),  'vertical_accuracy': eyelink_data.vert_accuracy.mean(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
+    acccuracy_table.loc['Pupil Labs'] = pd.Series({'mean-mean-mean': mm_pupillabs_data.accuracy.mean(), 'mean-median-mean': pupillabs_data.accuracy.mean(), 'horizontal_accuracy': pupillabs_data.hori_accuracy.mean(),'vertical_accuracy': pupillabs_data.vert_accuracy.mean(), 'subject_min_accuracy': pupillabs_data.accuracy.min(), 'subject_max_accuracy': pupillabs_data.accuracy.max(), 'mean_rms': pupillabs_data.rms.mean()})
+    
+    
+    # convert dtypes to floats and round results
+    acccuracy_table = acccuracy_table.astype('float').round(2)
+    
+    # only report most important columns
+    if concise:
+        return acccuracy_table[['mean-median-mean']].round(1) 
     
     return acccuracy_table
 
@@ -166,6 +219,13 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
     
     options are: 'fixations', 'accuracy_for_each_element', 'precision_for_each_element' and 'offset'
     
+    
+    example promt LARGE_GRID.display_fixations(raw_large_grid_df, option='offset', greyscale=True)
+
+    Please select a subject: VP4
+
+    Please select a block: 1
+    
     returns plot
     
     """
@@ -177,11 +237,11 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
             if input_subject is None:
                 input_subject = [input("Please select a subject: ")]
             if input_block is None:
-                input_block = [int(input("Please select a block: "))]           
+                input_block = [input("Please select a block: ")]           
             
     
     # make separate figure for each eyetracker
-    for eyetracker in [['EyeLink'], ['Pupil Labs']]:
+    for eyetracker in [["EyeLink"], ["Pupil Labs"]]:
         et_grouped_elem_pos = raw_large_grid_df.query('et==@eyetracker')    
         
        
@@ -190,6 +250,9 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
             # subjects vs blocks
             # new window for each eyetracker
             
+            # save old theme and set the one for fixation plotting
+            old_theme = theme_get()
+            theme_set(mythemes.display_fixation_theme)
             
             if greyscale:
                 # no colors for position of element points
@@ -203,7 +266,7 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                     ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -'))
                 p.draw()
                 # save for teatime as png
-                p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.png'), height=15, width=15, units = 'in', dpi=1000)
+                p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' displayed_fixations.png'), height=10, width=13, units = 'in', dpi=500)
                 
             else:
                 # color of element depends on the position of the true target element
@@ -215,6 +278,11 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                     xlab("Mean horizontal fixation position [$^\circ$]") + 
                     ylab("Mean vertical fixation position [$^\circ$]") +
                     ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -')).draw()
+                
+            
+            # restore old theme
+            theme_set(old_theme)
+            
  
         
         elif option == 'accuracy_for_each_element':        
@@ -248,6 +316,7 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                       
             if greyscale:
                 # no colors for position of element points
+                 
                 p = (ggplot(specific_subject_df, aes(x='mean_gx', y='mean_gy'))
                         + geom_point(size=2, alpha=0.8, show_legend=False)
                         # displayed elements
@@ -259,7 +328,7 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                         + ggtitle(str(eyetracker)[2:-2] + ': Mean fixation position vs displayed element position'))
                 p.draw()
                 # save for teatime as png
-                p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' fixation_offset2.png'), height=5, width=10, units = 'in', dpi=1000)
+                p.save(filename = str('../plots/2018-09-05_tea_time_presentation/' + str(eyetracker)[2:-2] +' fixation_offset2.png'), height=5, width=10, units = 'in', dpi=400)
                 
             else:
                 # color of element depends on the position of the true target element

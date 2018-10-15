@@ -2,6 +2,7 @@ from plotnine import *
 import numpy as np
 import pandas as pd
 import functions.et_make_df as make_df
+from functions.et_helper import winmean,winmean_cl_boot
 
 def process_lum(etsamples,etmsgs):
     all_lum = pd.DataFrame()
@@ -53,11 +54,11 @@ def bin_lum(lum_epoch,nbins=100):
 
 def plot_time_all(all_lum_binned):
     # Plot the average over subjects of the average over blocks with +-95CI
-    all_lum_binned_noblock = all_lum_binned.groupby(["td","eyetracker","subject","lum"],as_index=False).agg("mean")
+    all_lum_binned_noblock = all_lum_binned.groupby(["td","eyetracker","subject","lum"],as_index=False).agg(winmean)
     all_lum_binned_noblock.loc[:,'plot_grouping'] = all_lum_binned_noblock.eyetracker + all_lum_binned_noblock.lum.map(str)
     p = (ggplot(all_lum_binned_noblock.query('lum>0'),aes(x='td',y='pa_norm',group="plot_grouping",color="lum",shape="eyetracker"))
-                +stat_summary(position=position_dodge(width=0.06),size=0.2) 
-                #+stat_summary()
+                +stat_summary(fun_data=winmean_cl_boot,position=position_dodge(width=0.06),size=0.2) 
+                
                 +geom_vline(xintercept=[0,3,10] )
                 +scale_color_gradient(low='black',high='lightgray')+xlim((-1,6))
                 +scale_shape_manual(values=[">","<"])
@@ -74,7 +75,7 @@ def plot_time_diff(all_lum_binned,subject="VP3"):
     
     p=(ggplot(all_lum_diff.query("subject==@subject"),aes(x='td',y='pa_norm',color="lum",group="plot_grouping"))
                 +geom_line()
-                #+stat_summary()
+                
                 +geom_vline(xintercept=[0,3,10] )
                 +scale_color_gradient(low='black',high='lightgray')
                 +xlim((-1,6))
@@ -84,13 +85,13 @@ def plot_time_diff(all_lum_binned,subject="VP3"):
     return(p)
 
 def calc_mean(all_lum,t_from=2,t_to=3):
-    mean_lum = all_lum.query("td>@t_from & td<=@t_to").groupby(["lum","block","subject","eyetracker","msg_time"],as_index=False).pa_norm.agg("mean")
+    mean_lum = all_lum.query("td>@t_from & td<=@t_to").groupby(["lum","block","subject","eyetracker","msg_time"],as_index=False).pa_norm.agg(winmean)
     return(mean_lum)
 
 def plot_mean(all_lum):
     mean_lum = calc_mean(all_lum)
     p=(ggplot(mean_lum.query("lum>0"),aes(x="lum",y="pa_norm",shape="eyetracker",color="lum"))
-     +stat_summary(position=position_dodge(width=15))
+     +stat_summary(fun_data=winmean_cl_boot,position=position_dodge(width=15))
      +geom_point(alpha=0.1)
      +scale_color_gradient(low='black',high='lightgray')
      +scale_shape_manual(values=[">","<"])
@@ -103,7 +104,7 @@ def plot_diff(all_lum):
     diff_lum.loc[:,'pa_norm'] = pd.to_numeric(diff_lum.loc[:,'pa_norm'])
     
     p = (ggplot(diff_lum,aes(x="subject",y="pa_norm",color="lum",group="lum"))
-     +stat_summary(position=position_dodge(width=0.5))
+     +stat_summary(fun_data=winmean_cl_boot,position=position_dodge(width=0.5))
      #+geom_point(alpha=0.2,position=position_dodge(width=0.5))
      +scale_color_gradient(low='black',high='lightgray')
      +ylab('pupil area difference (Eyelink-Pupillabs)[a.u.]')

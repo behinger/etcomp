@@ -24,7 +24,7 @@ import logging
 
 #%% WRAPPER TO DETECT SACCADES   (IN THE CASE OF PL SAMPLES ARE INTERPOLATED FIRST)
 
-def detect_saccades_engbert_mergenthaler(etsamples,etevents=None,et = None):
+def detect_saccades_engbert_mergenthaler(etsamples,etevents=None,et = None,engbert_lambda=5):
     # Input:      etsamples
     #             fs:   sampling frequency
     # Output:     saccades (df) with expanded / raw
@@ -67,7 +67,7 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents=None,et = None):
          
  
     # apply the saccade detection algorithm     
-    saccades = apply_engbert_mergenthaler(xy_data = interpgaze[['gx','gy']],is_blink = interpgaze['is_blink'], vel_data = None,sample_rate=fs)
+    saccades = apply_engbert_mergenthaler(xy_data = interpgaze[['gx','gy']],is_blink = interpgaze['is_blink'], vel_data = None,sample_rate=fs,l = engbert_lambda)
     
     #sacsave = saccades.copy()
     #saccades = sacsave
@@ -159,6 +159,7 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
     # Deleted nans due to spyder bug https://github.com/numpy/numpy/issues/11029
     # This is just aesthetics so we do not get a runtime warning
     normed_scaled_vel_data[np.isnan(normed_scaled_vel_data)] = -1
+    logger.debug('using a threshold of %.2f lambda'%(l))
     over_threshold = (normed_scaled_vel_data > l)
     logger.warning('Mean overthreshold values: %s',np.round(over_threshold.mean(), 4))
     # integers instead of bools preserve the sign of threshold transgression

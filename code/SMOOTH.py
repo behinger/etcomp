@@ -9,6 +9,8 @@ import logging
 
 from plotnine import *
 from matplotlib import pyplot as plt
+from functions.et_helper import winmean,winmean_cl_boot
+
 logger = logging.getLogger(__name__)
 
 # Helper Functions
@@ -110,7 +112,7 @@ def fitTrial_pandas(d,sm,etevents):
     except Exception as err:
         logger.exception('Error smooth model fit single trial'+str(err))
         return(pd.Series({'taumean':np.nan,'taustd':np.nan,'summary':np.nan}))
-    return(pd.Series({'taumean':np.mean(fit.extract()['tau']),'taustd':np.std(fit.extract()['tau']),'summary':fit.summary(),'velomean':np.mean(fit.extract()['slope'])}))
+    return(pd.Series({'taumean':winmean(fit.extract()['tau']),'taustd':np.std(fit.extract()['tau']),'summary':fit.summary(),'velomean':winmean(fit.extract()['slope'])}))
 
 
 def get_smooth_data(etsamples,etmsgs,select=''):
@@ -184,13 +186,13 @@ def plot_single_trial(etsamples,etmsgs,etevents,subject,eyetracker,trial,block,s
     [plt.plot(time,act[i,:],'k',alpha=0.1) for i in range(act.shape[0])]
     plt.plot(time,epochs.query(selectTrial).rotated)
     plt.plot(epochs.query(selectTrial+"&type=='saccade'").td,epochs.query(selectTrial+"&type=='saccade'").rotated,'go')
-    plt.plot(np.mean(fit.extract()['tau']),0,'ro')
+    plt.plot(winmean(fit.extract()['tau']),0,'ro')
     #print(np.mean(fit.extract()['tau']))
     return fit
 
 def plot_modelresults(smoothresult,field="taumean",option=''):
     
-    smoothgroup = smoothresult.groupby(['eyetracker','subject'],as_index=False).agg(np.mean)
+    smoothgroup = smoothresult.groupby(['eyetracker','subject'],as_index=False).agg(winmean)
     
     if field == 'taumean':
         binwidth = 0.001
@@ -198,7 +200,7 @@ def plot_modelresults(smoothresult,field="taumean",option=''):
         binwidth = 0.1
         
     if option == '':
-        pl = ggplot(smoothgroup,aes(x="eyetracker",y=field))+geom_point(alpha=0.1)+stat_summary(color='red')
+        pl = ggplot(smoothgroup,aes(x="eyetracker",y=field))+geom_point(alpha=0.1)+stat_summary(fun_data=winmean_cl_boot,color='red')
     if option=='difference':
         smoothdiff = smoothgroup.groupby("subject").agg(np.diff)
         pl = ggplot(smoothdiff,aes(x=field))+geom_histogram(binwidth=binwidth)+ggtitle('binwidth of %.3f'%(binwidth))
@@ -208,5 +210,5 @@ def plot_modelresults(smoothresult,field="taumean",option=''):
     
 def plot_catchup_amplitudes(smooth):
     smooth_saccade = smooth.query("type=='saccade'       & condition=='SMOOTH' & exp_event=='trialstart'") 
-    smooth_saccade_agg = smooth_saccade.groupby(["subject","et","block","trial","angle","vel"],as_index=False).agg({'amplitude':np.mean})
-    return(ggplot(smooth_saccade_agg,aes(x="vel",y="amplitude",color="et"))+stat_summary()+ylab('Number of Catchup Saccades'))
+    smooth_saccade_agg = smooth_saccade.groupby(["subject","et","block","trial","angle","vel"],as_index=False).agg({'amplitude':winmean})
+    return(ggplot(smooth_saccade_agg,aes(x="vel",y="amplitude",color="et"))+stat_summary(fun_data=winmean_cl_boot)+ylab('Number of Catchup Saccades'))

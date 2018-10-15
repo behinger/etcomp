@@ -12,6 +12,11 @@ import logging
 
 from plotnine import *
 
+
+from scipy.stats.mstats import winsorize
+from plotnine.stats.stat_summary import bootstrap_statistics
+
+
 #%% put PUPIL LABS data into PANDAS DF
 
 def gaze_to_pandas(gaze):
@@ -220,13 +225,22 @@ def set_dtypes(df):
     for column in categorial_var:
         
         if column in df:
-            df[column] = pd.to_numeric(df[column], downcast='integer')
+            # fill none values to not have problems with integers
+            df[column] = df[column].fillna(-1)
+            
+            # convert ids to interger and round them to make them look nicely
+            df[column] = pd.to_numeric(df[column], downcast='integer')            
             df[column] = df[column].round(0).astype(int)
+            
+            # convert -1 back to None
+            df[column] = df[column].astype(str)
+            df[column] = df[column].replace('-1', np.nan)
+            
+            # old version
             #df[column] = df[column].astype('category')
         
     
-    # logging.debug('dtypes of the df after: %s', df.dtypes)
-    
+    # logging.debug('dtypes of the df after: %s', df.dtypes)    
     return df    
 
 
@@ -310,7 +324,7 @@ def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix
 
     except FileNotFoundError as e:
         print(e)
-        raise('Error: Could not read file')
+        raise e
 
     return etsamples,etmsgs,etevents
 
@@ -397,18 +411,20 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
         query = query+"& subject == @single_eventormsg.subject"
     if not bothET:
         query = query+"& eyetracker==@single_eventormsg.eyetracker"
-    samples_query = "smpl_time>=@tstart & smpl_time <=@tend & "+query
-    msg_query     = "msg_time >=@tstart & msg_time  <=@tend & "+query
+    samples_query   = "smpl_time>=@tstart & smpl_time   <=@tend & "+query
+    msg_query       = "msg_time >=@tstart & msg_time    <=@tend & "+query
     event_query     = "end_time >=@tstart & start_time  <=@tend & "+query
     etmsgs = etmsgs.query(msg_query)
-    
     longstring = etmsgs.to_string(columns=['exp_event'],na_rep='',float_format='%.1f',index=False,header=False,col_space=0)
     longstring = re.sub(' +',' ',longstring)
     splitstring = longstring.split(sep="\n")
+    if len(splitstring) == etmsgs.shape[0]-1:
+        # last element was a Nan blank and got removed
+        splitstring.append(' ')   
     etmsgs.loc[:,'label'] = splitstring
 
     p = (ggplot()
-     + geom_point(aes(x='smpl_time',y='gx',color='type'),data=etsamples.query(samples_query)) # samples
+     + geom_point(aes(x='smpl_time',y='gx',color='type',shape='eyetracker'),data=etsamples.query(samples_query)) # samples
      + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
      + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
     )
@@ -426,6 +442,27 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
                    + geom_hline(yintercept=single_eventormsg.posx))
     return(p)
     
-    # e.g. for large grid
-    
-    
+ 
+ 
+
+
+# define 20% winsorized means 
+
+def winmean(x,perc = 0.2,axis=0):
+    return(np.mean(winsorize(x,perc,axis=axis),axis=axis))
+
+def winmean_cl_boot(series, n_samples=1000, confidence_interval=0.95,
+                 random_state=None):
+    return bootstrap_statistics(series, winmean,
+                                n_samples=n_samples,
+                                confidence_interval=confidence_interval,
+                                random_state=random_state)
+
+def mad(arr):
+    """ Median Absolute Deviation: a "Robust" version of standard deviation.
+        Indices variabililty of the sample.
+        https://en.wikipedia.org/wiki/Median_absolute_deviation 
+    """
+    arr = np.ma.array(arr).compressed() # should be faster to not use masked arrays.
+    med = np.median(arr)
+    return np.median(np.abs(arr - med))
