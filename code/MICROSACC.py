@@ -7,7 +7,13 @@ from functions.et_helper import winmean_cl_boot
 import functions.et_condition_df as condition_df
 import logging
 from plotnine import *
+
+# specify costumed minimal theme
+import functions.plotnine_theme as mythemes
+
 logger = logging.getLogger(__name__)
+
+
 
 def detect_microsaccades(etsamples,etevents,etmsgs):
     all_microsaccades = pd.DataFrame()
@@ -62,12 +68,24 @@ def group_microsaccades(microsaccades):
     print(microsaccades_grouped.columns)
     return(microsaccades_grouped)
 
+
+
 def plot_default(microsaccades,subtype="count"):
+    
     # subtype can be "count"  or "mean"
     microsaccades_grouped = group_microsaccades(microsaccades)
+           
     p = (ggplot(microsaccades_grouped,aes(x="eyetracker",y=subtype))
-        +geom_point(alpha=0.3)+stat_summary(fun_data=winmean_cl_boot,color='red'))
-    return(p)
+        + geom_line(aes(group='subject'), color='lightblue')
+        + geom_point(alpha=0.9, color='lightblue')
+        + stat_summary(fun_data=winmean_cl_boot, color='black', size=0.8, position=position_nudge(x=0.05,y=0))
+        + xlab("Eye Trackers")
+        + ggtitle('Smooth pursuit'))
+    
+    
+    return p
+
+
 
 def plot_densities(microsaccades,x="amplitude"):
     p = (ggplot(microsaccades,aes(x=x))

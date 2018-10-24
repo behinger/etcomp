@@ -36,7 +36,7 @@ def rotateRow(row):
     row.loc[:,'rotated'] = rot[0]
     return(row)
 
-def compileModel(modelname ="changepoint.stan"):
+def compileModel(modelname ="/net/store/nbp/users/behinger/projects/etcomp/code/changepoint.stan"):
     # compile the bayesian model to c++  (extra function to speed things up by reusing the model)
     import pystan
     return(pystan.StanModel(file=modelname))
@@ -58,7 +58,6 @@ def fitTrial(d,sm=None,etevents=None):
         #0 0 1 0  0 0 1 1 1  1 0 0 1 1 1 1 1 1  1 0 
         #0 0 1 -1 0 0 1 0 0 -1 0 0 1 0 0 0 0 0 -1 0
 
-        #print(diffix)
 
         saconset = np.where(diffix == 1)[0]
         if saconset.shape[0] == 0:
@@ -66,32 +65,25 @@ def fitTrial(d,sm=None,etevents=None):
             print('showindexerror')
         else:
             sacoffset = np.where(diffix == -1)[0]
-            #print(saconset)
-            #print(sacoffset)
+
             if sacoffset.shape[0]- saconset.shape[0] == -1: # offset one to short
                 sacoffset = np.append(sacoffset,allSaccIx.shape[0]-1)
 
             sacamplitude  = d.rotated.iloc[sacoffset].values -d.rotated.iloc[saconset].values
-            #print(d.rotated.iloc[sacoffset])
-            #print(saconset)
-            #print(d.rotated)
-            #print(sacoffset)
-            #print(sacamplitude)
+
             firstSaccIx = saconset[sacamplitude>1] # saccade larger than 1deg
             firstSaccIx = firstSaccIx[0]
-            #print(np.where(diffix!=0)[0])
-        
-        #print(firstSaccIx)
+
             
             
         d = d.iloc[0:firstSaccIx]
     except IndexError as err:
-        print(err)
-        print('no saccade found (not a problem)')
+        logger.error(err)
+        logger.error('no saccade found (not a problem)')
         pass
             
     if d.shape[0]<10:
-        print('less than 10 samples, aborting')
+        logger.warning('less than 10 samples, aborting')
         pass
     
     # setup data
@@ -145,9 +137,9 @@ def estimate_init_latency(etsamples,etmsgs,etevents):
     
     
 def save_smooth(smoothresult,datapath='/net/store/nbp/projects/etcomp/'):
-    print('saving...')
+    logger.info('saving...')
     smoothresult.to_csv(datapath+'results/stan_smooth_results.csv')
-    print('... saving done')
+    logger.info('... saving done')
     
 def load_smooth(datapath='/net/store/nbp/projects/etcomp/'):
     smoothresult = pd.read_csv(datapath+'results/stan_smooth_results.csv')
@@ -159,10 +151,6 @@ def plot_single_trial(etsamples,etmsgs,etevents,subject,eyetracker,trial,block,s
     select = "subject=='%s'&eyetracker=='%s'"%(subject,eyetracker)
     selectTrial = 'trial==%i&block==%i'%(trial,block)
     etmsgs2 = etmsgs.query(selectTrial)
-    # temporary fix to align streams
-    #if eyetracker=='pl':
-    #    print('fixing pupillab camera lag of 40ms (according to pupillabs)')
-    #    etmsgs2.loc[:,'msg_time'] = etmsgs2.loc[:,'msg_time']+0.045
     epochs = get_smooth_data(etsamples,etmsgs2,select)
     
     out = epochs.query(selectTrial).groupby(["block","trial"]).apply(lambda row:fitTrial(row,sm,etevents))
@@ -187,7 +175,7 @@ def plot_single_trial(etsamples,etmsgs,etevents,subject,eyetracker,trial,block,s
     plt.plot(time,epochs.query(selectTrial).rotated)
     plt.plot(epochs.query(selectTrial+"&type=='saccade'").td,epochs.query(selectTrial+"&type=='saccade'").rotated,'go')
     plt.plot(winmean(fit.extract()['tau']),0,'ro')
-    #print(np.mean(fit.extract()['tau']))
+    
     return fit
 
 def plot_modelresults(smoothresult,field="taumean",option=''):
@@ -200,12 +188,22 @@ def plot_modelresults(smoothresult,field="taumean",option=''):
         binwidth = 0.1
         
     if option == '':
-        pl = ggplot(smoothgroup,aes(x="eyetracker",y=field))+geom_point(alpha=0.1)+stat_summary(fun_data=winmean_cl_boot,color='red')
+        
+         pl = (ggplot(smoothgroup, aes(x='eyetracker', y=field)) +\
+                  geom_line(aes(group='subject'), color='lightblue') +
+                  geom_point(color='lightblue') +
+                  stat_summary(fun_data=winmean_cl_boot,color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
+                  #guides(color=guide_legend(ncol=8)) +
+                  xlab("Eye Trackers") + 
+                  ylab(field.capitalize()) +
+                  ggtitle('Smooth pursuit'))
+        
+        
     if option=='difference':
         smoothdiff = smoothgroup.groupby("subject").agg(np.diff)
         pl = ggplot(smoothdiff,aes(x=field))+geom_histogram(binwidth=binwidth)+ggtitle('binwidth of %.3f'%(binwidth))
         
-    pl.draw()
+    return(pl)
 
     
 def plot_catchup_amplitudes(smooth):

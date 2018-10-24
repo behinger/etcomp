@@ -128,7 +128,7 @@ def make_table_accuracy_winmean(raw_large_grid_df, concise=False):
     
     # only report most important columns
     if concise:
-        print('to be done bene was lasy')
+        print('to be done bene was lazy')
     #    return acccuracy_table[['mean-median-mean']].round(1) 
     
     return acccuracy_table
@@ -354,11 +354,17 @@ def display_fixation_centered(raw_large_grid_df,input_subject=None,input_block=N
     if input_block is not None:
         raw_large_grid_df = raw_large_grid_df.query('block == @input_block')
         # mean_fix vs grid point elements
-    return((ggplot(raw_large_grid_df, aes(x='posx-mean_gx', y='posy-mean_gy', color='np.sqrt(posx**2+posy**2)'))
-            + geom_point(alpha=0.01)
+    return((ggplot(raw_large_grid_df, aes(x='mean_gx-posx', y='mean_gy-posy', color='np.sqrt(posx**2+posy**2)'))
+            #+ geom_point(alpha=0.01)
+            +stat_ellipse(level=0.90)
+            +stat_ellipse(level=0.70)
+            +stat_ellipse(level=0.50)
+            +stat_ellipse(level=0.30)
+            +stat_ellipse(level=0.10)
             # displayed elements
             + annotate("point",x=0, y=0, color='black', shape = 'x')
-            + facet_wrap("~et")
+            + facet_wrap("~et")+coord_fixed(xlim=[-4,4],ylim=[-4,4])
+
     ))
 #
 # Density comparison: Fails because I don't know how to standardize properly

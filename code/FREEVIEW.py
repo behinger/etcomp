@@ -28,7 +28,7 @@ import logging
 
 
 
-def plot_heatmap(raw_freeview_df,raw_fix_count_df):
+def plot_heatmap(raw_freeview_df,raw_fix_count_df, only_horizontal_heatmap=True):
     """
     Make a heatmap of the freeview fixation df
     """
@@ -36,8 +36,8 @@ def plot_heatmap(raw_freeview_df,raw_fix_count_df):
     # the pictures have a size of 1200 x 1500 pixels
     # factor of 0.6 as we scaled the  pictures in the matlabscript (experiment)
     # they are centered  --> divide by 2
-    pic_size_horizontal = helper.size_px2deg(1500*0.6) / 2
-    pic_size_vertical = helper.size_px2deg(1200*0.6) / 2
+    pic_size_horizontal = helper.size_px2deg(1500*0.6) 
+    pic_size_vertical = helper.size_px2deg(1200*0.6) 
     
     
     # mean fixation location data
@@ -57,46 +57,70 @@ def plot_heatmap(raw_freeview_df,raw_fix_count_df):
     # 300: we selected 300 std as we want 3 degrees visual angle and have bins of size 0.01
     sigmas = [0, 300, 0, 300]
 
-  
-    # make a figure that has 4 subplots
-    fig, axs = plt.subplots(2, 2)
+    if only_horizontal_heatmap:
+        # make a figure that has 2 subplots (aligned horizontally)
+        fig, axs = plt.subplots(1, 2)
+        
+        # Pupil Labs heatmap
+        img, extent = make_heatmap(pl_x_coords,pl_y_coords, sigmas[1], pic_size_horizontal, pic_size_vertical)
+        axs[0].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
+        axs[0].set_aspect('equal')
+        axs[0].set_title("Pupil Labs Smoothing with 3 $^\circ$")
 
-    
-    # Pupil Labs heatmap
-    img, extent = make_heatmap(pl_x_coords,pl_y_coords, sigmas[1], pic_size_horizontal, pic_size_vertical)
-    axs[0,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
-    axs[0,1].set_aspect('equal')
-    axs[0,1].set_title("Pupil Labs Smoothing with 3 $^\circ$")
-    
-    # Pupil Labs scatterplot
-    axs[0,0].plot(pl_x_coords, pl_y_coords, 'k.', markersize=5)
-    axs[0,0].set_aspect('equal')  
-    axs[0, 0].set_xlim(extent[0], extent[1])
-    axs[0, 0].set_ylim(extent[2], extent[3])
-    axs[0,0].set_title("Pupil Labs Scatter plot")
-    
-
-    # EyeLink heatmap    
-    img, extent = make_heatmap(el_x_coords, el_y_coords, sigmas[3], pic_size_horizontal, pic_size_vertical)
-    axs[1,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
-    axs[1,1].set_title("EyeLink Smoothing with 3 $^\circ$")
-    
-    # EyeLink scatterplot
-    axs[1,0].plot(el_x_coords, el_y_coords, 'k.', markersize=5)
-    axs[1,0].set_aspect('equal')
-    axs[1, 0].set_xlim(extent[0], extent[1])
-    axs[1, 0].set_ylim(extent[2], extent[3])
-    axs[1,0].set_title("EyeLink Scatter plot")
+        # EyeLink heatmap    
+        img, extent = make_heatmap(el_x_coords, el_y_coords, sigmas[3], pic_size_horizontal, pic_size_vertical)
+        axs[1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
+        axs[1].set_aspect('equal')
+        axs[1].set_title("EyeLink Smoothing with 3 $^\circ$")
+        
+        plt.show()
+        
+        
+    else:
+        # make a figure that has 4 subplots
+        fig, axs = plt.subplots(2, 2)
 
 
-    # put info into generated files
-    with open('../generated_files/heatmap_info.md', 'w')  as gf:
-        print('Pupil Labs :  total number of fixations: {}'.format(len(pl_x_coords)), file=gf)
-        print('EyeLink    :  total number of fixations: {}'.format(len(el_x_coords)), file=gf)
-        print('Pupil Labs :  all picture_ids that were shown: {}'.format(np.sort(raw_fix_count_df.query("et == 'Pupil Labs'").pic_id.unique())), file=gf)
-        print('EyeLink    :  all picture_ids that were shown: {}'.format(np.sort(raw_fix_count_df.query("et == 'EyeLink'").pic_id.unique())), file=gf)
+        # Pupil Labs heatmap
+        img, extent = make_heatmap(pl_x_coords,pl_y_coords, sigmas[1], pic_size_horizontal, pic_size_vertical)
+        axs[0,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
+        axs[0,1].set_aspect('equal')
+        axs[0,1].set_title("Pupil Labs Smoothing with 3 $^\circ$")
 
-    plt.show()
+        # Pupil Labs scatterplot
+        axs[0,0].plot(pl_x_coords, pl_y_coords, 'k.', markersize=5)
+        axs[0,0].set_aspect('equal')  
+        axs[0, 0].set_xlim(extent[0], extent[1])
+        axs[0, 0].set_ylim(extent[2], extent[3])
+        axs[0,0].set_title("Pupil Labs Scatter plot")
+
+
+        # EyeLink heatmap    
+        img, extent = make_heatmap(el_x_coords, el_y_coords, sigmas[3], pic_size_horizontal, pic_size_vertical)
+        axs[1,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
+        axs[1,1].set_aspect('equal')
+        axs[1,1].set_title("EyeLink Smoothing with 3 $^\circ$")
+
+        # EyeLink scatterplot
+        axs[1,0].plot(el_x_coords, el_y_coords, 'k.', markersize=5)
+        axs[1,0].set_aspect('equal')
+        axs[1, 0].set_xlim(extent[0], extent[1])
+        axs[1, 0].set_ylim(extent[2], extent[3])
+        axs[1,0].set_title("EyeLink Scatter plot")
+
+
+        # put info into generated files
+        try:
+            with open('../generated_files/heatmap_info.md', 'w')  as gf:
+                print('Pupil Labs :  total number of fixations: {}'.format(len(pl_x_coords)), file=gf)
+                print('EyeLink    :  total number of fixations: {}'.format(len(el_x_coords)), file=gf)
+                print('Pupil Labs :  all picture_ids that were shown: {}'.format(np.sort(raw_fix_count_df.query("et == 'Pupil Labs'").pic_id.unique())), file=gf)
+                print('EyeLink    :  all picture_ids that were shown: {}'.format(np.sort(raw_fix_count_df.query("et == 'EyeLink'").pic_id.unique())), file=gf)
+        except FileNotFoundError:
+            print('file not found to save numbers...')
+            import os
+            print(os.getcwd())
+        plt.show()
 
 
 
@@ -188,6 +212,7 @@ def plot_fixation_durations(raw_freeview_df, option=None):
         # Caution: ets might have different number of detected saccades as basis!
         return (ggplot(raw_freeview_df, aes(x='duration', color='et'))
                     + geom_density()
+                
                     + xlim([0,1])
                     + xlab('fixation duration [s]')
                     + ggtitle('Fixation durations'))

@@ -3,12 +3,14 @@ import numpy as np
 import pandas as pd
 import functions.et_make_df as make_df
 from functions.et_helper import winmean,winmean_cl_boot
+import logging
+logger = logging.getLogger(__name__)
 
 def process_lum(etsamples,etmsgs):
     all_lum = pd.DataFrame()
     for subject in etsamples.subject.unique():
         for et in ['pl','el']:
-            print("subject:%s, et:%s"%(subject,et))
+            logger.info("subject:%s, et:%s"%(subject,et))
             all_lum = pd.concat([all_lum,process_lum_singlesub(etsamples,etmsgs,subject,et)])
             
     return(all_lum)
@@ -32,7 +34,7 @@ def process_lum_singlesub(etsamples,etmsgs,subject,eyetracker,td=[-1,5]):
 def standardize_lum(df):
         #df.loc[:,"pa_norm"] = lum_epoch.pa/scipy.stats.iqr(lum_epoch.pa)
         if np.sum(df.td<0)==0:
-            print('trial has no baseline')
+            logger.warning('trial has no baseline')
             df.loc[:,"pa_norm"] = np.nan
         else:
             df.loc[:,"pa_norm"] = df.pa / np.median(df.loc[df.td<0,'pa'])
@@ -90,7 +92,7 @@ def calc_mean(all_lum,t_from=2,t_to=3):
 
 def plot_mean(all_lum):
     mean_lum = calc_mean(all_lum)
-    p=(ggplot(mean_lum.query("lum>0"),aes(x="lum",y="pa_norm",shape="eyetracker",color="lum"))
+    p=(ggplot(mean_lum.query("lum>0").groupby(["lum","subject","eyetracker"],as_index=False).pa_norm.agg(winmean),aes(x="lum",y="pa_norm",shape="eyetracker",color="lum"))
      +stat_summary(fun_data=winmean_cl_boot,position=position_dodge(width=15))
      +geom_point(alpha=0.1)
      +scale_color_gradient(low='black',high='lightgray')

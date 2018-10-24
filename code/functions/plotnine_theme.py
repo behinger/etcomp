@@ -226,6 +226,55 @@ display_fixation_theme = ((theme_minimal(base_size=12) + theme(text = element_te
         
 
 
+shake_rotate_theme = (theme_minimal(base_size=12) + theme(text = element_text(),\
+               panel_background = element_rect(colour = 'None'),\
+               plot_background = element_rect(colour = 'None'),\
+               
+               # title position
+               plot_title = element_blank(),\
+               panel_border = element_rect(colour = 'None'),\
+               
+               axis_title = element_text(size = 10),\
+
+               # with va you can move xlab title matplotlibstyle
+               axis_title_x = element_text(size=12),\
+               axis_title_y = element_text(size=12, angle=90, vjust=0),\
+               
+               # style of Koordinatenachsen und deren Beschriftungen
+               axis_text = element_text(colour="black"),\
+               axis_line = element_line(colour="black"),\
+               
+               # axis ticks
+               axis_ticks = element_line(colour="black"),\
+               
+               axis_ticks_length=8,\
+               axis_ticks_length_minor=5,\
+               axis_ticks_length_major=8,\
+
+               axis_ticks_pad_minor=1,\
+               
+               # specify the backgroundgrid here
+               # light grey grid:
+               panel_grid_major = element_line(colour="#f0f0f0"),\
+               panel_grid_minor = element_blank(),\
+    
+            
+               legend_key = element_rect(colour = 'None'),\
+               legend_position = "bottom",\
+               legend_background=element_rect(fill='None',color='None'),\
+               legend_direction = "horizontal",\
+               legend_box = 'horizontal',\
+               legend_margin = 20,\
+               legend_title = element_blank(),\
+               legend_box_margin = 25,\
+               legend_title_align = 'top',\
+
+               strip_background=element_rect(colour="#ffffff",fill="#ffffff"),\
+               strip_text = element_blank()))
+               
+
+    
+
 """
 Possibility to change position of the xlab title:
     
