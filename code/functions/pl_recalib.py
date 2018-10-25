@@ -5,6 +5,8 @@ import numpy as np
 # Pretty serious workaround. Ignores errors in imports :S
 import builtins
 from types import ModuleType
+import logging
+logger = logging.getLogger(__name__)
 
 class DummyModule(ModuleType):
     def __getattr__(self, key):
@@ -53,7 +55,7 @@ def list_to_stream(gaze_list):
     return(gaze_serialized)
 
 def notify_all(self,notification=''):
-        print(notification)
+        logger.info(notification)
 
 def gen_fakepool(inp_gaze=[],calibration_mode='2D'): 
     
@@ -113,7 +115,7 @@ def pl_recalibV2(pupil_list,ref_list,inp_gaze,calibration_mode='2d',eyeID=None):
         fake_gpool = gen_fakepool(gaze,calibration_mode)
         
         #method, result = select_calibration_method(fake_gpool, pupil_list, ref_list)
-        print(calibrate_and_map)
+        logger.info(calibrate_and_map)
         calib_generator = calibrate_and_map(fake_gpool,ref,pupil,gaze,0,0)
         tmp = next(calib_generator) # start once
         output = []
@@ -123,23 +125,14 @@ def pl_recalibV2(pupil_list,ref_list,inp_gaze,calibration_mode='2d',eyeID=None):
                 i += 1
                 newsamp = next(calib_generator)
                 if newsamp[0] == 'Mapping complete.':
-                    print('Mapping complete')
+                    logger.info('Mapping complete')
                     break
                 if i%100000 == 1:
-                    print(newsamp[0])
+                    logger.info(newsamp[0])
                 output.append(newsamp[1][0])
         except StopIteration:
-            print('error')
+            logger.error('error')
             pass
         calib_generator.close()
         return(output)
         
-        #finish_calibration(fake_gpool,pupil,ref)
-        
-        #output = fake_gpool.plugins.get_initializers()[0]
-#        
-#        # XXX Check whether this is equal somehow to what is done during the recording
-        #mappingFunction =  getattr(gaze_mappers, output[0]) 
-        #print('using pupillabs function: '+output[0])
-        #self.mapper= mappingFunction(fake_gpool, **output[1])
-

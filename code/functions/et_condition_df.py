@@ -43,7 +43,7 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
         
     for subject in subjectnames:
         for et in ets:
-            logger.critical('Eyetracker: %s    Subject: %s ', et, subject)
+            logger.info('Eyetracker: %s    Subject: %s ', et, subject)
             
             # load preprocessed data for one eyetracker and for one subject at a time
             if not data:

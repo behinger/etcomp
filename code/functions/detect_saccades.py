@@ -211,7 +211,7 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
     saccades = []
     for i, cis in enumerate(valid_threshold_crossing_indices):
         if i%1000 == 0:
-            print(i)
+            logger.info(i)
         # find the real start and end of the saccade by looking at when the acceleleration reverses sign before the start and after the end of the saccade:
         # sometimes the saccade has already started?
         expanded_saccade_start = np.arange(cis[0])[np.r_[0,np.diff(signed_acc_data[:cis[0]] != 1)] != 0]
@@ -328,8 +328,8 @@ def interpolate_gaze(etsamples, fs=None):
     gazeInt.loc[:,'gy']  = interp(etsamples.smpl_time,etsamples.gy)
     if 'pa' in gazeInt.columns:
         gazeInt.loc[:,'pa']  = interp(etsamples.smpl_time,etsamples.pa)
-    if np.nansum(str(etsamples.type) == 'blink')>0:
-        gazeInt.loc[:,'is_blink']  = interp(etsamples.smpl_time,etsamples.type == 'blink')
+    if np.nansum(etsamples.type.astype(str) == 'blink')>0:
+        gazeInt.loc[:,'is_blink']  = interp(etsamples.smpl_time,etsamples.type.astype(str) == 'blink')
     else:
         gazeInt.loc[:,'is_blink'] = 0
     

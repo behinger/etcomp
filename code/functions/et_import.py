@@ -13,6 +13,7 @@ import functions.et_parse as parse
 import functions.et_make_df as make_df
 import functions.et_helper as  helper
 
+import imp # for edfread reload
 
 
 import scipy
@@ -32,6 +33,16 @@ def pl_fix_timelag(pl):
     # fill it back in
     # gonna do it with a for-loop because other stuff is too voodo or not readable for me
     
+    
+    # Use this code (and change t_cam and t_msg above) if you want everything in computer time timestamps
+    #for ix,m in enumerate(pl['gaze_positions']):
+    #    pl['gaze_positions'][ix]['timestamp'] = pl['gaze_positions'][ix]['timestamp']  * slope + intercept   
+    #    for ix2,m2 in enumerate(pl['gaze_positions'][ix]['pupil_positions']):
+    #            pl['gaze_positions'][ix]['pupil_positions']['timestamp'] = pl['gaze_positions'][ix]['pupil_positions']['timestamp']  * slope + intercept
+    #for ix,m in enumerate(pl['gaze_positions']):
+    #     pl['pupil_positions'][ix]['timestamp'] = pl['pupil_positions'][ix]['timestamp']  * slope + intercept# + 0.045 # the 45ms  are the pupillabs defined delay between camera image & timestamp3   
+        
+    # this code is to get notifications into sample time stamp. But for now we 
     for ix,m in enumerate(pl['notifications']):
         pl['notifications'][ix]['timestamp'] = pl['notifications'][ix]['timestamp']  * slope + intercept + 0.045 # the 45ms  are the pupillabs defined delay between camera image & timestamp3
         
@@ -79,14 +90,20 @@ def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=Tr
     # get a logger
     logger = logging.getLogger(__name__)
     
+    if surfaceMap:
+        # has to be imported before nbp recalib
+        try:
+            import functions.pl_surface as pl_surface
+        except ImportError:
+            raise('Custom Error:Could not import pl_surface')
+
 
     assert(type(subject)==str)
     
     # Get samples df
     # (is still a dictionary here)
     original_pldata = raw_pl_data(subject=subject, datapath=datapath)
-    
-    
+        
 
     # recalibrate data
     if recalib:
@@ -98,10 +115,6 @@ def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=Tr
     original_pldata = pl_fix_timelag(original_pldata)  
     
     if surfaceMap:
-        try:
-            import functions.pl_surface as pl_surface
-        except ImportError:
-            print('Could not import pl_surface')
 
         folder= os.path.join(datapath,subject,'raw')
         tracker = pl_surface.map_surface(folder)   

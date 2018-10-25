@@ -19,6 +19,8 @@ from functions import et_import
 from lib.pupil.pupil_src.shared_modules import accuracy_visualizer
 from functions.pl_recalib import pl_recalibV2
 
+import logging
+
 def find_closest_gridstart(elcaliberror,gridstart):
     # because we often recalibrate multiple times, we have to look for the most recent one. The most recent one of each block is the one, that is closest to the grid start trigger
     out = pd.DataFrame()
@@ -49,8 +51,9 @@ def el_accuracy(subject):
     return(elcaliberror)
 
 def pl_accuracy(subject):
+    logger = logging.getLogger(__name__)
 
-    print('loading subject %s'%(subject))
+    logger.info('loading subject %s'%(subject))
     pldata = et_import.raw_pl_data(subject=subject)
     
     # get calibration and accuracy data
@@ -69,7 +72,7 @@ def pl_accuracy(subject):
     ix_cal = ix_cal[np.diff(np.append(-1,ix_acc))!=1]
     ix_acc = ix_acc[np.diff(np.append(ix_acc,-1))!=1]
     
-    print("found %i calibrations"%(ix_cal.shape))
+    logger.info("found %i calibrations"%(ix_cal.shape))
     fake_gpool = pl_surface.fake_gpool_surface(folder='/net/store/nbp/projects/etcomp/%s/raw'%(subject))
     
     
@@ -94,9 +97,7 @@ def pl_accuracy(subject):
         prec.append(results[1].result)
         time.append(cal['pupil_list'][0]['timestamp'])
     
-    #print('Angular accuracy: {}. Used {} of {} samples.'.format(*results[0]))
-    #print("Angular precision: {}. Used {} of {} samples.".format(*results[1]))
-
+ 
     plcaliberror = pd.DataFrame({"avg":accu,"msg_time":time,'subject':subject,'eyetracker':'pl'})
     
     

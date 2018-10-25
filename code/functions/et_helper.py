@@ -80,7 +80,9 @@ def add_msg_to_event(etevents,etmsgs,timefield = 'start_time', direction='backwa
 def add_events_to_samples(etsamples, etevents):
     # Calls append_eventtype_to_sample for each event
     # Also adds blink_id
-    print(etevents.type.unique())
+    logger = logging.getLogger(__name__)
+
+    logger.info(etevents.type.unique())
     for evt in etevents.type.unique():
         etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype=evt)
         
@@ -263,18 +265,18 @@ def set_to_full_names(df):
 
 #%% everything related to VISUAL DEGREES
 
-def size_px2deg(px, pxPerDeg=0.276,distance=600):
+def size_px2deg(px, mm_per_px=0.276,distance=600):
     """
     function to get the picture size of the freeviewing task
     from pixels into visual angle
     """
           
-    deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
+    deg = 2*np.arctan2(px/2*mm_per_px,distance)*180/np.pi
 
     return deg
 
 
-def px2deg(px, orientation, pxPerDeg=0.276,distance=600):
+def px2deg(px, orientation, mm_per_px=0.276,distance=600):
     # VD
     # "gx_px - gx_px-midpoint"
     # subtract center of our BENQ
@@ -287,7 +289,7 @@ def px2deg(px, orientation, pxPerDeg=0.276,distance=600):
         center_y = 1080 / 2
         px       = px - center_y
            
-    deg = 2*np.arctan2(px*pxPerDeg,distance)*180/np.pi
+    deg = 2*np.arctan2(px*mm_per_px,distance)*180/np.pi
 
     return deg
 

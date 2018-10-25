@@ -10,6 +10,9 @@ import functions.et_helper as  helper
 import scipy
 import scipy.stats
 
+import logging
+
+
 
 
 
@@ -17,13 +20,14 @@ def load_data(algorithm='hmm_'):
     # loop over the foldernames (subjectnames)
     # restricted to subjects that we do not exclude from analysis
     # also loop over the et
+    logger = logging.getLogger(__name__)
     foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
     #TODO find out whats wrong with vp3 and vp12 and fix and then use vp3 again!!
     rejected_subjects = ['pilot', 'log_files', 'surface', '007', 'VP8', 'VP21','VP7','all_preprocessed']
     subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
     #subjectnames = ['VP3']
 
-    print('warning: removing DC offset of time-points (to semi align eyetrackers t=0)')
+    logger.warning('warning: removing DC offset of time-points (to semi align eyetrackers t=0)')
     datapath = '/net/store/nbp/projects/etcomp/'
     algorithm = [algorithm]
     etsamples = pd.DataFrame()
@@ -32,11 +36,11 @@ def load_data(algorithm='hmm_'):
     for subject in subjectnames:
         for et in ['el','pl']:
             for outputtype in algorithm:
-                print('loading subject %s with et %s'%(subject,et))
+                logger.info('loading subject %s with et %s'%(subject,et))
                 try:
                     elsamples, elmsgs, elevents = helper.load_file(et,subject,datapath=datapath,outputprefix=outputtype)
                 except:
-                    print('warning subject %s et %s not found'%(subject,et))
+                    logger.critical('warning subject %s et %s not found'%(subject,et))
                     continue
                 
                 t0 = elmsgs.query("condition=='Instruction'&exp_event=='BEGINNING_start'").msg_time.values
@@ -59,8 +63,9 @@ def load_data(algorithm='hmm_'):
     #regress pupillabs against eyelink, use triggers as identical timers
 
     for subject in etmsgs.subject.unique():
-        print("fixing subject %s"%(subject))
-        etsamples,etevents,etmsgs = regress_eyetracker(etsamples,etevents,etmsgs,subject)
+        logger.info("fixing subject %s"%(subject))
+        etsamples,etmsgs,etevents = regress_eyetracker(etsamples,etevents,etmsgs,subject)
+        
     return(etsamples,etmsgs,etevents)
 
 
@@ -79,6 +84,7 @@ def regress_eyetracker(etsamples,etevents,etmsgs,subject):
     
     # remove the non common items
     
+
     remove_el = []
     remove_pl = []
     if subject=='VP4':
@@ -89,6 +95,7 @@ def regress_eyetracker(etsamples,etevents,etmsgs,subject):
                 remove_el =[180] 
     if subject=='VP24':
         remove_el = [46,162]
+        
     etmsgs_regress_el = etmsgs_regress_el[~etmsgs_regress_el.index.isin(etmsgs_regress_el.index[remove_el])]
     etmsgs_regress_pl = etmsgs_regress_pl[~etmsgs_regress_pl.index.isin(etmsgs_regress_el.index[remove_pl])]
     
@@ -97,12 +104,13 @@ def regress_eyetracker(etsamples,etevents,etmsgs,subject):
     x = etmsgs_regress_pl.msg_time.values
     assert(len(x)==len(y),'Error, there seems to be more or less messages in el than pl')
     slope,intercept,low,high = scipy.stats.theilslopes(y,x)
-
+    
+    print('slope:%.10f, intercept:%.10f'%(slope,intercept))
     #transform all pl timestamps
-    etmsgs.loc[ix_m,'msg_time']     = etmsgs.loc[ix_m,'msg_time'].values*slope + intercept
-    etsamples.loc[ix_s,'smpl_time'] = etsamples.loc[ix_s,'smpl_time'].values*slope + intercept
-    etevents.loc[ix_e,'start_time'] = etevents.loc[ix_e,'start_time'].values*slope + intercept
-    etevents.loc[ix_e,'end_time']   = etevents.loc[ix_e,'end_time'].values*slope + intercept
+    etmsgs.loc[ix_m,'msg_time']     = etmsgs.loc[ix_m,'msg_time'].values     *slope + intercept
+    etsamples.loc[ix_s,'smpl_time'] = etsamples.loc[ix_s,'smpl_time'].values *slope + intercept
+    etevents.loc[ix_e,'start_time'] = etevents.loc[ix_e,'start_time'].values *slope + intercept
+    etevents.loc[ix_e,'end_time']   = etevents.loc[ix_e,'end_time'].values   *slope + intercept
     # we do not recalculate durations & velocity because the local change is so small (~0.1ms / 1s)
     
-    return(etsamples,etevents,etmsgs)
+    return(etsamples,etmsgs,etevents)
