@@ -44,6 +44,7 @@ def make_samples_df(etsamples):
 
 
 def make_events_df(etevents):
+    # why do we have an end_point column?
     fields_to_keep = set(['blink_id', 'start_gx','start_gy','end_gx','end_gy','end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'mean_gx', 'mean_gy', 'rms','sd'])
         
     fields_to_fillin = fields_to_keep - set(etevents.columns)
@@ -198,7 +199,7 @@ def make_condition(merged_events,condition=None):
         
     return out_df
 
-    
+
 def make_all_elements_grid_df(merged_events):
     # Input:    merged_events have info from msgs df AND event df
     #           (see add_msg_to_event in et_helper)
