@@ -8,6 +8,9 @@ Created on Fri Jun 15 19:47:14 2018
 
 
 import functions.add_path
+
+import functions.et_preprocess as preprocess
+
 import pandas as pd
 import numpy as np
 
@@ -15,6 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from scipy.ndimage.filters import gaussian_filter
+from scipy.misc import imread
 
 from plotnine import *
 # specify costumed minimal theme
@@ -24,6 +28,7 @@ import functions.et_helper as  helper
 from functions.et_helper import winmean,winmean_cl_boot
 
 import logging
+import os
 
 
 
@@ -190,13 +195,7 @@ def plot_number_of_fixations(raw_fix_count_df, option=None):
         raise ValueError('You must set options to a valid option. See documentation.')
     
 
-    
-    
-
-def plot_histogram(raw_fix_count_df):
-    #TODO  
-    pass
-
+ 
 
 def plot_fixation_durations(raw_freeview_df, option=None):
     """
@@ -231,6 +230,111 @@ def plot_fixation_durations(raw_freeview_df, option=None):
     else:
         raise ValueError('You must set options to a valid option. See documentation.')
     
+
+
+def plot_scanpath(subject, pic_id,option=None):
+    """
+    plots the scanpath of the subject  into picture (picture id)
+    """
+    
+    # set theme to default
+    theme_set(mythemes.default_theme)
+    
+    if option is None:
+        # uses all samples from both eyetrackers
+
+        return (ggplot(raw_freeview_df, aes(x='duration', color='et'))
+                    + geom_density()               
+                    + xlim([0,1])
+                    + xlab('fixation duration [s]')
+                    + ggtitle('Fixation durations'))
+                
+        
+    elif option == 'only_fixations':
+        
+        
+        # idea load msgs and samples for indicated subject
+        # use function plot around event???
+        
+        print("We look at the scanpath of participant: ", subject)
+        print()
+        
+        all_samples = pd.DataFrame()
+        all_msgs= pd.DataFrame()
+        all_events = pd.DataFrame()
+
+        for et in ['el','pl']:
+
+            etsamples, etmsgs, etevents = preprocess.preprocess_et(et, subject,load=True)
+                   
+            all_samples = pd.concat([all_samples,  etsamples.assign(et=et)], ignore_index=True, sort=False)
+            all_msgs      = pd.concat([all_msgs,   etmsgs.assign(et=et)],    ignore_index=True, sort=False)
+            all_events    = pd.concat([all_events, etevents.assign(et=et)],  ignore_index=True, sort=False)
+ 
+        
+        
+        # select only relevant columns in all_msgs
+        all_msgs = all_msgs.query("condition=='FREEVIEW'").filter(items=['block', 'pic_id', 'exp_event', 'et', 'msg_time', 'trial'])
+
+        
+        for eyetracker in ['el','pl']:
+    
+            # we presented the pictures for 6 seconds
+            # the msgs are parsed in a way that the picture_id is sent after viewing
+            # therefore we subtract 6 seconds from the msg time
+            el_start_time = float(all_msgs.query('(pic_id == @pic_id) & (et == @eyetracker)').msg_time.values - 6)
+            el_end_time = float(all_msgs.query('(pic_id == @pic_id) & (et == @eyetracker)').msg_time.values)
+               
+            
+
+            
+            x_fix = all_samples.query('(smpl_time >= @el_start_time) & (smpl_time <= @el_end_time) & (type == "fixation") & (et == @eyetracker)').gx.values
+            y_fix = all_samples.query('(smpl_time >= @el_start_time) & (smpl_time <= @el_end_time) & (type == "fixation") & (et == @eyetracker)').gy.values
+            
+            x_sac = all_samples.query('(smpl_time >= @el_start_time) & (smpl_time <= @el_end_time) & (type == "saccade") & (et == @eyetracker)').gx.values
+            y_sac = all_samples.query('(smpl_time >= @el_start_time) & (smpl_time <= @el_end_time) & (type == "saccade") & (et == @eyetracker)').gy.values
+            
+            
+            assert (len(x_fix) == len(y_fix))
+            
+            path = '/net/store/nbp/users/kgross/etcomp/experiment/stimuli/Muster'
+            os.chdir(path)
+            file_list = os.listdir(path)
+            
+            pic_ids_keys      = [float(id) for id in range(1,19)]
+            file_names_values = file_list[0:18]
+            map_id2file = dict(zip(pic_ids_keys, file_names_values))
+            
+
+            
+            img = imread(map_id2file.get(pic_id))
+            
+            from scipy.misc import imresize
+            img_resize = imresize(img,size=0.6)
+            
+            if eyetracker == 'pl':
+                colorlist = ['blue','cyan']
+            if eyetracker == 'el':
+                colorlist = ['red','magenta']
+                
+            plt.scatter(x_sac, y_sac, alpha=0.5, s=10, c=colorlist[0])
+            plt.scatter(x_fix, y_fix, alpha=0.5, s=10, c=colorlist[1])
+            
+        
+        pic_size_horizontal = helper.size_px2deg(1500*0.6) 
+        pic_size_vertical = helper.size_px2deg(1200*0.6) 
+        
+        plt.imshow(img_resize, extent=[-(pic_size_horizontal), (pic_size_horizontal), -(pic_size_vertical), (pic_size_vertical)])
+
+            
+        plt.show()
+        
+            
+    else:
+        raise ValueError('You must set options to a valid option. See documentation.')
+    
+
+
 
 
 #

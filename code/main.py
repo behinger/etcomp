@@ -239,7 +239,7 @@ FREEVIEW.plot_fixation_durations(raw_freeview_df, option='facet_subjects')
 FREEVIEW.plot_main_sequence(raw_freeview_df)
 
 
-
+FREEVIEW.plot_scanpath('VP4', pic_id=18, option='only_fixations')
 
 
 
@@ -294,7 +294,7 @@ def compare_raw_signal(subject, block, condition, algorithm=None):
                  facet_grid("et~.") +
                  xlab("Time [s]") +
                  ylab("X-Position [$^\circ$]") +
-                 labs(title='Raw signal: EyeLink vs. Pupil Labs'))  
+                 labs(title='Annotated samples: EyeLink vs. Pupil Labs'))  
 
       
 subject = 'VP4'
@@ -302,7 +302,7 @@ block = None
 condition = None
 
 p = compare_raw_signal(subject, block, condition)
-p.save(filename = str('../plots/2018-09-05_tea_time_presentation/good_compare_et_signals.png'), height=5, width=11, units = 'in', dpi=400)
+p.save(filename = str('../plots/2018-09-05_tea_time_presentation/good_compare_et_signals_not_labeled.png'), height=5, width=11, units = 'in', dpi=400)
 
 
 # good raw signal: VP4 start 42 seconds  duration 55 seconds
