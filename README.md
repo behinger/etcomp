@@ -1,4 +1,27 @@
-# ACUITY TEST
+# How to use etcomp
+
+We made great efforts to not need root rights but still be able to use pupil labs from source. The GUI is non-functional. pyAV somehow is a newer version and we need to fix some things in pupillabs (forked version is linked)
+```
+git clone https://github.com/behinger/etcomp
+git submodule update --init
+make
+```
+Should do all the magic for you.
+
+You need these packages definitely installed  using sudo/ root (there might be more):
+```
+automake
+cmake
+pkgconfig
+python3-dev
+libglew-dev <-- this one is usually not installed
+xorg-dev libglu1-mesa-dev <-- needed for libglew
+```
+
+
+
+# Old instructions
+### ACUITY TEST
 http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&distance=1&distanceUnits=meters&chartType=2&optoType=0&displayType=1&rowIndex=14&mirror=false&animate=false&crowd=false&nearFar=near&col1=#dedede&col2=#f10708&col3=#20e4fa&col4=#000000&mode3d=0
 
 # How to start the compiled binary of pupil player / capture locally under ubuntu:
