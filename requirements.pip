@@ -17,3 +17,4 @@ msgpack_python
 glfw
 matplotlib
 nslr
+cysignal
