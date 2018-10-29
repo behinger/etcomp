@@ -27,7 +27,7 @@ python-reqs: ${VENV}
 	)
 
 
-compile-dependencies: pyav edfread opencv glfw ceres
+compile-dependencies: pyav edfread ${opencvbuild} glfw ${ceresbuild}
 		echo 'done'
 
 uneyesrc = ${installfolder}/build/src_uneye
@@ -93,15 +93,15 @@ opencvbuild = ${installfolder}/build/build_opencv
 ${opencvsrc}:
 			git clone https://github.com/itseez/opencv ${opencvsrc}
 
-opencv: ${opencvsrc}
-		mkdir ${opencvbuild}
-		mkdir ${opencvsrc}/build
+${opencvbuild}: ${opencvsrc}
+		mkdir -p ${opencvbuild}
+		mkdir -p ${opencvsrc}/build
 	        cd ${opencvsrc}/build && \
                 cmake -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_TBB=ON -D WITH_TBB=ON -D WITH_CUDA=OFF -D BUILD_opencv_python2=OFF -DBUILD_opencv_python3=ON  -D CMAKE_INSTALL_PREFIX='../../build_opencv' ../ && \
                 make -j4 && \
                 make install
 		# now add opencv to python
-		cp ${opencvbuild}/lib/python3.5/dist-packages/cv2.cpython-35m-x86_64-linux-gnu.so ${VENV}/lib/python3.5/site-packages/cv2.cpython-35m-x86_64-linux-gnu.so
+		cp ${opencvbuild}/lib/python3.5/site-packages/cv2.cpython-35m-x86_64-linux-gnu.so ${VENV}/lib/python3.5/site-packages/cv2.cpython-35m-x86_64-linux-gnu.so
 
 cleanopencv:
 		rm -r ${opencvbuild}
@@ -137,7 +137,7 @@ ${eigensrc}:
 #		make install
 		
 
-ceres:  ${ceressrc} ${eigensrc} ${suitesparsebuild}
+${ceresbuild}:  ${ceressrc} ${eigensrc} ${suitesparsebuild}
 		cd  ${ceressrc} && \
 		mkdir -p build && cd build && \
 		mkdir -p ../../build_ceres && \
