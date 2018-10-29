@@ -27,7 +27,7 @@ python-reqs: ${VENV}
 	)
 
 
-compile-dependencies: pyav edfread ${opencvbuild} glfw ${ceresbuild}
+compile-dependencies: pyav edfread opencv glfw ceres
 		echo 'done'
 
 uneyesrc = ${installfolder}/build/src_uneye
@@ -93,6 +93,9 @@ opencvbuild = ${installfolder}/build/build_opencv
 ${opencvsrc}:
 			git clone https://github.com/itseez/opencv ${opencvsrc}
 
+opencv: ${opencvbuild}
+	echo 'opencv done'
+
 ${opencvbuild}: ${opencvsrc}
 		mkdir -p ${opencvbuild}
 		mkdir -p ${opencvsrc}/build
@@ -119,6 +122,8 @@ eigensrc = ${installfolder}/build/eigen3/
 
 ${ceressrc}:
 		git clone https://ceres-solver.googlesource.com/ceres-solver ${ceressrc}
+		cd ${ceressrc}&&\
+		git checkout tags/1.14.0
 ${eigensrc}:
 		git clone https://github.com/eigenteam/eigen-git-mirror.git ${eigensrc}
 
@@ -137,11 +142,13 @@ ${eigensrc}:
 #		make install
 		
 
-${ceresbuild}:  ${ceressrc} ${eigensrc} ${suitesparsebuild}
-		cd  ${ceressrc} && \
+ceres : ${ceresbuild}
+	echo 'done'
+${ceresbuild}:  ${ceressrc} ${eigensrc} 
+		cd ${ceressrc} && \
 		mkdir -p build && cd build && \
 		mkdir -p ../../build_ceres && \
-		cmake .. -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX='../../build_ceres' -DEIGEN_INCLUDE_DIR_HINTS='../../eigen3' -DEIGEN_INCLUDE_DIR='../../eigen3'
+		cmake .. -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX='../../build_ceres' -DEIGEN_INCLUDE_DIR_HINTS='../../eigen3' -DEIGEN_INCLUDE_DIR='../../eigen3' && \
 # -DGLOG_LIBRARY_DIR_HINTS='/net/store/nbp/users/behinger/projects/etcomp/local/temp/glog_build/lib' -DGLOG_INCLUDE_DIR_HINTS='/net/store/nbp/users/behinger/projects/etcomp/local/temp/glog_build/include' -DSUITESPARSE_LIBRARY_DIR_HINTS='../../build_suitesparse/lib' -DSUITESPARSE_INCLUDE_DIR_HINTS='../../build_suitesparse/include' && \
 		make -j3 &&\
 		make test
