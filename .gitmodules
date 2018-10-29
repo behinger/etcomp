@@ -1,6 +1,6 @@
 [submodule "lib/pupil"]
 	path = lib/pupil
-	url = https://github.com/pupil-labs/pupil
+	url = https://github.com/behinger/pupil
 [submodule "lib/pyedfread"]
 	path = lib/pyedfread
 	url = https://github.com/nwilming/pyedfread
