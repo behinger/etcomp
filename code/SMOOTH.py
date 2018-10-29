@@ -44,13 +44,14 @@ def compileModel(modelname ="/net/store/nbp/users/behinger/projects/etcomp/code/
 def fitTrial(d,sm=None,etevents=None):
     # Estimate the point of onset by a (2-pieces) piecewise regression were the first part has slope 0.
     if not sm:
+        # if model does not exist, compile, but should be done before to reduce overhead greatly
         sm = compileModel()
     
     # remove data up to first saccade (i.e. remove data after first saccade)
     try:
         
-        #if etevents is None:
-            # unfortunately we do not have the "amplitude" information of the saccades available. Else we could add a minimal amplitude restriction (to exclude microsaccades)
+
+        # find the first saccade after 100ms
         firstSaccIx = np.where((d.type == "saccade") & (d.td >0.1))[0][0]
     #else:
         allSaccIx = ((d.type == "saccade") & (d.td >0.1))*1
@@ -77,6 +78,8 @@ def fitTrial(d,sm=None,etevents=None):
             
             
         d = d.iloc[0:firstSaccIx]
+        
+        
     except IndexError as err:
         logger.error(err)
         logger.error('no saccade found (not a problem)')
@@ -108,14 +111,15 @@ def fitTrial_pandas(d,sm,etevents):
 
 
 def get_smooth_data(etsamples,etmsgs,select=''):
+    
     epochs = make_df.make_epochs(etsamples.query(select),etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'"),td=[-0,0.6])
     epochs=  epochs.groupby("angle",group_keys=False).apply(rotateRow)
     return(epochs)
            
 def fit_bayesian_model(etsamples,etmsgs,etevents):
     # compile the model
-    sm = pystan.StanModel(file="changepoint.stan")  
-
+    sm = pystan.StanModel(file="/net/store/nbp/users/behinger/projects/etcomp/code/changepoint.stan")  
+    
     smoothresult = pd.DataFrame()
     for subject in etsamples.subject.unique():
         for et in etsamples.eyetracker.unique():
@@ -123,6 +127,7 @@ def fit_bayesian_model(etsamples,etmsgs,etevents):
             try:
                 select = "eyetracker=='%s'&subject=='%s'"%(et,subject)
                 epochs = get_smooth_data(etsamples,etmsgs,select)
+                
                 tmp = epochs.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,etevents))
                 smoothresult = pd.concat([smoothresult,tmp.reset_index().assign(eyetracker=et,subject=subject)],ignore_index=True,sort=False)
             except Exception as err:
@@ -208,5 +213,17 @@ def plot_modelresults(smoothresult,field="taumean",option=''):
     
 def plot_catchup_amplitudes(smooth):
     smooth_saccade = smooth.query("type=='saccade'       & condition=='SMOOTH' & exp_event=='trialstart'") 
-    smooth_saccade_agg = smooth_saccade.groupby(["subject","et","block","trial","angle","vel"],as_index=False).agg({'amplitude':winmean})
-    return(ggplot(smooth_saccade_agg,aes(x="vel",y="amplitude",color="et"))+stat_summary(fun_data=winmean_cl_boot)+ylab('Number of Catchup Saccades'))
+    smooth_saccade_agg = smooth_saccade.groupby(["subject","et","block","angle","vel"],as_index=False).agg({'amplitude':winmean})
+    smooth_saccade_agg_agg = smooth_saccade_agg.groupby(["subject","et","angle","vel"],as_index=False).agg({'amplitude':winmean})
+    
+    smooth_saccade_agg_agg.loc[:,'group'] = smooth_saccade_agg_agg['subject'].astype(str) + smooth_saccade_agg_agg['et'].astype(str)
+    p = (
+        ggplot(smooth_saccade_agg_agg,aes(x="vel",y="amplitude",color="et"))
+        #+stat_summary(aes(group='group'),fun_y=winmean,geom='line',linetype='dashed')
+        #+stat_summary(aes(group='group'),fun_y=winmean,geom='point')
+        +stat_summary(fun_data=winmean_cl_boot)
+        
+        +ylab('Number of Catchup Saccades')
+        )
+    
+    return(p)

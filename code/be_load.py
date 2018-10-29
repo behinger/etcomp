@@ -108,7 +108,7 @@ def regress_eyetracker(etsamples,etevents,etmsgs,subject):
     print('slope:%.10f, intercept:%.10f'%(slope,intercept))
     #transform all pl timestamps
     etmsgs.loc[ix_m,'msg_time']     = etmsgs.loc[ix_m,'msg_time'].values     *slope + intercept
-    etsamples.loc[ix_s,'smpl_time'] = etsamples.loc[ix_s,'smpl_time'].values *slope + intercept
+    etsamples.loc[ix_s,'smpl_time'] = etsamples.loc[ix_s,'smpl_time'].values *slope + intercept + 0.01 #this fixes the delay of PL camera to trigger (reported by pupillabs)
     etevents.loc[ix_e,'start_time'] = etevents.loc[ix_e,'start_time'].values *slope + intercept
     etevents.loc[ix_e,'end_time']   = etevents.loc[ix_e,'end_time'].values   *slope + intercept
     # we do not recalculate durations & velocity because the local change is so small (~0.1ms / 1s)

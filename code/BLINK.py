@@ -19,7 +19,7 @@ def plot_duration(beep,option=''):
     
     if option == '':
         pl = pl+\
-        geom_jitter(width=0.2,alpha=0.8, color='lightblue')+\
+        geom_jitter(width=0.2,height=0,alpha=0.8, color='lightblue')+\
         stat_summary(fun_data=winmean_cl_boot,data=beep.groupby(["subject","et"],as_index=False).agg({"duration":winmean}))+ggtitle('Median Blink Duration per block, subjectwise mean + subjectwise 95%CI')
     
     if option == 'facet_subjects':
@@ -38,7 +38,7 @@ def plot_count(beep,option=''):
     
     if option == '':
             pl = ggplot(beep,aes(x="et",y="n_blinks"))+\
-        geom_jitter(width=0.2,alpha=0.8, color='lightblue')+\
+        geom_jitter(width=0.2,height=0,alpha=0.8, color='lightblue')+\
                 stat_summary(fun_data=winmean_cl_boot,data=beep.groupby(["subject","et"],as_index=False).agg({"n_blinks":winmean}))+ggtitle('Mean number of blinks per block, subjectwise mean + subjectwise 95%CI')
     
     if option == 'facet_subjects':
@@ -46,6 +46,6 @@ def plot_count(beep,option=''):
                 geom_jitter(position=position_dodge(width=0.2))+\
                 facet_wrap("~subject")
     
-    pl = pl+ylim([0,10])
+    pl = pl+expand_limits(y=0)+scale_y_continuous(breaks=[1,3,5,7,9])
     
     return pl   

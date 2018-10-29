@@ -17,7 +17,7 @@ from plotnine.data import *
 
 
 
-default_theme = (theme_minimal(base_size=12) + theme(text = element_text(),\
+default_theme = (theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro') + theme(text = element_text(),\
                panel_background = element_rect(colour = 'None'),\
                plot_background = element_rect(colour = 'None'),\
                
@@ -75,7 +75,7 @@ theme_set(default_theme)
 
 
 # plotting for the comparison for the raw signal
-raw_signal_theme = (theme_minimal(base_size=12) + theme(text = element_text(),\
+raw_signal_theme = (theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro') + theme(text = element_text(),\
                panel_background = element_rect(colour = 'None'),\
                plot_background = element_rect(colour = 'None'),\
                
@@ -125,7 +125,7 @@ raw_signal_theme = (theme_minimal(base_size=12) + theme(text = element_text(),\
 
 
 # plotting for before after Grid
-before_after_grid_theme = ((theme_minimal(base_size=12) + theme(text = element_text(),\
+before_after_grid_theme = ((theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro') + theme(text = element_text(),\
                            panel_background = element_rect(colour = 'None'),\
                            plot_background = element_rect(colour = 'None'),\
                            
@@ -174,7 +174,7 @@ before_after_grid_theme = ((theme_minimal(base_size=12) + theme(text = element_t
 
 
 # show large grid fixations (no grid in background)
-display_fixation_theme = ((theme_minimal(base_size=12) + theme(text = element_text(),\
+display_fixation_theme = ((theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro') + theme(text = element_text(),\
                panel_background = element_rect(colour = 'None'),\
                plot_background = element_rect(colour = 'None'),\
                
@@ -226,7 +226,7 @@ display_fixation_theme = ((theme_minimal(base_size=12) + theme(text = element_te
         
 
 
-shake_rotate_theme = (theme_minimal(base_size=12) + theme(text = element_text(),\
+shake_rotate_theme = (theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro') + theme(text = element_text(),\
                panel_background = element_rect(colour = 'None'),\
                plot_background = element_rect(colour = 'None'),\
                

@@ -80,7 +80,7 @@ def plot_default(microsaccades,subtype="count"):
         + geom_point(alpha=0.9, color='lightblue')
         + stat_summary(fun_data=winmean_cl_boot, color='black', size=0.8, position=position_nudge(x=0.05,y=0))
         + xlab("Eye Trackers")
-        + ggtitle('Smooth pursuit'))
+        + ggtitle('Microsaccades'))
     
     
     return p

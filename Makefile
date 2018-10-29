@@ -7,11 +7,11 @@ VENV = ${installfolder}/etcompvenv
 #export PATH := ${VIRTUAL_ENV}/bin:${PATH}
 
 
-install: git-reqs ${VENV} python-reqs compile-dependencies
+install: git-reqs ${VENV} python-reqs compile-dependencies printexport
 		echo 'installation done, whew.. you should be very happy that this worked ;)'
 
 git-reqs:
-			git submodule update --init
+	git submodule update --init
 
 ${VENV}:
 	virtualenv -p python3 --system-site-packages ${VENV}
@@ -27,7 +27,7 @@ python-reqs: ${VENV}
 	)
 
 
-compile-dependencies: pyav edfread opencv glfw printexport
+compile-dependencies: pyav edfread opencv glfw ceres
 		echo 'done'
 
 uneyesrc = ${installfolder}/build/src_uneye
@@ -40,12 +40,12 @@ uneye: ${VENV}
 	pip3 install ./ -r ./requirements.txt\
 	)
 	
-git pull https://github.com/berenslab/uneye
+	git pull https://github.com/berenslab/uneye
 
 
 printexport:
 		echo 'use this command before starting python/spyder'
-		echo 'export LD_LIBRARY_PATH=${CURDIR}/${ffmpegbuild}/lib/:${CURDIR}/${glfwbuild}/lib/:$$LD_LIBRARY_PATH'
+		echo 'export LD_LIBRARY_PATH=${CURDIR}/${ffmpegbuild}/lib/:${CURDIR}/${glfwbuild}/lib/:${CURRDIR}/${ceresbuild}/lib:$$LD_LIBRARY_PATH'
 
 glfwsrc = ${installfolder}/build/src_glfw
 glfwbuild = ${installfolder}/build/build_glfw
@@ -96,10 +96,10 @@ ${opencvsrc}:
 opencv: ${opencvsrc}
 		mkdir ${opencvbuild}
 		mkdir ${opencvsrc}/build
-	  cd ${opencvsrc}/build && \
-	  cmake -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_TBB=ON -D WITH_TBB=ON -D WITH_CUDA=OFF -D BUILD_opencv_python2=OFF -DBUILD_opencv_python3=ON  -D CMAKE_INSTALL_PREFIX='../../build_opencv' ../ && \
-	  make -j4 && \
-	  make install
+	        cd ${opencvsrc}/build && \
+                cmake -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_TBB=ON -D WITH_TBB=ON -D WITH_CUDA=OFF -D BUILD_opencv_python2=OFF -DBUILD_opencv_python3=ON  -D CMAKE_INSTALL_PREFIX='../../build_opencv' ../ && \
+                make -j4 && \
+                make install
 		# now add opencv to python
 		cp ${opencvbuild}/lib/python3.5/dist-packages/cv2.cpython-35m-x86_64-linux-gnu.so ${VENV}/lib/python3.5/site-packages/cv2.cpython-35m-x86_64-linux-gnu.so
 
@@ -112,6 +112,42 @@ ffmpegbuild = ${installfolder}/build/build_ffmpeg
 
 yasmsrc =  ${installfolder}/build/src_yasm/
 yasmbuild = ${installfolder}/build/build_yasm/
+
+ceressrc = ${installfolder}/build/src_ceres/
+ceresbuild = ${installfolder}/build/build_ceres/
+eigensrc = ${installfolder}/build/eigen3/
+
+${ceressrc}:
+		git clone https://ceres-solver.googlesource.com/ceres-solver ${ceressrc}
+${eigensrc}:
+		git clone https://github.com/eigenteam/eigen-git-mirror.git ${eigensrc}
+
+#suitesparsesrc   = ${installfolder}/build/src_suitesparse
+#suitesparsebuild = ${installfolder}/build/build_suitesparse
+
+#${suitesparsesrc}: #
+#		git clone https://github.com/jlblancoc/suitesparse-metis-for-windows/ ${suitesparsesrc}
+
+
+#${suitesparsebuild}: ${suitesparsesrc}
+#		cd ${suitesparsesrc} &&\
+#		mkdir -p build &&\
+#		cd build && \
+#		cmake ../ -DCMAKE_INSTALL_PREFIX='../../build_suitesparse' &&\
+#		make install
+		
+
+ceres:  ${ceressrc} ${eigensrc} ${suitesparsebuild}
+		cd  ${ceressrc} && \
+		mkdir -p build && cd build && \
+		mkdir -p ../../build_ceres && \
+		cmake .. -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX='../../build_ceres' -DEIGEN_INCLUDE_DIR_HINTS='../../eigen3' -DEIGEN_INCLUDE_DIR='../../eigen3'
+# -DGLOG_LIBRARY_DIR_HINTS='/net/store/nbp/users/behinger/projects/etcomp/local/temp/glog_build/lib' -DGLOG_INCLUDE_DIR_HINTS='/net/store/nbp/users/behinger/projects/etcomp/local/temp/glog_build/include' -DSUITESPARSE_LIBRARY_DIR_HINTS='../../build_suitesparse/lib' -DSUITESPARSE_INCLUDE_DIR_HINTS='../../build_suitesparse/include' && \
+		make -j3 &&\
+		make test
+		make install
+		#sudo sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/ceres.conf'
+		#sudo ldconfig
 
 ${ffmpegsrc}:
 		wget http://launchpad.net/ubuntu/+archive/primary/+files/ffmpeg_3.3.4.orig.tar.xz &&\
