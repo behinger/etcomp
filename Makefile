@@ -22,6 +22,7 @@ python-reqs: ${VENV}
 	( \
 	. ${VENV}/bin/activate; \
 	pip3 install --upgrade -r requirements.pip;\
+	pip3 install setuptools -U --force
 	pip3 install git+https://github.com/pupil-labs/pyglui;\
 	pip3 install git+https://github.com/has2k1/plotnine.git;\
 	)
