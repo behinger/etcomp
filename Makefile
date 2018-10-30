@@ -93,6 +93,10 @@ opencvsrc = ${installfolder}/build/src_opencv
 opencvbuild = ${installfolder}/build/build_opencv
 ${opencvsrc}:
 			git clone https://github.com/itseez/opencv ${opencvsrc}
+			cd ${opencvsrc} &&\
+			git checkout 68c92908d57f074c9e301c8f8f2419aaa0a3fe93
+
+
 
 opencv: ${opencvbuild}
 	echo 'opencv done'
@@ -124,9 +128,11 @@ eigensrc = ${installfolder}/build/eigen3/
 ${ceressrc}:
 		git clone https://ceres-solver.googlesource.com/ceres-solver ${ceressrc}
 		cd ${ceressrc}&&\
-		git checkout tags/1.14.0
+		git checkout 2496500436da3b72ac4431e7878d5d5197e2031b
 ${eigensrc}:
 		git clone https://github.com/eigenteam/eigen-git-mirror.git ${eigensrc}
+		cd ${eigensrc}&&\
+		git checkout tags/3.3.4
 
 #suitesparsesrc   = ${installfolder}/build/src_suitesparse
 #suitesparsebuild = ${installfolder}/build/build_suitesparse
@@ -150,9 +156,6 @@ ${ceresbuild}:  ${ceressrc} ${eigensrc}
 		mkdir -p build && cd build && \
 		mkdir -p ../../build_ceres && \
 		cmake .. -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX='../../build_ceres' -DEIGEN_INCLUDE_DIR_HINTS='../../eigen3' -DEIGEN_INCLUDE_DIR='../../eigen3' && \
-# -DGLOG_LIBRARY_DIR_HINTS='/net/store/nbp/users/behinger/projects/etcomp/local/temp/glog_build/lib' -DGLOG_INCLUDE_DIR_HINTS='/net/store/nbp/users/behinger/projects/etcomp/local/temp/glog_build/include' -DSUITESPARSE_LIBRARY_DIR_HINTS='../../build_suitesparse/lib' -DSUITESPARSE_INCLUDE_DIR_HINTS='../../build_suitesparse/include' && \
-		make -j3 &&\
-		make test
 		make install
 		#sudo sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/ceres.conf'
 		#sudo ldconfig
