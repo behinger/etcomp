@@ -28,25 +28,33 @@ def grid_duration(etmsgs):
     return(y)
 
 def print_results(df,fields = ['duration','accuracy','rms','sd']):
+    
     import scipy.stats
+    
     def percentile(n):
         def percentile_(x):
             return np.percentile(x, n)
         percentile_.__name__ = 'percentile_%s' % n
         return percentile_
-
-    df_agg = df.groupby(['eyetracker','subject','block'],as_index=False).agg(winmean).groupby(['eyetracker','subject'],as_index=False).agg(winmean)[['eyetracker','subject']+fields]
-    tmp_main = df_agg.groupby(['eyetracker']).agg([winmean,percentile(25),percentile(75)])
     
-    tmp_el = df_agg.query("eyetracker=='el'")[fields]
-    tmp_pl = df_agg.query("eyetracker=='pl'")[fields]
+    if 'eyetracker' in df.columns:
+        et = "eyetracker"
+    else:
+        et = "et"
+    
+    df_agg = df.groupby([et,'subject','block'],as_index=False).agg(winmean).groupby([et,'subject'],as_index=False).agg(winmean)[[et,'subject']+fields]
+    tmp_main = df_agg.groupby([et]).agg([winmean,percentile(25),percentile(75)])
+    
+    tmp_el = df_agg.query("@et=='el'")[fields]
+    tmp_pl = df_agg.query("@et=='pl'")[fields]
     tmp_diff = tmp_el.reset_index(drop=True) -tmp_pl.reset_index(drop=True)
     
     tmp_diff.agg([winmean_cl_boot])
 
     tmp_diff_agg = tmp_diff.agg([winmean_cl_boot])
+    
     for c in tmp_diff_agg.columns.levels[0]:
         diff_tuple = tuple(tmp_diff_agg[c].values[0])
         main_tuple = tuple(tmp_main[c].values[0],) + tuple(tmp_main[c].values[1])
         all_tuple = (c,)+main_tuple + diff_tuple
-        print('Winsorized mean %s of Eyelink was %.2f (IQR: %.2f to %.2f), of Pupil Labs %.2f (IQR: %.2f to %.2f), with a paired difference of %.2f ($CI_{95}$: %.2f to %.2f)'%(all_tuple))
+        print('For EyeLink the winsorized mean %s was %.2f (IQR: %.2f to %.2f), for Pupil Labs %.2f (IQR: %.2f to %.2f), with a paired difference of %.2f ($CI_{95}$: %.2f to %.2f)'%(all_tuple))
