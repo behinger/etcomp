@@ -27,26 +27,50 @@ def grid_duration(etmsgs):
     y.astype('datetime64[s]')[['grid_time_before','grid_time_after']]
     return(y)
 
-def print_results(df,fields = ['duration','accuracy','rms','sd']):
+def print_results(df,fields = ['duration','accuracy','rms','sd'], round_to=2, agg_first_over_blocks=True):
+    
     import scipy.stats
+    
     def percentile(n):
         def percentile_(x):
             return np.percentile(x, n)
         percentile_.__name__ = 'percentile_%s' % n
         return percentile_
-
-    df_agg = df.groupby(['eyetracker','subject','block'],as_index=False).agg(winmean).groupby(['eyetracker','subject'],as_index=False).agg(winmean)[['eyetracker','subject']+fields]
-    tmp_main = df_agg.groupby(['eyetracker']).agg([winmean,percentile(25),percentile(75)])
     
-    tmp_el = df_agg.query("eyetracker=='el'")[fields]
-    tmp_pl = df_agg.query("eyetracker=='pl'")[fields]
-    tmp_diff = tmp_el.reset_index(drop=True) -tmp_pl.reset_index(drop=True)
+    if 'eyetracker' in df.columns:
+        et = 'eyetracker'
+        el = 'el'
+        pl = 'pl'
+        
+    else:
+        et = 'et'
+        el = 'EyeLink'
+        pl = 'Pupil Labs'
     
-    tmp_diff.agg([winmean_cl_boot])
-
+    
+    if agg_first_over_blocks:
+        df_agg = df.groupby([et,'subject','block'],as_index=False).agg(winmean).groupby([et,'subject'],as_index=False).agg(winmean)[[et,'subject']+fields]
+    else:
+        df_agg = df.groupby([et,'subject'],as_index=False).agg(winmean)[[et,'subject']+fields]
+    
+    
+    tmp_main = df_agg.groupby([et]).agg([winmean,percentile(25),percentile(75)])
+    
+    
+    tmp_el = df_agg.loc[df_agg[et]==el,fields]
+    tmp_pl = df_agg.loc[df_agg[et]==pl,fields]
+    
+    
+    
+    
+    tmp_diff = tmp_el.reset_index(drop=True) - tmp_pl.reset_index(drop=True)
+    
+    
     tmp_diff_agg = tmp_diff.agg([winmean_cl_boot])
+    roundto = str(round_to)
     for c in tmp_diff_agg.columns.levels[0]:
         diff_tuple = tuple(tmp_diff_agg[c].values[0])
         main_tuple = tuple(tmp_main[c].values[0],) + tuple(tmp_main[c].values[1])
         all_tuple = (c,)+main_tuple + diff_tuple
-        print('Winsorized mean %s of Eyelink was %.2f (IQR: %.2f to %.2f), of Pupil Labs %.2f (IQR: %.2f to %.2f), with a paired difference of %.2f ($CI_{95}$: %.2f to %.2f)'%(all_tuple))
+        printstr = 'For EyeLink the winsorized mean %s was \SI{%.'+roundto+'f}{} (IQR: \SI{%.'+roundto+'f}{} to \SI{%.2f}{}), for Pupil Labs \SI{%.'+roundto+'f}{} (IQR: \SI{%.'+roundto+'f}{} to \SI{%.'+roundto+'f}{}), with a paired difference of \SI{%.'+roundto+'f}{} ($CI_{95}$: \SI{%.'+roundto+'f}{} to \SI{%.'+roundto+'f}{})'
+        print(printstr%(all_tuple))
