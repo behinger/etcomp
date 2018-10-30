@@ -17,4 +17,5 @@ msgpack_python
 glfw
 matplotlib
 nslr
-cysignal
+cysignals
+python-dateutil

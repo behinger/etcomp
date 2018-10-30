@@ -22,7 +22,7 @@ python-reqs: ${VENV}
 	( \
 	. ${VENV}/bin/activate; \
 	pip3 install --upgrade -r requirements.pip;\
-	pip3 install setuptools -U --force
+	pip3 install setuptools -U --force;\
 	pip3 install git+https://github.com/pupil-labs/pyglui;\
 	pip3 install git+https://github.com/has2k1/plotnine.git;\
 	)
@@ -94,7 +94,8 @@ opencvbuild = ${installfolder}/build/build_opencv
 ${opencvsrc}:
 			git clone https://github.com/itseez/opencv ${opencvsrc}
 			cd ${opencvsrc} &&\
-			git checkout 68c92908d57f074c9e301c8f8f2419aaa0a3fe93
+			git checkout b38c50b
+ 
 
 
 
