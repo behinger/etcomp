@@ -47,7 +47,7 @@ def print_results(df,fields = ['duration','accuracy','rms','sd'], round_to=2, ag
         et = 'et'
         el = 'EyeLink'
         pl = 'Pupil Labs'
-    
+
     
     if agg_first_over_blocks:
         df_agg = df.groupby([et,'subject','block'],as_index=False).agg(winmean).groupby([et,'subject'],as_index=False).agg(winmean)[[et,'subject']+fields]
@@ -70,10 +70,11 @@ def print_results(df,fields = ['duration','accuracy','rms','sd'], round_to=2, ag
 
     roundto = str(round_to)
 
+
     for c in tmp_diff_agg.columns.levels[0]:
         diff_tuple = tuple(tmp_diff_agg[c].values[0])
         main_tuple = tuple(tmp_main[c].values[0],) + tuple(tmp_main[c].values[1])
         all_tuple = (c,)+main_tuple + diff_tuple
-        
+
         printstr = 'For EyeLink the winsorized mean %s was \SI{%.'+roundto+'f}{} (IQR: \SI{%.'+roundto+'f}{} to \SI{%.2f}{}), for Pupil Labs \SI{%.'+roundto+'f}{} (IQR: \SI{%.'+roundto+'f}{} to \SI{%.'+roundto+'f}{}), with a paired difference of \SI{%.'+roundto+'f}{} ($CI_{95}$: \SI{%.'+roundto+'f}{} to \SI{%.'+roundto+'f}{})'
         print(printstr%(all_tuple))
