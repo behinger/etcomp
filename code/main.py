@@ -209,9 +209,9 @@ LARGE_and_SMALL_GRID.display_fixations(raw_all_grids_df, option='fixations')
 raw_freeview_df, raw_fix_count_df = condition_df.get_condition_df(subjectnames, ets, condition='FREEVIEW')
 
 # Find out which pictures are only shown for VP1
-# VP1 saw:
-# VP3 saw:
-# Difference:  
+# VP1 saw: ['22', '6', '17', '15', '23', '18', '16', '14', '19', '8', '2', '10', '13', '21', '5', '3', '20', '1']
+# VP3 saw: ['11', '16', '12', '17', '7', '9', '15', '1', '18', '3', '13', '14', '2', '8', '5', '6', '10', '4']
+# Difference: Pictures that were only shown in VP1:  ['21', '23', '19', '20', '22'] 
 print(raw_freeview_df.head())
 pic_id_VP1 =list(raw_freeview_df.query("subject=='VP1'").pic_id.unique())
 pic_id_VP3 =list(raw_freeview_df.query("subject=='VP3'").pic_id.unique()) 
