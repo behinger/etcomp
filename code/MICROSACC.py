@@ -13,7 +13,7 @@ import functions.plotnine_theme as mythemes
 
 logger = logging.getLogger(__name__)
 
-
+import MISC
 
 def detect_microsaccades(etsamples,etevents,etmsgs):
     all_microsaccades = pd.DataFrame()
@@ -83,6 +83,8 @@ def plot_default(microsaccades,subtype="count"):
         + ggtitle('Microsaccades'))
     
     
+    MISC.print_results(microsaccades_grouped, fields = ['count', 'amplitude winmean'], agg_first_over_blocks=False,round_to=2)
+
     return p
 
 

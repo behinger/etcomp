@@ -48,7 +48,7 @@ import logging
 foldernames       = helper.get_subjectnames('/net/store/nbp/projects/etcomp/')
 
 # TODO find out whats wrong with vp3 and vp12 and fix and then use vp3 again!!
-rejected_subjects = ['pilot', 'log_files', 'surface', 'results', '007', 'VP8', 'VP21','VP7']
+rejected_subjects = ['pilot', 'log_files', 'surface', 'results', 'backup', 'conversion.log', 'compress_videos.sh', '007', 'VP8', 'VP21','VP7']
 subjectnames      = [subject for subject in foldernames if subject not in rejected_subjects]
 ets               = ['el', 'pl']    
 
@@ -207,6 +207,15 @@ LARGE_and_SMALL_GRID.display_fixations(raw_all_grids_df, option='fixations')
 #############
 # Freeviewing
 raw_freeview_df, raw_fix_count_df = condition_df.get_condition_df(subjectnames, ets, condition='FREEVIEW')
+
+# Find out which pictures are only shown for VP1
+# VP1 saw:
+# VP3 saw:
+# Difference:  
+print(raw_freeview_df.head())
+pic_id_VP1 =list(raw_freeview_df.query("subject=='VP1'").pic_id.unique())
+pic_id_VP3 =list(raw_freeview_df.query("subject=='VP3'").pic_id.unique()) 
+print('Pictures that were only shown in VP1: ', list(set(pic_id_VP1) - set(pic_id_VP3)))
 
 # plot the fixations as a heatmap
 # TODO annotation how many fixations from how many pictures are used for each eyetracker

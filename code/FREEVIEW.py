@@ -195,8 +195,7 @@ def plot_number_of_fixations(raw_fix_count_df, option=None):
         raise ValueError('You must set options to a valid option. See documentation.')
     
 
- 
-
+    
 def plot_fixation_durations(raw_freeview_df, option=None):
     """
     makes a density plot to investigate on the fixation durations
