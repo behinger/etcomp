@@ -1,5 +1,4 @@
 import numpy as np
-import pystan
 import functions.et_helper as helper
 import pandas as pd
 import sys
@@ -117,6 +116,7 @@ def get_smooth_data(etsamples,etmsgs,select=''):
     return(epochs)
            
 def fit_bayesian_model(etsamples,etmsgs,etevents):
+    import pystan
     # compile the model
     sm = pystan.StanModel(file="/net/store/nbp/users/behinger/projects/etcomp/code/changepoint.stan")  
     
