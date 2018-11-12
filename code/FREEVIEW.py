@@ -41,8 +41,8 @@ def plot_heatmap(raw_freeview_df,raw_fix_count_df, only_horizontal_heatmap=True)
     # the pictures have a size of 1200 x 1500 pixels
     # factor of 0.6 as we scaled the  pictures in the matlabscript (experiment)
     # they are centered  --> divide by 2
-    pic_size_horizontal = helper.size_px2deg(1500*0.6) 
-    pic_size_vertical = helper.size_px2deg(1200*0.6) 
+    pic_size_horizontal = helper.size_px2deg(1500*0.6) /2
+    pic_size_vertical = helper.size_px2deg(1200*0.6) /2
     
     
     # mean fixation location data
@@ -298,8 +298,8 @@ def plot_scanpath(etsamples, etmsgs, subject,pic_id):
         plt.scatter(x_fix, y_fix, alpha=0.5, s=10, c=colorlist[1])
 
 
-    pic_size_horizontal = helper.size_px2deg(1500*0.6) 
-    pic_size_vertical = helper.size_px2deg(1200*0.6) 
+    pic_size_horizontal = helper.size_px2deg(1500*0.6)/2 
+    pic_size_vertical = helper.size_px2deg(1200*0.6)/2
 
     plt.imshow(img_resize,alpha=0.3, extent=[-(pic_size_horizontal), (pic_size_horizontal), -(pic_size_vertical), (pic_size_vertical)])
 
