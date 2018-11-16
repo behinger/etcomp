@@ -209,9 +209,9 @@ def plot_fixation_durations(raw_freeview_df, option=None):
         # use all detected fixations of all subjects and plot desity for each eyetracker
         # Caution: ets might have different number of detected saccades as basis!
         return (ggplot(raw_freeview_df, aes(x='duration', color='et'))
-                    + geom_density()
+                    + geom_freqpoly(binwidth=0.025)
                 
-                    + xlim([0,1])
+                    + coord_cartesian(xlim=[0,1.5])
                     + xlab('fixation duration [s]')
                     + ggtitle('Fixation durations'))
                 
