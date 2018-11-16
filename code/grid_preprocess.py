@@ -67,7 +67,7 @@ init_logger.update_logger_filepath(newpath = os.path.join(logfilepath, 'log_prep
 
 logger = logging.getLogger(__name__)
 ets               = ['pl', 'el']    
-ets = ['el']
+
 # preprocess for all subjects
 
 for et in ets:

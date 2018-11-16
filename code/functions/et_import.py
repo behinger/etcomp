@@ -198,6 +198,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # TODO understand and fix this
     count = 0
     while np.any(elsamples.time>1e10) and count < 40:
+        from pyedfread import edf # parses SR research EDF data files into pandas df
         imp.reload(edf)
         count = count + 1
         # logger.error(elsamples.time[elsamples.time>1e10])

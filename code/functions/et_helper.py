@@ -285,11 +285,12 @@ def px2deg(px, orientation, mm_per_px=0.276,distance=600):
         center_x = 1920 / 2
         px       = px - center_x
     
-    if orientation == 'vertical':
+    elif orientation == 'vertical':
         center_y = 1080 / 2
         px       = px - center_y
-           
-    deg = 2*np.arctan2(px*mm_per_px,distance)*180/np.pi
+    else:
+        raise('unknown option')
+    deg = np.arctan2(px*mm_per_px,distance)*180/np.pi
 
     return deg
 

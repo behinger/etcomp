@@ -92,6 +92,7 @@ def pl_accuracy(subject):
     tmp = fake_accuracy()
     for cal,acc in combined:
         gaze_pos = pl_recalibV2(cal['pupil_list'],cal['ref_list'],acc['pupil_list'],calibration_mode='2d',eyeID=None)    
+        
         results= tmp.calc_acc_prec_errlines(gaze_pos,acc['ref_list'],fake_gpool.capture.intrinsics)
         accu.append(results[0].result)
         prec.append(results[1].result)
