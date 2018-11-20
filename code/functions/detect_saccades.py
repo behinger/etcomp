@@ -63,7 +63,12 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents=None,et = None,engbe
             interpgaze['is_blink'] =  etsamples.type=='blink' 
         else:
             interpgaze['is_blink'] = 0
-        fs = 500
+        
+        if np.isclose(etsamples.iloc[1:3].smpl_time.agg(np.diff),0.002):
+            fs = 500
+        else:
+            # for 5 subjects we have a sampling rate of only 250Hz
+            fs = 250
          
  
     # apply the saccade detection algorithm     
