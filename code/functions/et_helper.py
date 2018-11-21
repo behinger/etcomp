@@ -454,7 +454,7 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
 def winmean(x,perc = 0.2,axis=0):
     return(np.mean(winsorize(x,perc,axis=axis),axis=axis))
 
-def winmean_cl_boot(series, n_samples=1000, confidence_interval=0.95,
+def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95,
                  random_state=None):
     return bootstrap_statistics(series, winmean,
                                 n_samples=n_samples,
