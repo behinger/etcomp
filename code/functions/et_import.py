@@ -81,7 +81,8 @@ def raw_pl_data(subject='',datapath='/net/store/nbp/projects/etcomp/',postfix='r
     return original_pldata
 
 
-def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=True, surfaceMap=True,parsemsg=True):
+def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=True, surfaceMap=True,parsemsg=True,fixTimeLag=True,px2deg=True,pupildetect=None,
+             pupildetect_options=None):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
     #           surfaceMap:
@@ -104,15 +105,28 @@ def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=Tr
     # (is still a dictionary here)
     original_pldata = raw_pl_data(subject=subject, datapath=datapath)
         
-
+    if pupildetect is not None:
+        from functions.nbp_pupildetect import  nbp_pupildetect
+        if subject == '':
+            filename = datapath
+        else:
+            filename = os.path.join(datapath,subject,'raw')
+   
+        pupil_positions_0= nbp_pupildetect(detector_type = pupildetect, eye_id = 0,folder=filename,pupildetect_options=pupildetect_options)
+        pupil_positions_1= nbp_pupildetect(detector_type = pupildetect, eye_id = 1,folder=filename,pupildetect_options=pupildetect_options)
+        pupil_positions = pupil_positions_0 + pupil_positions_1
+        original_pldata['pupil_positions'] = pupil_positions
+        recalib=True
+        
     # recalibrate data
     if recalib:
         from functions import nbp_recalib
         original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
     # Fix timing 
-    # Pupillabs cameras have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).
+    # Pupillabs cameras ,have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).
     # We fix this here
-    original_pldata = pl_fix_timelag(original_pldata)  
+    if fixTimeLag:
+        original_pldata = pl_fix_timelag(original_pldata)  
     
     if surfaceMap:
 
@@ -139,7 +153,7 @@ def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=Tr
     
 
     # get the nice samples df
-    plsamples = make_df.make_samples_df(pldata) #
+    plsamples = make_df.make_samples_df(pldata,px2deg=px2deg) #
     
     
     if parsemsg:

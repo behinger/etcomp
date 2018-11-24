@@ -59,8 +59,12 @@ def nbp_recalib(pupil,calibration_mode='2d',eyeID=None):
             
         pupilPosition_cut =[pupil['pupil_positions'][i] for i in np.where(idx)[0].tolist()]
         print(len(single_calib))
-
-        single_recalib_data = pl.pl_recalibV2(single_calib['pupil_list'],single_calib['ref_list'],pupilPosition_cut,calibration_mode=calibration_mode,eyeID = eyeID)        
+        
+        try:
+            single_recalib_data = pl.pl_recalibV2(single_calib['pupil_list'],single_calib['ref_list'],pupilPosition_cut,calibration_mode=calibration_mode,eyeID = eyeID)        
+        except:
+            continue
+                
         
         recalib_data = recalib_data + single_recalib_data
         

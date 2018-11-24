@@ -22,7 +22,7 @@ import logging
 
 #%% MAKE SAMPLES
 
-def make_samples_df(etsamples):
+def make_samples_df(etsamples,px2deg=True):
    
     fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel'])
     
@@ -34,11 +34,12 @@ def make_samples_df(etsamples):
     for fieldname in fields_to_fillin:
         etsamples_reduced.loc[:,fieldname] = np.nan
     
-    # convert pixels into visual degrees
-    # VD
-    etsamples_reduced.gx = helper.px2deg(etsamples_reduced.gx, 'horizontal')
-    etsamples_reduced.gy = helper.px2deg(etsamples_reduced.gy, 'vertical')
-    
+    if px2deg:
+        # convert pixels into visual degrees
+        # VD
+        etsamples_reduced.gx = helper.px2deg(etsamples_reduced.gx, 'horizontal')
+        etsamples_reduced.gy = helper.px2deg(etsamples_reduced.gy, 'vertical')
+
     return(etsamples_reduced)
 
 

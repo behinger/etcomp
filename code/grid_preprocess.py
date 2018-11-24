@@ -44,7 +44,7 @@ ets               = ['el', 'pl']
 print(sys.argv)
 if len(sys.argv)>1:
     job_name = sys.argv[1]
-    assert(job_name in ['etcomp','etcomp_hmm','etcomp_hmm_nosmooth'])
+    assert(job_name in ['etcomp','etcomp_hmm','etcomp_hmm_nosmooth','etcomp_3d'])
     import subprocess 
     if len(sys.argv)>2:
         subprocess.check_output(["qsub",'-cwd','-N',job_name,'-t',sys.argv[2],'-l','mem=20G,h=!ramsauer.ikw.uni-osnabrueck.de','-e',logfilepath,'-o',logfilepath,'-q','nbp.q','grid_preprocess.sge'])
@@ -75,6 +75,8 @@ for et in ets:
         logger.critical('Eyetracker: %s    Subject: %s ', et, subject)
         if job_name == 'etcomp':
             etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations ),outputprefix='')
+        elif job_name == 'etcomp_3d':
+            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations ),outputprefix='3D',pupildetect='3D')
         elif job_name == 'etcomp_hmm':
             etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=False,save=True,eventfunctions=(make_blinks,detect_events_hmm),outputprefix='hmm_')
         elif job_name == 'etcomp_hmm_nosmooth':

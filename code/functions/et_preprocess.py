@@ -24,7 +24,7 @@ import logging
 
 #%%
     
-def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations),outputprefix=''):    
+def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations),outputprefix='', **kwargs):    
     # Output:     3 cleaned dfs: etsamples, etmsgs, etevents   
     
     # get a logger for the preprocess function    
@@ -44,10 +44,10 @@ def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=Fal
     logger.debug("Importing et data")
     if et == 'pl':
         logger.debug('Caution: etevents might be empty')
-        etsamples,etmsgs,etevents = import_pl(subject=subject,datapath=datapath)
+        etsamples,etmsgs,etevents = import_pl(subject=subject,datapath=datapath, **kwargs)
     elif et == 'el':
         from functions.et_import import import_el
-        etsamples,etmsgs,etevents = import_el(subject=subject,datapath=datapath)
+        etsamples,etmsgs,etevents = import_el(subject=subject,datapath=datapath, **kwargs)
     else:
         raise ValueError("Eyetracker must be el or pl!") 
         
