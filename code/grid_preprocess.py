@@ -39,6 +39,7 @@ ets               = ['el', 'pl']
 #subjectnames = ['VP20']
 
 
+ets=['pl']
 #venv=> python3 grid_preprocess etcomp_hmm 
 
 print(sys.argv)
@@ -76,7 +77,7 @@ for et in ets:
         if job_name == 'etcomp':
             etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations ),outputprefix='')
         elif job_name == 'etcomp_3d':
-            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations ),outputprefix='3D',pupildetect='3D')
+            etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=False,save=True,eventfunctions=(make_blinks,make_saccades,make_fixations ),outputprefix='3D',pupildetect='3d')
         elif job_name == 'etcomp_hmm':
             etsamples, etmsgs, etevents = preprocess.preprocess_et(et,subject,load=False,save=True,eventfunctions=(make_blinks,detect_events_hmm),outputprefix='hmm_')
         elif job_name == 'etcomp_hmm_nosmooth':

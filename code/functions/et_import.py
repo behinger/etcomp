@@ -90,6 +90,12 @@ def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=Tr
     
     # get a logger
     logger = logging.getLogger(__name__)
+    if pupildetect:
+        # has to be imported first
+        import av
+        import ctypes
+        ctypes.cdll.LoadLibrary('/net/store/nbp/users/behinger/projects/etcomp/local/build/build_ceres_working/lib/libceres.so.2')
+
     
     if surfaceMap:
         # has to be imported before nbp recalib
@@ -105,7 +111,7 @@ def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=Tr
     # (is still a dictionary here)
     original_pldata = raw_pl_data(subject=subject, datapath=datapath)
         
-    if pupildetect is not None:
+    if pupildetect is not None: # can be 2d or 3d
         from functions.nbp_pupildetect import  nbp_pupildetect
         if subject == '':
             filename = datapath
@@ -121,6 +127,8 @@ def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=Tr
     # recalibrate data
     if recalib:
         from functions import nbp_recalib
+        if pupildetect is not None:
+            original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata,calibration_mode=pupildetect)
         original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
     # Fix timing 
     # Pupillabs cameras ,have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).

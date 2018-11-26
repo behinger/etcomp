@@ -1,8 +1,7 @@
 #!/bin/bash
 #$ -N etcomp
 
-export LD_LIBRARY_PATH=/net/store/nbp/projects/lib/edfread/build/linux64:../local/build/build_ffmpeg/lib/:../local/build/build_glfw/lib/:$LD_LIBRARY_PATH
-
+export LD_LIBRARY_PATH=/net/store/nbp/projects/lib/edfread/build/linux64:../local/build/build_ffmpeg/lib/:../local/build/build_glfw/lib/:../local/build/eigen3/:../local/build/eigen3/Eigen:$LD_LIBRARY_PATH    
 
 source ../local/etcompvenv/bin/activate &&\
 python3 grid_preprocess.py

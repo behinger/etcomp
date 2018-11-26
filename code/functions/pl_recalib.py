@@ -57,7 +57,7 @@ def list_to_stream(gaze_list):
 def notify_all(self,notification=''):
         logger.info(notification)
 
-def gen_fakepool(inp_gaze=[],calibration_mode='2D'): 
+def gen_fakepool(inp_gaze=[],calibration_mode='2d'): 
     
         from lib.pupil.pupil_src.shared_modules.plugin import Plugin_List
         
