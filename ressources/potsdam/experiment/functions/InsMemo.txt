@@ -1,6 +1,0 @@
-1. Teil des Experiments \n
-
-Sobald Sie kalibriert wurden, beginnt das eigentliche Experiment. Die Präsentation des Bildes endet nach 10 Sekunden. Den Beginn eines Durchgangs startet Ihr/e VersuchleiterIn, wenn sie bereit dazu sind. 
-Zu Beginn eines Durchgangs erscheint zunächst ein weißes Kreuz auf schwarzem Hintergrund und im Anschluss ein schwarzes Kreuz auf weißem Hintergrund. Fixieren sie dieses bitte, bis ein Bild erscheint. \b 
-
-Weiter mit der Leertaste. \n
