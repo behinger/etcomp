@@ -1,0 +1,5 @@
+2. Teil des Experiments \n
+
+Im zweiten Teil des Experiments sollen Sie entscheiden, ob ein dargebotenes Bild neu ist oder bereits im ersten Teil des Experimentes präsentiert wurde. Drücken Sie bei neuen Bildern die 'linke Pfeiltaste' und bei bekannten Bildern die 'rechte Pfeiltaste'. Bei falscher Antwort ertönt ein kurzer Warnton. Antworten Sie bitte immer so schnell wie möglich und benutzten Sie dabei immer Zeige- und Ringfinger dergleichen Hand. \b
+
+Weiter mit einer der Pfeiltasten. \n
