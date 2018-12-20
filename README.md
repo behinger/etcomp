@@ -1,3 +1,6 @@
+# Visual Test Battery
+If you want to use the visual test battery, we recommend to use the scripts in the folder "experiment". The scripts in "experiment_ehinger2019" are for reproducability reasons. We updated several small things e.g. more consistent trigger messages and the likes which still need to be fixed in the analysis!
+
 # How to use etcomp
 
 We made great efforts to not need root rights but still be able to use pupil labs from source. The GUI is non-functional. pyAV somehow is a newer version and we need to fix some things in pupillabs (forked version is linked)
