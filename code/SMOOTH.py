@@ -223,7 +223,7 @@ def plot_catchup_amplitudes(smooth):
         #+stat_summary(aes(group='group'),fun_y=winmean,geom='point')
         +stat_summary(fun_data=winmean_cl_boot)
         
-        +ylab('Number of Catchup Saccades')
+        +ylab('Amplitude of Catchup Saccades')
         )
     
     return(p)
