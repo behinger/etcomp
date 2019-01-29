@@ -1,11 +1,11 @@
 # Eye Tracking Comparison
 
 This project procides:
-  - Matlab/PsychophysicsToolbox-3: Visual Test Battery with 9 different Eye Tracking Tasks
-  - Python: Preprocessing Pipeline for Pupil Labs Glasses & Eyelink 1000. Modular for other eye trackers
-  - Python: Analysis Scripts for Ehinger,Groß et al 2019
-  - Makefile for all requirements, including Pupil Labs Software WITHOUT root/sudo necessity (see below for restrictions)
-  - Pupil Labs Eye Videos + World Video of 15 subjects + concurrent Eyelink Streams at: 10.6084/m9.figshare.c.4379810
+  - **Visual Test Battery**  with 9 different Eye Tracking Tasks (Matlab/PsychophysicsToolbox-3)
+  - **Preprocessing Pipeline** for **Pupil Labs Glasses** & **Eyelink 1000**. Modular for other eye trackers (Python)
+  - **Analysis Scripts** for **Ehinger,Groß et al 2019** (Python)
+  - **Makefile** for all requirements, including **Pupil Labs Software WITHOUT root/sudo** necessity (see below for restrictions)
+  - Pupil Labs **Eye Videos** + World Video of **15 subjects** + **concurrent Eyelink** data [at figsare](10.6084/m9.figshare.c.4379810)
   
 # Instructions
 Get the project GIT and initialize the submodules
