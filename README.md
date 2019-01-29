@@ -3,9 +3,9 @@
 This project procides:
   - **Visual Test Battery**  with 9 different Eye Tracking Tasks (Matlab/PsychophysicsToolbox-3)
   - **Preprocessing Pipeline** for **Pupil Labs glasses** & **EyeLink 1000**. Modular for other eye trackers (Python)
-  - **Analysis Scripts** for **Ehinger,Groß et al 2019** (Python)
+  - **Analysis Scripts** for **Ehinger, Groß et al 2019** (Python)
   - **Makefile** for all requirements, including **Pupil Labs Software WITHOUT root/sudo** necessity (see below for restrictions)
-  - Pupil Labs **Eye Videos** + World Video of **15 subjects** + **concurrent Eyelink** data [at figsare](10.6084/m9.figshare.c.4379810)
+  - Pupil Labs **Eye Videos** + World Video of **15 subjects** + **concurrent EyeLink** data [at figsare](10.6084/m9.figshare.c.4379810)
   
 # Instructions
 Get the project GIT and initialize the submodules
@@ -14,14 +14,14 @@ git clone https://github.com/behinger/etcomp
 git submodule update --init
 ```
 
-This makefile generates a virtualenv, download all required python modules, install all requisits for pupil labs. This includes opencv, it my take quite a while!
+This makefile generates a virtualenv, downloads all required python modules, installs all requisits for Pupil Labs. This includes opencv, it my take quite a while!
 ```
 make
 ```
 
 ## Visual Test Battery
 #### Acuity TEST
-[We used this acuity test](http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&distance=1&distanceUnits=meters&chartType=2&optoType=0&displayType=1&rowIndex=14&mirror=false&animate=false&crowd=false&nearFar=near&col1=#dedede&col2=#f10708&col3=#20e4fa&col4=#000000&mode3d=0)
+[We used this acuity test](http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&distance=1&distanceUnits=meters&chartType=2&optoType=0&displayType=1&rowIndex=14&mirror=false&animate=false&crowd=false&nearFar=near&col1=#dedede&col2=#f10708&col3=#20e4fa&col4=#000000&mode3d=0).
 Be sure to setup monitor size correctly!
 #### Run Experiment
 Experiment can be run by ./experiment/ETcomp.m
