@@ -1,12 +1,51 @@
-# How to use etcomp
+# Eye Tracking Comparison
 
-We made great efforts to not need root rights but still be able to use pupil labs from source. The GUI is non-functional. pyAV somehow is a newer version and we need to fix some things in pupillabs (forked version is linked)
+This project procides:
+  - Matlab/PsychophysicsToolbox-3: Visual Test Battery with 9 different Eye Tracking Tasks
+  - Python: Preprocessing Pipeline for Pupil Labs Glasses & Eyelink 1000. Modular for other eye trackers
+  - Python: Analysis Scripts for Ehinger,Groß et al 2019
+  - Makefile for all requirements, including Pupil Labs Software WITHOUT root/sudo necessity (see below for restrictions)
+  - Pupil Labs Eye Videos + World Video of 15 subjects + concurrent Eyelink Streams at: 10.6084/m9.figshare.c.4379810
+  
+# Instructions
+Get the project GIT and initialize the submodules
 ```
 git clone https://github.com/behinger/etcomp
 git submodule update --init
+```
+
+This makefile generates a virtualenv, download all required python modules, install all requisits for pupil labs. This includes opencv, it my take quite a while!
+```
 make
 ```
-Should do all the magic for you.
+
+## Visual Test Battery
+### Acuity TEST
+[We used this acuity test](http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&distance=1&distanceUnits=meters&chartType=2&optoType=0&displayType=1&rowIndex=14&mirror=false&animate=false&crowd=false&nearFar=near&col1=#dedede&col2=#f10708&col3=#20e4fa&col4=#000000&mode3d=0)
+Be sure to setup monitor size correctly!
+
+## Python Preprocessing Pipeline
+You can run a subject using the preprocessing pipeline (from the folder "code").
+We took some care to make it modular, but the pipeline should be more thought as a starting base and needs modification for your own setup.
+```
+import functions.et_preprocess
+from functions.detect_events import make_blinks,make_saccades,make_fixations
+data = preprocess_et(et='pl', datapath='/net/store/nbp/projects/etcomp/sub-1/raw'eventfunctions=(make_blinks,make_saccades,make_fixations))
+```
+- The datapath should be a pupil labs folder (if et='pl'), or a folder with an eyelink-EDF file (if et='el')
+- The eventfunctions are modular, here we use the default ones implemented by us, but you could simply replace them with other functions. The eventfunctions are executed in order.
+- We are using loggers for messages, try to use the "debug" flag if you want more information!
+
+## Python Analysis Pipeline
+Our analyses (and all results included in the paper) can be found in the notebook: code/main.ipynb
+
+Further analyses can be found in the capital notebooks eg. SMOOTH.ipynb, GRID.ipynb. 
+Functions for each tasks are in SMOOTH.py, or GRID.py
+
+
+## Makefile
+
+We made great efforts to not need root rights but still be able to use pupil labs from source. The GUI is non-functional. pyAV somehow is a newer version and we need to fix some things in pupillabs (forked version is linked)
 
 You need these packages definitely installed  using sudo/ root (there might be more):
 ```
@@ -17,12 +56,25 @@ python3-dev
 libglew-dev <-- this one is usually not installed
 xorg-dev libglu1-mesa-dev <-- needed for libglew
 ```
+(In principle you can also try to compile glew, but I could not manage properly.)
+
+### Add Paths
+After installation run 
+``` make export-paths```
+
+and everytime before running spider or python, you need to run these to add some dependencies for python to use.
+
+You can put these in your `~./bashrc` so that everytime you run a terminal, you will also have the paths automatically (highly recommend)
+
+### EDFread
 
 
+Pyedfread also needs a dependencie from SR-research (libedfapi.so), which is not publicly available. Checkout the Sr research forum!
+
+-------------------------------------------------------------
 
 # Old instructions
-### ACUITY TEST
-http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&distance=1&distanceUnits=meters&chartType=2&optoType=0&displayType=1&rowIndex=14&mirror=false&animate=false&crowd=false&nearFar=near&col1=#dedede&col2=#f10708&col3=#20e4fa&col4=#000000&mode3d=0
+These instructions here are notes on how to instlal different versions of Pupil Labs Glasses.
 
 # How to start the compiled binary of pupil player / capture locally under ubuntu:
 
@@ -32,48 +84,10 @@ http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&dista
 - Optional: Copy the file to a more useful directory e.g. ```/net/store/nbp/users/yourRZname```
 - go to the folder ```cd /folder/to/be/extracted/to``` and run ```./pupil_player```
 
-# Git
-```
-git clone https://github.com/behinger/etcomp
-git submodule update --init
-```
-The latter is necessary to get the files from pupillabs, which we partially will make use of.
-
-# Change pupil labs code
-- We need to comment out the 4 lines in references_surface init related to fonts (at least on Ubuntu)
-- With our pyav we need to update ``` mode='time'``` to ```whence='time'```. This is in the file ```video_capture/file_backend.py``` twice
-# NEW INSTALLATION
-
-We have a large list of dependencies. Easiest is to install using:
-
-``` make install ```
-
-Then run 
-``` make export-paths```
-
-and everytime before running spider or python, you need to run these to add some dependencies for python to use.
-
-You can put these in your `~./bashrc` so that everytime you run a terminal, you will also have the paths automatically (highly recommend)
 
 
-You need these packages definitely installed (there might be more):
-```
-automake
-cmake
-pkgconfig
-python3-dev
-libglew-dev <-- this one is usually not installed
-xorg-dev libglu1-mesa-dev <-- needed for libglew
-```
-
-In principle you can also try to compile glew, but I could not manage properly.
-
-Pyedfread also needs a dependencie from SR-research (libedfapi.so), which is not publicly available. Checkout the Sr research forum!
-
-
-
-# What follows now is old installation instruction, they were merged to make install
-# Python EDFREAD
+## What follows now is old installation instruction, they were merged to make install
+## Python EDFREAD
 
 
 - go to ```lib/pyedfread```
@@ -85,21 +99,7 @@ Pyedfread also needs a dependencie from SR-research (libedfapi.so), which is not
 - run ```python setup.py install```
 
 
-# pip packages
-so far, probably missed a few
-
-```
-Cython==0.25.2
-h5py==2.7.1
-ipython==6.3.1
-msgpack-python==0.4.8
-numpy==1.13.3
-pandas==0.20.3
-pyedfread==0.1
-scipy==0.19.1
-spyder==3.2.8
-```
-# install opencv
+## install opencv
 - compile opencv3 as pupil-labs
 ```
   git clone https://github.com/itseez/opencv
@@ -110,7 +110,7 @@ spyder==3.2.8
   make install
   
   ```
-# isntalling pyav under linux
+## isntalling pyav under linux
 This one was difficult
 - get ffmpeg3 (only v.2 is installed by defaul)
 - I used https://launchpad.net/ubuntu/+archive/primary/+files/ffmpeg_3.3.4.orig.tar.xz
