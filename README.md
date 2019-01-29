@@ -2,7 +2,7 @@
 
 This project procides:
   - **Visual Test Battery**  with 9 different Eye Tracking Tasks (Matlab/PsychophysicsToolbox-3)
-  - **Preprocessing Pipeline** for **Pupil Labs Glasses** & **Eyelink 1000**. Modular for other eye trackers (Python)
+  - **Preprocessing Pipeline** for **Pupil Labs glasses** & **EyeLink 1000**. Modular for other eye trackers (Python)
   - **Analysis Scripts** for **Ehinger,Groß et al 2019** (Python)
   - **Makefile** for all requirements, including **Pupil Labs Software WITHOUT root/sudo** necessity (see below for restrictions)
   - Pupil Labs **Eye Videos** + World Video of **15 subjects** + **concurrent Eyelink** data [at figsare](10.6084/m9.figshare.c.4379810)
