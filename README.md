@@ -20,9 +20,16 @@ make
 ```
 
 ## Visual Test Battery
-### Acuity TEST
+#### Acuity TEST
 [We used this acuity test](http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&distance=1&distanceUnits=meters&chartType=2&optoType=0&displayType=1&rowIndex=14&mirror=false&animate=false&crowd=false&nearFar=near&col1=#dedede&col2=#f10708&col3=#20e4fa&col4=#000000&mode3d=0)
 Be sure to setup monitor size correctly!
+#### Run Experiment
+Experiment can be run by ./experiment/ETcomp.m
+
+Ubuntu: The experiment communicates with Pupil Labs using ZMQ. To get this to work, you have to load a library before running matlab:
+```
+LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 matlab
+```
 
 ## Python Preprocessing Pipeline
 You can run a subject using the preprocessing pipeline (from the folder "code").
