@@ -21,10 +21,10 @@ make
 
 ## Visual Test Battery
 #### Acuity TEST
-[We used this acuity test](http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&distance=1&distanceUnits=meters&chartType=2&optoType=0&displayType=1&rowIndex=14&mirror=false&animate=false&crowd=false&nearFar=near&col1=#dedede&col2=#f10708&col3=#20e4fa&col4=#000000&mode3d=0).
+[We used this acuity test](http://www.openoptometry.com/Alpha/v4_0/OTC.html#lineSize=1.8&lineUnits=cm&distance=1&distanceUnits=meters&chartType=2&optoType=0&displayType=1&rowIndex=14&mirror=false&animate=false&crowd=false&nearFar=near&col1=#dedede&col2=#f10708&col3=#20e4fa&col4=#000000&mode3d=0). 
 Be sure to setup monitor size correctly!
 #### Run Experiment
-Experiment can be run by ./experiment/ETcomp.m
+The experiment can be run by ./experiment/ETcomp.m
 
 Ubuntu: The experiment communicates with Pupil Labs using ZMQ. To get this to work, you have to load a library before running matlab:
 ```
@@ -69,7 +69,7 @@ xorg-dev libglu1-mesa-dev <-- needed for libglew
 After installation run 
 ``` make export-paths```
 
-and everytime before running spider or python, you need to run these to add some dependencies for python to use.
+and everytime before running Spyder or Python, you need to run these to add some dependencies for Python to use.
 
 You can put these in your `~./bashrc` so that everytime you run a terminal, you will also have the paths automatically (highly recommend)
 
@@ -81,7 +81,7 @@ Pyedfread also needs a dependencie from SR-research (libedfapi.so), which is not
 -------------------------------------------------------------
 
 # Old instructions
-These instructions here are notes on how to instlal different versions of Pupil Labs Glasses.
+These instructions here are notes on how to instlal different versions of Pupil Labs glasses.
 
 # How to start the compiled binary of pupil player / capture locally under ubuntu:
 
