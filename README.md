@@ -14,7 +14,7 @@ git clone https://github.com/behinger/etcomp
 git submodule update --init
 ```
 
-This makefile generates a virtualenv, downloads all required python modules, installs all requisits for Pupil Labs. This includes opencv, it my take quite a while!
+This Makefile generates a virtualenv, downloads all required python modules, installs all requisits for Pupil Labs. This includes opencv, it my take quite a while!
 ```
 make
 ```
@@ -37,10 +37,10 @@ We took some care to make it modular, but the pipeline should be more thought as
 ```
 import functions.et_preprocess
 from functions.detect_events import make_blinks,make_saccades,make_fixations
-data = preprocess_et(et='pl', datapath='/net/store/nbp/projects/etcomp/sub-1/raw'eventfunctions=(make_blinks,make_saccades,make_fixations))
+data = preprocess_et(et='pl', datapath='/net/store/nbp/projects/etcomp/sub-1/raw', eventfunctions=(make_blinks,make_saccades,make_fixations))
 ```
 - The datapath should be a pupil labs folder (if et='pl'), or a folder with an eyelink-EDF file (if et='el')
-- The eventfunctions are modular, here we use the default ones implemented by us, but you could simply replace them with other functions. The eventfunctions are executed in order.
+- The eventfunctions are modular, here we use the default ones implemented by us, but you could simply replace them with other functions. The eventfunctions are executed sequentially.
 - We are using loggers for messages, try to use the "debug" flag if you want more information!
 
 ## Python Analysis Pipeline
