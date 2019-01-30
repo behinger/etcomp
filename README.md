@@ -1,5 +1,4 @@
-[![DOI](https://zenodo.org/badge/109820824.svg)](https://zenodo.org/badge/latestdoi/109820824)
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2553447.svg)](https://doi.org/10.5281/zenodo.2553447)
 
 # Eye Tracking Comparison
 
