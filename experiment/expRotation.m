@@ -6,8 +6,9 @@ else
     order = {'TILT','SHAKE'};
 end
 
+% We cross balanced the order
 for k = order
-
+    
     if strcmp(k{1},'SHAKE')
         showInstruction('SHAKE',screen,requester,eyetracking, block);
         rotate(screen, eyetracking, requester, rand.shake, block);
@@ -28,29 +29,29 @@ end
         centerX = screen.screen_width/2;
         centerY = screen.screen_height/2;
         % define 5 coordinates for the points
-%         dist = centerX/3;
-%         l = dist;
-%         lm = dist*2;
-%         rm = screen.screen_width -2*dist;
-%         r = screen.screen_width -dist;
-%         coordX = [l lm rm r];
-%         coordX = [coordX coordX];
-%         coordX = coordX(randperm(length(coordX)));
+        %         dist = centerX/3;
+        %         l = dist;
+        %         lm = dist*2;
+        %         rm = screen.screen_width -2*dist;
+        %         r = screen.screen_width -dist;
+        %         coordX = [l lm rm r];
+        %         coordX = [coordX coordX];
+        %         coordX = coordX(randperm(length(coordX)));
         coordX = centerX + centerX.*rand;
         sendETNotifications(eyetracking,requester,sprintf('SHAKE start block %d',block))
         
         for count =1 : length(coordX)
-%             drawTarget(centerX,centerY,screen,20,'fixcross');
-%             flip_screen(screen,2);
-%             sendETNotifications(eyetracking,requester,sprintf('SHAKE block %d center',block))
+            %             drawTarget(centerX,centerY,screen,20,'fixcross');
+            %             flip_screen(screen,2);
+            %             sendETNotifications(eyetracking,requester,sprintf('SHAKE block %d center',block))
             
-%             KbStrokeWait();
-%             
+            %             KbStrokeWait();
+            %
             
             drawTarget(coordX(count),centerY,screen,20,'fixcross');
             flip_screen(screen,2);
             sendETNotifications(eyetracking,requester,sprintf('SHAKE block %d x %d, y %d',block, coordX(count),centerY));
-%             
+            %
             KbStrokeWait();
             
             
@@ -67,10 +68,10 @@ end
         Screen('BlendFunction', screen.win, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         
         % all angles we want to capure (0 is a horizontal line)
-%         angles = [5 -5 10 -10 15 -15];
-%         angles = [angles angles];
+        %         angles = [5 -5 10 -10 15 -15];
+        %         angles = [angles angles];
         
-%         angles = angles(randperm(length(angles)));
+        %         angles = angles(randperm(length(angles)));
         lineLength = 400; % length of the line
         sendETNotifications(eyetracking,requester,sprintf('TILT start block %d',block))
         

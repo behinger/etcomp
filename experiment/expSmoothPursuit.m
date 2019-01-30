@@ -82,7 +82,7 @@ for count= 1:length(directions)%size(pos,1)-1
         
 
     end
-    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialend, trial %d, block %d,',count ,block))
+    sendETNotifications(eyetracking,requester,sprintf('SMOOTH PURSUIT trialend, velocity %d, angle %d, trial %d, block %d,',velocities(count),directions(count),count ,block))
     WaitSecs(0.5); 
     
 end

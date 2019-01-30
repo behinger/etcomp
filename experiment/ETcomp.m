@@ -1,31 +1,31 @@
 % ET Comp experiment
-%LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 matlab
+% Please start matlab using:
+% LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 matlab
+% else the cosyzmq library will run into problems
 
+%% Clean up
 sca
 clear all
-%open screen
+
+% Debug mode allows transparent screen
 debug=false;
 
 %setup eyetracker
-eyetracking=~debug;
-requester = ~debug;
+eyetracking=~debug; % variable whether eye tracking triggers, connections and calibratinos should be used
+requester = ~debug; % similar, whether connection to pupil labs should be opened
 
 if debug
-    fprintf('!!!!!!DEBUG MODE ON!!!!!!!\n');
+    input('!!!!!!DEBUG MODE ON!!!!!!! Confirm with "Enter"');
     commandwindow;
     PsychDebugWindowConfiguration;
 end                                                                                                                   
 % set up path environment
 
 cfg = expConfigure();
-
 cfg.subject_id = input('\n subjectid: ');
-
 
 % Initialize Sounddriver
 InitializePsychSound(1);
-
-
 %% Test Beep%%
 fprintf('Test Beep\n');
 dobeep = 1;
@@ -37,10 +37,8 @@ while dobeep
 end
 
 %% Eyetracking setup
-
-
 if eyetracking == 1
-    % Eyelink
+    %% Eyelink
     %always start in the middle
     calibcoordinates = cfg.small_grid_coord;
     middlepoint = calibcoordinates(:,1) == 960 & calibcoordinates(:,2) == 540 ;
@@ -51,11 +49,7 @@ if eyetracking == 1
     sessionInfo = sprintf('%s %s','SUBJECTINDEX',num2str(cfg.subject_id));
     Eyelink('message','METAEX %s',sessionInfo);
     
-    % Pupillabs
-    %     Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
-    %     while Pupil_started ~= 1
-    %         Pupil_started = input(sprintf('Has pupil capture been started an Manual Marker Calibration been selected? Check if Eyecam 1&2 are recorded! \n (1) - Confirm. \n >'));
-    %     end
+    %% Pupil Labs
     try
         zmq_request('init');
     catch e
@@ -65,9 +59,9 @@ if eyetracking == 1
     requester = zmq_request('add_requester', 'tcp://100.1.0.3:5004');
     requester = int32(requester);
     el.requester =requester;
+    
     % Setup Eyelink
     Eyelink('StartSetup');
-    
     
     % Start recording
     reply =    sendETNotifications(eyetracking,requester,'Connect Pupil');    
@@ -93,7 +87,7 @@ for block = 1:6
     tic
     rand_block = select_randomization(cfg.rand, cfg.subject_id, block);
     
-    % at the beginni ng of each block : calibrate ADD pupil labs
+    % at the beginning of each block : calibrate 
     if eyetracking
         fprintf('\n\nEYETRACKING CALIBRATION...')
     
