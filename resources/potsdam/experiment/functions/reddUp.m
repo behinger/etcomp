@@ -1,0 +1,1 @@
+function reddUp%% function reddUp.m - experiment SpatStat%% % % close screensShowCursor;Screen('CloseAll');% clear cacheclear mex;clear fun;home;return;

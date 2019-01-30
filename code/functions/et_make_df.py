@@ -22,7 +22,7 @@ import logging
 
 #%% MAKE SAMPLES
 
-def make_samples_df(etsamples):
+def make_samples_df(etsamples,px2deg=True):
    
     fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel'])
     
@@ -34,11 +34,12 @@ def make_samples_df(etsamples):
     for fieldname in fields_to_fillin:
         etsamples_reduced.loc[:,fieldname] = np.nan
     
-    # convert pixels into visual degrees
-    # VD
-    etsamples_reduced.gx = helper.px2deg(etsamples_reduced.gx, 'horizontal')
-    etsamples_reduced.gy = helper.px2deg(etsamples_reduced.gy, 'vertical')
-    
+    if px2deg:
+        # convert pixels into visual degrees
+        # VD
+        etsamples_reduced.gx = helper.px2deg(etsamples_reduced.gx, 'horizontal')
+        etsamples_reduced.gy = helper.px2deg(etsamples_reduced.gy, 'vertical')
+
     return(etsamples_reduced)
 
 
@@ -120,8 +121,10 @@ def calc_3d_angle_onerow(row):
 def calc_3d_angle_points(x_0, y_0, x_1, y_1):
     
     # calculate the spherical angle between 2 points
-    vec1 = helper.sph2cart(x_0/360*2*pi, y_0/360*2*pi)
-    vec2 = helper.sph2cart(x_1/360*2*pi, y_1/360*2*pi)
+    # We add pi/2 so that (0°,0°,1), and (0°,90°,1) have a distance of 90° instead of 0. (we take the "y" axis as the "0°,0°")
+    #
+    vec1 = helper.sph2cart(x_0/360*2*pi + pi/2, y_0/360*2*pi + pi/2)
+    vec2 = helper.sph2cart(x_1/360*2*pi + pi/2, y_1/360*2*pi + pi/2)
     
     # pupillabs : precision = np.sqrt(np.mean(np.rad2deg(np.arccos(succesive_distances.clip(-1., 1.))) ** 2))
     cosdistance = np.dot(vec1,vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))

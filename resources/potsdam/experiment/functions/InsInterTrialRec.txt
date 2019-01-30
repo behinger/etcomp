@@ -1,0 +1,10 @@
+\n
+
+Sie steuern den Zeitpunkt der Darbietung des nächsten Bildes selbst. Falls Sie z.B. noch blinzeln müssen, sollten Sie dies (jetzt) machen. \n
+
+Neues Bild - linke Pfeiltaste. \s
+Altes Bild - rechte Pfeiltaste. \n
+
+Den nächsten Durchgang können Sie ebenfalls mit den Pfeiltasten starten. \b
+
+Weiter mit einer der Pfeiltasten. \n

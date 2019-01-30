@@ -41,8 +41,8 @@ def plot_heatmap(raw_freeview_df,raw_fix_count_df, only_horizontal_heatmap=True)
     # the pictures have a size of 1200 x 1500 pixels
     # factor of 0.6 as we scaled the  pictures in the matlabscript (experiment)
     # they are centered  --> divide by 2
-    pic_size_horizontal = helper.size_px2deg(1500*0.6) 
-    pic_size_vertical = helper.size_px2deg(1200*0.6) 
+    pic_size_horizontal = helper.size_px2deg(1500*0.6) /2
+    pic_size_vertical = helper.size_px2deg(1200*0.6) /2
     
     
     # mean fixation location data
@@ -209,9 +209,9 @@ def plot_fixation_durations(raw_freeview_df, option=None):
         # use all detected fixations of all subjects and plot desity for each eyetracker
         # Caution: ets might have different number of detected saccades as basis!
         return (ggplot(raw_freeview_df, aes(x='duration', color='et'))
-                    + geom_density()
+                    + geom_freqpoly(binwidth=0.025)
                 
-                    + xlim([0,1])
+                    + coord_cartesian(xlim=[0,1.5])
                     + xlab('fixation duration [s]')
                     + ggtitle('Fixation durations'))
                 
@@ -298,8 +298,8 @@ def plot_scanpath(etsamples, etmsgs, subject,pic_id):
         plt.scatter(x_fix, y_fix, alpha=0.5, s=10, c=colorlist[1])
 
 
-    pic_size_horizontal = helper.size_px2deg(1500*0.6) 
-    pic_size_vertical = helper.size_px2deg(1200*0.6) 
+    pic_size_horizontal = helper.size_px2deg(1500*0.6)/2 
+    pic_size_vertical = helper.size_px2deg(1200*0.6)/2
 
     plt.imshow(img_resize,alpha=0.3, extent=[-(pic_size_horizontal), (pic_size_horizontal), -(pic_size_vertical), (pic_size_vertical)])
 

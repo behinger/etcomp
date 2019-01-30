@@ -57,7 +57,7 @@ def list_to_stream(gaze_list):
 def notify_all(self,notification=''):
         logger.info(notification)
 
-def gen_fakepool(inp_gaze=[],calibration_mode='2D'): 
+def gen_fakepool(inp_gaze=[],calibration_mode='2d'): 
     
         from lib.pupil.pupil_src.shared_modules.plugin import Plugin_List
         
@@ -129,7 +129,10 @@ def pl_recalibV2(pupil_list,ref_list,inp_gaze,calibration_mode='2d',eyeID=None):
                     break
                 if i%100000 == 1:
                     logger.info(newsamp[0])
-                output.append(newsamp[1][0])
+                try:
+                    output.append(newsamp[1][0])
+                except Exception as e:
+                    print(newsamp)
         except StopIteration:
             logger.error('error')
             pass

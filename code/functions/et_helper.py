@@ -285,11 +285,12 @@ def px2deg(px, orientation, mm_per_px=0.276,distance=600):
         center_x = 1920 / 2
         px       = px - center_x
     
-    if orientation == 'vertical':
+    elif orientation == 'vertical':
         center_y = 1080 / 2
         px       = px - center_y
-           
-    deg = 2*np.arctan2(px*mm_per_px,distance)*180/np.pi
+    else:
+        raise('unknown option')
+    deg = np.arctan2(px*mm_per_px,distance)*180/np.pi
 
     return deg
 
@@ -453,7 +454,7 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
 def winmean(x,perc = 0.2,axis=0):
     return(np.mean(winsorize(x,perc,axis=axis),axis=axis))
 
-def winmean_cl_boot(series, n_samples=1000, confidence_interval=0.95,
+def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95,
                  random_state=None):
     return bootstrap_statistics(series, winmean,
                                 n_samples=n_samples,

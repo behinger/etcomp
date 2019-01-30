@@ -10,7 +10,11 @@ import functions.plotnine_theme
 from plotnine import *
 import numpy as np
 from functions.et_helper import winmean,winmean_cl_boot
+
+import MISC
+
 #%%
+
 
 def plot_duration(beep,option=''):
     
@@ -26,6 +30,10 @@ def plot_duration(beep,option=''):
         pl = ggplot(beep,aes(x="block",y="duration",fill="et",color="et"))+geom_point(position=position_dodge(width=0.2))+facet_wrap("~subject")
         
     pl = pl+expand_limits(y=0)
+
+    
+    MISC.print_results(beep, fields = ['duration'], agg_first_over_blocks=True, round_to=3)
+
     
     return pl   
 
@@ -48,4 +56,7 @@ def plot_count(beep,option=''):
     
     pl = pl+expand_limits(y=0)+scale_y_continuous(breaks=[1,3,5,7,9])
     
+    # print stat results
+    MISC.print_results(beep, fields = ['n_blinks'], agg_first_over_blocks=False, round_to=1)
+
     return pl   
