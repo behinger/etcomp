@@ -1,3 +1,6 @@
+[![DOI](https://zenodo.org/badge/109820824.svg)](https://zenodo.org/badge/latestdoi/109820824)
+
+
 # Eye Tracking Comparison
 
 This project procides:
