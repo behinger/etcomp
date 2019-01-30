@@ -12,7 +12,7 @@ This project procides:
   
 # Instructions
 Get the project GIT and initialize the submodules
->>>>>>> 03747af4e1cb9f45d5bf7e9a1a92717feb0e3666
+
 ```
 git clone https://github.com/behinger/etcomp
 git submodule update --init
