@@ -9,7 +9,8 @@ run ```ETcomp.m ```
 
 The experimental code is collaborative work with Inga Ibs
 
------ Analysis ----
+# Analysis
+
 Here it gets more interesting. We want a fully reproducible analysis pipeline without manual steps (we dont want things like "start pupil player now and detect surfaces"). Therefore we interface calibration-functions and surface-detection functions directly from pupillabs. This unfortunately requires many libraries of pupillab to be compiled. Skip if you have compiled the pupillabs sofware already: Good news is: there is a make file & we do not need SUDO rights for most things, bad news there are 1 or 2 libraries that need to be installed using sudo [6]
 
 If you need a detailed analysis pipeline, I think its best to look into the scripts [7] and [8]. There is quite a bit of overload because we need to analyse Eyelink  + Pupillabs at the same time. But I think the code is factored OK :smiley:
