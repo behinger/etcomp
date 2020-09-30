@@ -24,7 +24,6 @@ python-reqs: ${VENV}
 	pip3 install --upgrade -r requirements.pip;\
 	pip3 install setuptools -U --force;\
 	pip3 install git+https://github.com/pupil-labs/pyglui.git@v1.22;\
-	pip3 install git+https://github.com/has2k1/plotnine.git;\
 	)
 
 
