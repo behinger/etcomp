@@ -14,7 +14,7 @@ import logging
 
 #%% Detect bad samples
     
-def detect_bad_samples(etsamples):
+def detect_bad_samples(etsamples,check_outside=True):
     # adds columns for bad samples (out of monitor, sampling frequency)
     
     # get a logger
@@ -24,21 +24,22 @@ def detect_bad_samples(etsamples):
     
     # create df to store index of merked samples
     marked_samples = pd.DataFrame()
+    if check_outside:
+        # Gaze Position
+        # is out of the range of the monitor
+        # The monitor has a size of 1920 x 1080 pixels
+        # we give tolerance of 500 px and we convert into visual degrees
+        # VD 
+        ix_outside_samples = (etsamples.gx < (helper.px2deg(-500, 'horizontal'))) | (etsamples.gx > (helper.px2deg(2420, 'horizontal'))) | (etsamples.gy < (helper.px2deg(-500, 'vertical'))) | (etsamples.gy > (helper.px2deg(1580, 'vertical')))
+        percentage_outside = np.mean(ix_outside_samples)*100
+        logger.warning("Caution: %.2f%% samples got marked as the calculated gazeposition is outside the monitor"%(percentage_outside))
     
-    # Gaze Position
-    # is out of the range of the monitor
-    # The monitor has a size of 1920 x 1080 pixels
-    # we give tolerance of 500 px and we convert into visual degrees
-    # VD 
-    ix_outside_samples = (etsamples.gx < (helper.px2deg(-500, 'horizontal'))) | (etsamples.gx > (helper.px2deg(2420, 'horizontal'))) | (etsamples.gy < (helper.px2deg(-500, 'vertical'))) | (etsamples.gy > (helper.px2deg(1580, 'vertical')))
-    percentage_outside = np.mean(ix_outside_samples)*100
-    logger.warning("Caution: %.2f%% samples got marked as the calculated gazeposition is outside the monitor"%(percentage_outside))
+        if (percentage_outside > 40):
+            raise NameError('More than 40% of the data got marked because the gaze is outside the monitor.') 
     
-    if (percentage_outside > 40):
-        raise NameError('More than 40% of the data got marked because the gaze is outside the monitor.') 
-    
-    marked_samples['outside'] = ix_outside_samples
-    
+        marked_samples['outside'] = ix_outside_samples
+    else:
+        marked_samples['outside']=0
     
     # Sampling Frequency
     # check how many samples there are with a fs worse than 120 Hz

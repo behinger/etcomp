@@ -24,7 +24,7 @@ import logging
 
 #%% WRAPPER TO DETECT SACCADES   (IN THE CASE OF PL SAMPLES ARE INTERPOLATED FIRST)
 
-def detect_saccades_engbert_mergenthaler(etsamples,etevents=None,et = None,engbert_lambda=5):
+def detect_saccades_engbert_mergenthaler(etsamples,etevents=None,et = None,engbert_lambda=5,version=0):
     # Input:      etsamples
     #             fs:   sampling frequency
     # Output:     saccades (df) with expanded / raw
@@ -72,7 +72,7 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents=None,et = None,engbe
          
  
     # apply the saccade detection algorithm     
-    saccades = apply_engbert_mergenthaler(xy_data = interpgaze[['gx','gy']],is_blink = interpgaze['is_blink'], vel_data = None,sample_rate=fs,l = engbert_lambda)
+    saccades = apply_engbert_mergenthaler(xy_data = interpgaze[['gx','gy']],is_blink = interpgaze['is_blink'], vel_data = None,sample_rate=fs,l = engbert_lambda,version=version)
     
     #sacsave = saccades.copy()
     #saccades = sacsave
@@ -88,7 +88,7 @@ def detect_saccades_engbert_mergenthaler(etsamples,etevents=None,et = None,engbe
 #%%  SACCADE DETECTION ALGORITHM
 
 
-def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None, l = 5, sample_rate=None, minimum_saccade_duration = 0.0075):
+def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None, l = 5, sample_rate=None, minimum_saccade_duration = 0.0075,version=0):
     """Uses the engbert & mergenthaler algorithm (PNAS 2006) to detect saccades.
     
     This function expects a sequence (N x 2) of xy gaze position or velocity data. 
@@ -99,7 +99,16 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
         l (float, optional):determines the threshold. Defaults to 5 median-based standard deviations from the median
         sample_rate (float, optional) - the rate at which eye movements were measured per second). Defaults to 1000.0
         minimum_saccade_duration (float, optional) - the minimum duration for something to be considered a saccade). Defaults to 0.0075
-    
+        version - one of  [0,1,2], specifies how to compute the median based std deviation. 
+                            let M denote the median operator, E the expectation/mean operator, v be the velocity. Then the std is estimated as:
+                                0: E(sqrt((v -M(v)) **2))  ([sic], even if sqrt and **2 cancel)
+                            (This is the version that is implemented in the source https://github.com/tknapen/hedfpy/blob/master/hedfpy/EyeSignalOperator.py
+                             However, the following two versions seem to be used in the original paper(s)):
+                                1: sqrt(M(v**2)-M(v)**2)
+                                2: sqrt(M((v-M(v))**2))
+                            (Note that these would yield the same if we were using the mean/expected value)
+                            version 1 is described in engbert & kliegl (2003), while version 2 is (supposedly) used in
+                            engbert & mergenthaler (2006), although the latter is not very explicit on notation)
     Returns:
         list of dictionaries, which each correspond to a saccade.
         
@@ -144,9 +153,29 @@ def apply_engbert_mergenthaler(xy_data = None, is_blink = None, vel_data = None,
 
     # median-based standard deviation, for x and y separately
     med = np.nanmedian(vel_data, axis = 0)
-     
-    std = np.nanmean(np.array(np.sqrt((vel_data - med)**2)), axis = 0) 
+
+    assert version in [0,1,2], 'Provide a valid algorithm version, see docstring for details'
+
+    if version == 0:
+
+        std = np.nanmean(np.array(np.sqrt((vel_data - med)**2)), axis = 0) 
+   
+    elif version == 1:
+        
+        # 'variance' as median of squares minus squares of median
+        var = np.nanmedian(vel_data**2,axis=0)-med**2
+        
+        std = np.sqrt(var)
+    elif version == 2:
+        
+        # 'variance' as median of squared deviations
+        var = np.nanmedian((vel_data-med)**2,axis=0)
+        
+        std = np.sqrt(var)
+
+    
     scaled_vel_data = vel_data / std # scale by the standard deviation
+
     
     logger.warning('Std of velocity data %s', np.round(std, 4))
     # normalize and to acceleration and its sign
@@ -319,7 +348,7 @@ def interpolate_gaze(etsamples, fs=None):
     fromT = etsamples.smpl_time.iloc[0]    # find the first sample
     toT   = etsamples.smpl_time.iloc[-1]   # find the last sample
     # we find the new index
-    timeIX = np.linspace(np.floor(fromT),np.ceil(toT),np.ceil(toT-fromT)*fs+1)
+    timeIX = np.linspace(np.floor(fromT),np.ceil(toT),int(np.ceil(toT-fromT)*fs+1))
     
     def interp(x,y):
         f = PchipInterpolator(x,y,extrapolate = False)    

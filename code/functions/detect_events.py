@@ -14,7 +14,7 @@ import os
 import logging
 
 # parses SR research EDF data files into pandas df
-from pyedfread import edf
+#from pyedfread import edf
 from functions.pl_detect_blinks import pl_detect_blinks
 #from sklearn.metrics import mean_squared_error
 
@@ -50,9 +50,9 @@ def make_blinks(etsamples,etevents,et):
 
 
 
-def make_saccades(etsamples,etevents,et,engbert_lambda=5):
+def make_saccades(etsamples,etevents,et,engbert_lambda=5,version=0):
 
-    saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et,engbert_lambda=engbert_lambda)
+    saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et,engbert_lambda=engbert_lambda,version=version)
 
     # select only interesting columns: keep only the raw
     keepcolumns = [s for s in saccadeevents.columns if "raw" in s]
@@ -72,7 +72,7 @@ def make_saccades(etsamples,etevents,et,engbert_lambda=5):
     return etsamples, etevents
 
     
-def make_fixations(etsamples, etevents,et):
+def make_fixations(etsamples, etevents,et,delete_short_fixations=True):
     from functions.et_helper import winmean
     # this happened already:  
     # etsamples, etevents = make_blinks(etsamples, etevents, et)
@@ -121,11 +121,15 @@ def make_fixations(etsamples, etevents,et):
     # add the type    
     fixationevents.loc[:,'type'] = 'fixation'
     fixationevents.loc[:,'duration'] = fixationevents['end_time'] - fixationevents['start_time']
-
-    # delete fixationevents shorter than 50 ms
-    logger.warning("Deleted %s fixationsevents of %s fixationsevents in total cause they were shorter than 50ms", np.sum(fixationevents.duration <= 0.05), len(fixationevents))
-    fixationevents = fixationevents[fixationevents.duration > 0.05]
     
+    if delete_short_fixations:
+
+        # delete fixationevents shorter than 50 ms
+        logger.warning("Deleted %s fixationsevents of %s fixationsevents in total cause they were shorter than 50ms", np.sum(fixationevents.duration <= 0.05), len(fixationevents))
+        fixationevents = fixationevents[fixationevents.duration > 0.05]
+    else:
+
+        logger.warning("Fixation Deletion was turned off. Short fixations ( %s fixationsevents of %s fixationsevents) shorter than 50 ms remain in the sample",np.sum(fixationevents.duration <= 0.05), len(fixationevents))
     
     for ix,row in fixationevents.iterrows():
         # take the mean gx/gy position over all samples that belong to that fixation
