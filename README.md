@@ -35,6 +35,9 @@ LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 matlab
 ```
 
 ## Python Preprocessing Pipeline
+
+**Update 2021-12-10**: You could also check out [this fork](https://github.com/teresa-canasbajo/bdd-driveratt/tree/master/eye_tracking/preprocessing) for a (potentially) cleaned up version. Haven't checked or tried it personally - citation would still be appreciated :-)
+
 You can run a subject using the preprocessing pipeline (from the folder "code").
 We took some care to make it modular, but the pipeline should be more thought as a starting base and needs modification for your own setup.
 ```
