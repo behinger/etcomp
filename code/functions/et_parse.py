@@ -23,7 +23,7 @@ def parse_message(msg):
     try:
         # for EyeLink
         msg_time = msg['msg_time']
-        string = msg['trialid '] # space on purpose
+        string = msg['message'] # space on purpose
         
     except:
         try:
@@ -36,10 +36,11 @@ def parse_message(msg):
     # splits msg into list of str and removes punctuation
     split = string.split(' ')
     split = [remove_punctuation(elem) for elem in split]
-    
+    split = [s for s in split if s != ''] # in etcomp2 we saw that sometimes we have an empty string in here, double space in experiment?
+    #print(split)
     parsedmsg = dict(msg_time = msg_time)
         
-    
+    #print(split)
     # if msg has label "GRID", then extract infos:
     # msg_time:  timestamp when msg was sent
     # exp_event: experimental event of GRID (buttonpress, element, start, stop)
@@ -58,6 +59,7 @@ def parse_message(msg):
 
         if split[1] == 'element':
             #print(split)
+            
             parsedmsg.update(dict(
                     element = int(split[2]),
                     # convert pixels into visual degrees
@@ -65,17 +67,18 @@ def parse_message(msg):
                     posx = helper.px2deg(float(split[4]), 'horizontal'),
                     posy = helper.px2deg(1080-float(split[6]), 'vertical'),
                     grid_size = int(split[8]),
-                    block = int(split[10])
+                    block = int(split[12])
                     ))
 
         elif split[1] == 'start':
-            #print(split)
+            
             parsedmsg.update(dict(
-                    block = int(split[3])))
+                    block = int(split[5])))
 
         elif split[1] == 'stop':
+            
             parsedmsg.update(dict(
-                    block = int(split[3])))
+                    block = int(split[5])))
 
     
     # label "DILATION"

@@ -14,7 +14,7 @@ import os
 import logging
 
 # parses SR research EDF data files into pandas df
-from pyedfread import edf
+#from pyedfread import edf
 from functions.pl_detect_blinks import pl_detect_blinks
 #from sklearn.metrics import mean_squared_error
 
@@ -49,19 +49,60 @@ def make_blinks(etsamples,etevents,et):
     return(etsamples,etevents)
 
 
+import numpy as np
+import cateyes
+
+def detect_saccades_cateyes(etsamples):
+    cl_disp,classes = cateyes.classify_dispersion(etsamples.gx, etsamples.gy,etsamples.smpl_time,2.,0.1) # 2°, 100ms
+
+    saccades = []
+    for idx in np.unique(cl_disp):
+        if idx == 0:
+            continue
+        ix = np.argwhere(cl_disp == idx)
+        #etsamples.smpl_time[ix[0]])
+        #print(classes[ix[0][0]],ix[0])
+        
+        if classes[ix[0][0]] != "Saccade":
+            continue
+                # only velocity based
+        
+        this_saccade = {
+        'start_time': etsamples.smpl_time.iloc[ix[0][0]],
+        'end_time': etsamples.smpl_time.iloc[ix[-1][0]],
+        'duration': len(ix)/1000,
+        'start_gx': etsamples.gx.iloc[ix[0][0]],
+        'start_gy': etsamples.gy.iloc[ix[0][0]],
+        'end_gx': etsamples.gx.iloc[ix[-1][0]],
+        'end_gy': etsamples.gy.iloc[ix[-1][0]],
+        }
+        saccades.append(this_saccade)
+        # no need to calculate the raw_amplitude here as we will calculate the SPHERICAL amplitude later
+        #'raw_amplitude': np.sum(normed_vel_data[cis[0]:cis[1]]),
+        #'raw_peak_velocity': np.max(normed_vel_data[cis[0]:cis[1]]) * sample_rate,
+    import pandas as pd
+    import functions.et_make_df as make_df
+
+    saccade_df = pd.DataFrame(saccades)
+    saccade_df['amplitude']= saccade_df.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
+    saccade_df.reset_index()
+    return saccade_df
+
 
 def make_saccades(etsamples,etevents,et,engbert_lambda=5):
 
-    saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et,engbert_lambda=engbert_lambda)
+    #saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et,engbert_lambda=engbert_lambda)
+
+    saccadeevents = detect_saccades_cateyes(etsamples)
 
     # select only interesting columns: keep only the raw
-    keepcolumns = [s for s in saccadeevents.columns if "raw" in s]
-    saccadeevents = saccadeevents[keepcolumns]
+    #keepcolumns = [s for s in saccadeevents.columns if "raw" in s]
+    #saccadeevents = saccadeevents[keepcolumns]
     
     # remove the part of the string that says raw in order to be consistent
-    newname = [s.replace('raw_','') for s in saccadeevents.columns if "raw" in s]
+    #newname = [s.replace('raw_','') for s in saccadeevents.columns if "raw" in s]
     
-    saccadeevents = saccadeevents.rename(columns=dict(zip(keepcolumns,newname)))
+    #saccadeevents = saccadeevents.rename(columns=dict(zip(keepcolumns,newname)))
     
     # add the type    
     saccadeevents['type'] = 'saccade'
@@ -95,7 +136,7 @@ def make_fixations(etsamples, etevents,et):
     etsamples.loc[:,'tmp_fix'] = etsamples['tmp_fix'].astype(int)
     
     # first sample should be fix start?
-    if etsamples['tmp_fix'][np.argmax(etsamples['tmp_fix'] != 0)] == -1:  #argmax stops at first true
+    if etsamples['tmp_fix'].iloc[np.argmax(etsamples['tmp_fix'] != 0)] == -1:  #argmax stops at first true
         # if we only find an fixation end, add a start at the beginning
         etsamples.iloc[0, etsamples.columns.get_loc('tmp_fix')] = 1
         
@@ -119,12 +160,13 @@ def make_fixations(etsamples, etevents,et):
     fixationevents.dropna(subset=['start_time', 'end_time'], inplace=True)
 
     # add the type    
+    
     fixationevents.loc[:,'type'] = 'fixation'
     fixationevents.loc[:,'duration'] = fixationevents['end_time'] - fixationevents['start_time']
 
     # delete fixationevents shorter than 50 ms
-    logger.warning("Deleted %s fixationsevents of %s fixationsevents in total cause they were shorter than 50ms", np.sum(fixationevents.duration <= 0.05), len(fixationevents))
-    fixationevents = fixationevents[fixationevents.duration > 0.05]
+    #logger.warning("Deleted %s fixationsevents of %s fixationsevents in total cause they were shorter than 50ms", np.sum(fixationevents.duration <= 0.05), len(fixationevents))
+    #fixationevents = fixationevents[fixationevents.duration > 0.05]
     
     
     for ix,row in fixationevents.iterrows():

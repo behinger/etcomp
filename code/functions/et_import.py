@@ -191,9 +191,9 @@ def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subjectname, datapath
     # Output:   Returns pupillabs dictionary
     filename = os.path.join(datapath,subject,'raw')
-    from pyedfread import edf # parses SR research EDF data files into pandas df
+    import  edfread # parses SR research EDF data files into pandas df
 
-    elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+    elsamples, elevents, elnotes = edfread.read_edf(os.path.join(filename,findFile(filename,'.EDF')[0]))#, trial_marker=b'')
     
     return (elsamples,elevents,elnotes)
     
@@ -220,7 +220,7 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # TODO understand and fix this
     count = 0
     while np.any(elsamples.time>1e10) and count < 40:
-        from pyedfread import edf # parses SR research EDF data files into pandas df
+        from edfread import edf # parses SR research EDF data files into pandas df
         imp.reload(edf)
         count = count + 1
         # logger.error(elsamples.time[elsamples.time>1e10])
@@ -247,8 +247,9 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # Convert to same units
     # change to seconds to be the same as pupil
     elsamples['smpl_time'] = elsamples['time'] / 1000 
-    elnotes['msg_time']    = elnotes['trialid_time'] / 1000
-    elnotes = elnotes.drop('trialid_time',axis=1)  
+    elnotes['msg_time']    = elnotes['time'] / 1000
+    #logger.warning(type(elnotes))
+    elnotes = elnotes.drop('time',axis=1)  
     elevents['start']      = elevents['start'] / 1000     
     elevents['end']        = elevents['end'] / 1000             
     
@@ -283,9 +284,13 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     
     # Determine which eye was recorded
 
+
+
     ix_left = elsamples.gx_left   != -32768 
     ix_right = elsamples.gx_right != -32768
 
+    # FIXME This doesnt work anymore, because we have both eyes!!
+    
     if (np.mean(ix_left | ix_right)<0.99):
         raise NameError('In more than 1 % neither left or right data')
         
@@ -319,8 +324,10 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
         
     # Parse EL msg
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
+    #logger.warning(elmsgs)
+    
     elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
-    elmsgs = fix_smallgrid_parser(elmsgs)
+    #elmsgs = fix_smallgrid_parser(elmsgs)
     
     return elsamples, elmsgs, elevents
     
