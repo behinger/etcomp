@@ -227,7 +227,9 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
         logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')
         elsamples, elevents, elnotes = raw_el_data(subject,datapath)
     
-    
+    if elsamples.iloc[0].time == elsamples.iloc[1].time:
+        logger.warning('detected 2000Hz recording, adding 0.5 to every second sample (following SR-Support)')
+        elsamples.loc[::2, 'time'] = elsamples.loc[::2, 'time'] + 0.5
     
     # We also delete Samples with interpolated pupil responses. In one dataset these were ~800samples.
     logger.warning('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
