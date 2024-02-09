@@ -183,10 +183,86 @@ def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=Tr
     return plsamples, plmsgs,plevents
 
 
+#%% TRACKPIXX
+
 
 
   
 #%% EYELINK
+
+def drop_eye(samples, events, subject, participantinfo):
+    """
+    Filters data for the dominant eye from a dataframe (e.g. a sample report) based on a participant reference dataframe.
+    
+    Parameters:
+        samples (pd.DataFrame): The samples DataFrame from which COLUMNS will be removed.
+        events (pd.DataFrame): The events DataFrame from which ROWS will be removed.
+        subject (str): A string containing the subject ID.
+        participantinfo (pd.DataFrame): The DataFrame containing the dominant eye information ('Rechts' for right, 'Links' for left).
+    Returns:
+        selection (pd.DataFrame): The modified DataFrame where non-dominant eye columns are removed and the remaining gaze-related columns are renamed.
+    """
+    logger = logging.getLogger(__name__)
+
+    eye = participantinfo.loc[participantinfo['ID'] == subject, 'DominantEye'].iloc[0]
+    logger.warning('Selecting the eye: %s', eye)
+    if eye == 'Rechts':
+        # Samples right
+        drop_columns = samples.filter(like='_left', axis=1)
+        elsamples = samples.drop(columns = drop_columns)
+        elsamples.rename(columns={'gx_right': 'gx', 
+                                  'gy_right': 'gy',
+                                  'gxvel_right': 'gxvel',
+                                  'gyvel_right': 'gyvel',
+                                  'pa_right': 'pa',
+                                  'px_right': 'px',
+                                  'py_right': 'py',
+                                  'hx_right': 'hx',
+                                  'hy_right': 'hy',
+                                  'hxvel_right': 'hxvel',
+                                  'hyvel_right': 'hyvel',
+                                  'rxvel_right': 'rxvel',
+                                  'ryvel_right': 'ryvel'}, 
+                         inplace=True)
+        if 'b_right' not in samples.columns:
+            logger.warning("DataFrame does not have the 'b_right' column.")
+        else:
+            elsamples.rename(columns={'b_right': 'blink'}, inplace=True)
+
+        # Events right
+        elevents = events.loc[events['eye'] == 1]
+
+    elif eye == 'Links':
+        # Samples left
+        drop_columns = samples.filter(like='_right', axis=1)
+        elsamples = samples.drop(columns = drop_columns)
+        elsamples.rename(columns={'gx_left': 'gx', 
+                                  'gy_left': 'gy',
+                                  'gxvel_left': 'gxvel',
+                                  'gyvel_left': 'gyvel',
+                                  'pa_left': 'pa',
+                                  'px_left': 'px',
+                                  'py_left': 'py',
+                                  'hx_left': 'hx',
+                                  'hy_left': 'hy',
+                                  'hxvel_left': 'hxvel',
+                                  'hyvel_left': 'hyvel',
+                                  'rxvel_left': 'rxvel',
+                                  'ryvel_left': 'ryvel'}, 
+                         inplace=True)
+        if 'b_left' not in samples.columns:
+            logger.warning("DataFrame does not have the 'b_left' column.")
+        else:
+            elsamples.rename(columns={'b_left': 'blink'}, inplace=True)
+
+        # Events left
+        elevents = events.loc[events['eye'] == 0]
+    
+    else:
+        logger.error("Unknown eye '%s' for participant ID: %s", eye, subject)
+        
+    return elsamples, elevents
+
 def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subjectname, datapath
     # Output:   Returns pupillabs dictionary
@@ -198,7 +274,7 @@ def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     return (elsamples,elevents,elnotes)
     
     
-def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
+def import_el(subject, participantinfo, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
     # Output:   Returns list of 3 el df (elsamples, elmsgs, elevents)
@@ -227,7 +303,9 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
         logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')
         elsamples, elevents, elnotes = raw_el_data(subject,datapath)
     
-    
+    if elsamples.iloc[0].time == elsamples.iloc[1].time:
+        logger.warning('detected 2000Hz recording, adding 0.5 to every second sample (following SR-Support)')
+        elsamples.loc[::2, 'time'] = elsamples.loc[::2, 'time'] + 0.5
     
     # We also delete Samples with interpolated pupil responses. In one dataset these were ~800samples.
     logger.warning('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
@@ -259,69 +337,38 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
         logger.error('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
         raise Exception('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
 
+    # Determine which eye was recorded
+    elsamples, elevents = drop_eye(elsamples, elevents, subject, participantinfo)
+
     # for horizontal gaze component
     # Idea: Logical indexing
-    ix_left = elsamples.gx_left  != -32768 
-    ix_right = elsamples.gx_right != -32768
+    ix = elsamples.gx != -32768
 
     # take the pupil area pa of the recorded eye
     # set pa to NaN instead of 0  or -32768
-    elsamples.loc[elsamples['pa_right'] < 1e-20,'pa_right'] = np.nan
-    elsamples.loc[~ix_right,'pa_right'] = np.nan
-    elsamples.loc[elsamples['pa_left'] < 1e-20,'pa_left'] = np.nan
-    elsamples.loc[~ix_left,'pa_left'] = np.nan
-    
-    # add pa column that takes the value that is not NaN
-    ix_left  = ~np.isnan(elsamples.pa_left)
-    ix_right = ~np.isnan(elsamples.pa_right)
-    
-    # init with nan
-    elsamples['pa'] = np.nan
-    
-    elsamples.loc[ix_left, 'pa'] = elsamples.pa_left[ix_left]
-    elsamples.loc[ix_right,'pa'] = elsamples.pa_right[ix_right]
-    
-    
-    # Determine which eye was recorded
+    elsamples.loc[elsamples['pa'] < 1e-20,'pa'] = np.nan
+    elsamples.loc[~ix,'pa'] = np.nan
+    ix  = ~np.isnan(elsamples.pa)
+    elsamples.loc[ix,'pa'] = elsamples.pa[ix]
 
-
-
-    ix_left = elsamples.gx_left   != -32768 
-    ix_right = elsamples.gx_right != -32768
-
-    # FIXME This doesnt work anymore, because we have both eyes!!
-    
-    if (np.mean(ix_left | ix_right)<0.99):
-        raise NameError('In more than 1 % neither left or right data')
-        
-    
     # for horizontal gaze component    
-    elsamples.loc[ix_left,'gx']      = elsamples.gx_left[ix_left]
-    elsamples.loc[ix_right,'gx']     = elsamples.gx_right[ix_right]
-
+    ix = elsamples.gx   != -32768 
+    elsamples.loc[ix,'gx']      = elsamples.gx[ix]
     # for horizontal gaze velocity component
-    elsamples.loc[ix_left,'gx_vel']  = elsamples.gxvel_left[ix_left]
-    elsamples.loc[ix_right,'gx_vel'] = elsamples.gxvel_right[ix_right]
-    
-    
+    elsamples.loc[ix,'gx_vel']  = elsamples.gxvel[ix]
+       
     # for vertical gaze component
-    ix_left = elsamples.gy_left   != -32768 
-    ix_right = elsamples.gy_right != -32768
-    
-    elsamples.loc[ix_left,'gy']    = elsamples.gy_left[ix_left]
-    elsamples.loc[ix_right,'gy']   = elsamples.gy_right[ix_right]
-    
+    ix = elsamples.gy   != -32768 
+    elsamples.loc[ix,'gy']    = elsamples.gy[ix]
     # for vertical gaze velocity component
-    elsamples.loc[ix_left,'gy_vel']  = elsamples.gyvel_left[ix_left]
-    elsamples.loc[ix_right,'gy_vel'] = elsamples.gyvel_right[ix_right]
+    elsamples.loc[ix,'gy_vel']  = elsamples.gyvel[ix]
     
     # Make (0,0) the point bottom left
     elsamples['gy'] = 1080 - elsamples['gy']
     
     # "select" relevant columns
     elsamples = make_df.make_samples_df(elsamples)
-            
-        
+                
     # Parse EL msg
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
     #logger.warning(elmsgs)
