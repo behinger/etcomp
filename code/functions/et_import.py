@@ -1,267 +1,180 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
+import imp # for edfread reload
+import logging
+import os
 import numpy as np
 import pandas as pd
+import re
+# import scipy
+# import scipy.stats
+from scipy import io as sio
 
-import os
-import logging
-
-from functions.et_helper import findFile,gaze_to_pandas
+from functions.et_helper import findFile
 import functions.et_parse as parse
 import functions.et_make_df as make_df
 import functions.et_helper as  helper
 
-import imp # for edfread reload
-
-
-import scipy
-import scipy.stats
-
-#%% PUPILLABS
-def pl_fix_timelag(pl):
-    #fixes the pupillabs latency lag (which can be super large!!)
-
-    t_cam = np.asarray([p['recent_frame_timestamp'] for p in pl['notifications'] if p['subject']=='trigger'])# camera time
-    t_msg = np.asarray([p['timestamp'] for p in pl['notifications'] if p['subject']=='trigger']) # msg time
-    
-    #slope, intercept, r_value, p_value, std_err  = scipy.stats.linregress(t_msg,t_cam) # predict camera time based on msg time
-    slope,intercept,low,high = scipy.stats.theilslopes(t_cam,t_msg)
-    logger = logging.getLogger(__name__)
-    logger.warning("fixing lag (at t=0) of :%.2fms, slope of %.7f (in a perfect world this is 0ms & 1.0)"%(intercept*1000,slope))
-    # fill it back in
-    # gonna do it with a for-loop because other stuff is too voodo or not readable for me
-    
-    
-    # Use this code (and change t_cam and t_msg above) if you want everything in computer time timestamps
-    #for ix,m in enumerate(pl['gaze_positions']):
-    #    pl['gaze_positions'][ix]['timestamp'] = pl['gaze_positions'][ix]['timestamp']  * slope + intercept   
-    #    for ix2,m2 in enumerate(pl['gaze_positions'][ix]['pupil_positions']):
-    #            pl['gaze_positions'][ix]['pupil_positions']['timestamp'] = pl['gaze_positions'][ix]['pupil_positions']['timestamp']  * slope + intercept
-    #for ix,m in enumerate(pl['gaze_positions']):
-    #     pl['pupil_positions'][ix]['timestamp'] = pl['pupil_positions'][ix]['timestamp']  * slope + intercept# + 0.045 # the 45ms  are the pupillabs defined delay between camera image & timestamp3   
-        
-    # this code is to get notifications into sample time stamp. But for now we 
-    for ix,m in enumerate(pl['notifications']):
-        pl['notifications'][ix]['timestamp'] = pl['notifications'][ix]['timestamp']  * slope + intercept + 0.045 # the 45ms  are the pupillabs defined delay between camera image & timestamp3
-        
-    return(pl)
-
-def raw_pl_data(subject='',datapath='/net/store/nbp/projects/etcomp/',postfix='raw'):
-    # Input:    subjectname, datapath
-    # Output:   Returns pupillabs dictionary
-    from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
-    
-    if subject == '':
-        filename = datapath
-    else:
-        filename = os.path.join(datapath,subject,postfix)
-    print(os.path.join(filename,'pupil_data'))
-    # with dict_keys(['notifications', 'pupil_positions', 'gaze_positions'])
-    # where each value is a list that contains a dictionary
-    original_pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'))
-    #original_pldata = pl_file_methods.Incremental_Legacy_Pupil_Data_Loader(os.path.join(filename,'pupil_data'))
-    # 'notification'
-    # dict_keys(['record', 'subject', 'timestamp', 'label', 'duration'])
-    
-    # 'pupil_positions'
-    # dict_keys(['diameter', 'confidence', 'method', 'norm_pos', 'timestamp', 'id', 'topic', 'ellipse'])
-    
-    # 'gaze_positions'
-    # dict_keys(['base_data', 'timestamp', 'topic', 'confidence', 'norm_pos'])
-        # where 'base_data' has a dict within a list 
-        # dict_keys(['diameter', 'confidence', 'method', 'norm_pos', 'timestamp', 'id', 'topic', 'ellipse'])
-        # where 'normpos' is a list (with horizon. and vert. component)
-    
-    # Fix the (possible) timelag of pupillabs camera vs. computer time
-    
-    
-    
-    return original_pldata
-
-
-def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=True, surfaceMap=True,parsemsg=True,fixTimeLag=True,px2deg=True,pupildetect=None,
-             pupildetect_options=None):
-    # Input:    subject:         (str) name
-    #           datapath:        (str) location where data is stored
-    #           surfaceMap:
-    # Output:   Returns 2 dfs (plsamples and plmsgs)
-    
-    # get a logger
-    logger = logging.getLogger(__name__)
-    if pupildetect:
-        # has to be imported first
-        import av
-        import ctypes
-        ctypes.cdll.LoadLibrary('/net/store/nbp/users/behinger/projects/etcomp/local/build/build_ceres_working/lib/libceres.so.2')
-
-    
-    if surfaceMap:
-        # has to be imported before nbp recalib
-        try:
-            import functions.pl_surface as pl_surface
-        except ImportError:
-            raise('Custom Error:Could not import pl_surface')
-
-
-    assert(type(subject)==str)
-    
-    # Get samples df
-    # (is still a dictionary here)
-    original_pldata = raw_pl_data(subject=subject, datapath=datapath)
-        
-    if pupildetect is not None: # can be 2d or 3d
-        from functions.nbp_pupildetect import  nbp_pupildetect
-        if subject == '':
-            filename = datapath
-        else:
-            filename = os.path.join(datapath,subject,'raw')
-   
-        pupil_positions_0= nbp_pupildetect(detector_type = pupildetect, eye_id = 0,folder=filename,pupildetect_options=pupildetect_options)
-        pupil_positions_1= nbp_pupildetect(detector_type = pupildetect, eye_id = 1,folder=filename,pupildetect_options=pupildetect_options)
-        pupil_positions = pupil_positions_0 + pupil_positions_1
-        original_pldata['pupil_positions'] = pupil_positions
-        recalib=True
-        
-    # recalibrate data
-    if recalib:
-        from functions import nbp_recalib
-        if pupildetect is not None:
-            original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata,calibration_mode=pupildetect)
-        original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
-    # Fix timing 
-    # Pupillabs cameras ,have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).
-    # We fix this here
-    if fixTimeLag:
-        original_pldata = pl_fix_timelag(original_pldata)  
-    
-    if surfaceMap:
-
-        folder= os.path.join(datapath,subject,'raw')
-        tracker = pl_surface.map_surface(folder)   
-        gaze_on_srf  = pl_surface.surface_map_data(tracker,original_pldata['gaze_positions'])
-        logger.warning('Original Data Samples: %s on surface: %s',len(original_pldata['gaze_positions']),len(gaze_on_srf))
-        original_pldata['gaze_positions'] = gaze_on_srf
-        
-    
-    # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time, diameter)
-    pldata = gaze_to_pandas(original_pldata['gaze_positions'])
-    
-    
-    
-    if surfaceMap:   
-        pldata.gx = pldata.gx*(1920 - 2*(75+18))+(75+18) # minus white border of marker & marker
-        pldata.gy = pldata.gy*(1080- 2*(75+18))+(75+18)
-        logger.debug('Mapped Surface to ScreenSize 1920 & 1080 (minus markers)')
-        del tracker
-
-    # sort according to smpl_time
-    pldata.sort_values('smpl_time',inplace=True)
-    
-
-    # get the nice samples df
-    plsamples = make_df.make_samples_df(pldata,px2deg=px2deg) #
-    
-    
-    if parsemsg:
-        # Get msgs df      
-        # make a list of gridnotes that contain all notifications of original_pldata if they contain 'label'
-        gridnotes = [note for note in original_pldata['notifications'] if 'label' in note.keys()]
-        plmsgs = pd.DataFrame();
-        for note in gridnotes:
-            msg = parse.parse_message(note)
-            if not msg.empty:
-                plmsgs = plmsgs.append(msg, ignore_index=True)
-
-        
-        plmsgs = fix_smallgrid_parser(plmsgs)
-    else:
-        plmsgs = original_pldata['notifications']
-        
-    plevents = pd.DataFrame()
-    return plsamples, plmsgs,plevents
-
 
 #%% TRACKPIXX
 
+def read_mat(directory='./data', excludeID=None):
+    """""
+    Read raw MAT data files as exported by Matlab for TrackPixx
 
-
-  
-#%% EYELINK
-
-def drop_eye(samples, events, subject, participantinfo):
-    """
-    Filters data for the dominant eye from a dataframe (e.g. a sample report) based on a participant reference dataframe.
-    
     Parameters:
-        samples (pd.DataFrame): The samples DataFrame from which COLUMNS will be removed.
-        events (pd.DataFrame): The events DataFrame from which ROWS will be removed.
-        subject (str): A string containing the subject ID.
-        participantinfo (pd.DataFrame): The DataFrame containing the dominant eye information ('Rechts' for right, 'Links' for left).
-    Returns:
-        selection (pd.DataFrame): The modified DataFrame where non-dominant eye columns are removed and the remaining gaze-related columns are renamed.
+        datapath (str): Data location
+        excludeID (list): A list of participant IDs to exclude from file import. These must be the same as the folder names
+    Returns: 
+        combined_df (pd.DataFrame): A DataFrame with added information about the block and participant
     """
-    logger = logging.getLogger(__name__)
+    all_data = []
 
-    eye = participantinfo.loc[participantinfo['ID'] == subject, 'DominantEye'].iloc[0]
-    logger.warning('Selecting the eye: %s', eye)
-    if eye == 'Rechts':
-        # Samples right
-        drop_columns = samples.filter(like='_left', axis=1)
-        elsamples = samples.drop(columns = drop_columns)
-        elsamples.rename(columns={'gx_right': 'gx', 
-                                  'gy_right': 'gy',
-                                  'gxvel_right': 'gxvel',
-                                  'gyvel_right': 'gyvel',
-                                  'pa_right': 'pa',
-                                  'px_right': 'px',
-                                  'py_right': 'py',
-                                  'hx_right': 'hx',
-                                  'hy_right': 'hy',
-                                  'hxvel_right': 'hxvel',
-                                  'hyvel_right': 'hyvel',
-                                  'rxvel_right': 'rxvel',
-                                  'ryvel_right': 'ryvel'}, 
-                         inplace=True)
-        if 'b_right' not in samples.columns:
-            logger.warning("DataFrame does not have the 'b_right' column.")
-        else:
-            elsamples.rename(columns={'b_right': 'blink'}, inplace=True)
-
-        # Events right
-        elevents = events.loc[events['eye'] == 1]
-
-    elif eye == 'Links':
-        # Samples left
-        drop_columns = samples.filter(like='_right', axis=1)
-        elsamples = samples.drop(columns = drop_columns)
-        elsamples.rename(columns={'gx_left': 'gx', 
-                                  'gy_left': 'gy',
-                                  'gxvel_left': 'gxvel',
-                                  'gyvel_left': 'gyvel',
-                                  'pa_left': 'pa',
-                                  'px_left': 'px',
-                                  'py_left': 'py',
-                                  'hx_left': 'hx',
-                                  'hy_left': 'hy',
-                                  'hxvel_left': 'hxvel',
-                                  'hyvel_left': 'hyvel',
-                                  'rxvel_left': 'rxvel',
-                                  'ryvel_left': 'ryvel'}, 
-                         inplace=True)
-        if 'b_left' not in samples.columns:
-            logger.warning("DataFrame does not have the 'b_left' column.")
-        else:
-            elsamples.rename(columns={'b_left': 'blink'}, inplace=True)
-
-        # Events left
-        elevents = events.loc[events['eye'] == 0]
-    
-    else:
-        logger.error("Unknown eye '%s' for participant ID: %s", eye, subject)
+    for root, dirs, files in os.walk(directory):
+        if excludeID is not None and os.path.basename(root) in excludeID:
+                continue
         
-    return elsamples, elevents
+        for filename in files:
+
+            if filename.endswith("tpx.mat"):
+                file_path = os.path.join(root, filename)
+                mat = sio.loadmat(file_path)
+                data = mat['bufferData']
+                cols = mat['varnames'][0].split(',')
+                df = pd.DataFrame(data=data, columns=cols)
+                
+                df['block'] = filename[-9:-8]
+                df['ID'] = filename[0:7]
+                
+                all_data.append(df)
+
+    combined_df = pd.concat(all_data, ignore_index=True)
+
+    return combined_df
+
+
+def load_messages(directory='./data', pattern=r'^sub-\d{3}_events.csv$', excludeID=None):
+    """""
+    Import the message report for TrackPixx.
+
+    Parameters:
+        directory (str): Data location
+        pattern (str): A regular expression for parsing participant IDs
+        excludeID (list): A list of participant IDs to exclude from file import. These must be the same as the folder names
+    Returns: 
+        combined_msgs (pd.DataFrame): A DataFrame with all messages
+    """
+
+    all_msgs = []
+    file_pattern = re.compile(pattern)
+
+    for root, dirs, files in os.walk(directory):
+        if excludeID is not None and os.path.basename(root) in excludeID:
+                continue
+        
+        for filename in files:
+            if file_pattern.match(filename):
+                file_path = os.path.join(root, filename)
+                print('Reading file', filename)
+                df = pd.read_csv(file_path)             
+                df['ID'] = filename[0:7]
+                
+                all_msgs.append(df)
+
+    combined_msgs = pd.concat(all_msgs, ignore_index=True)
+
+    return combined_msgs
+
+def load_wordbounds(directory='./data'):
+    """
+    This function reads and processes CSV files with word bounding box coordinates 
+    for the reading task.
+
+    Parameters:
+        directory (str): The path to the directory containing the CSV files.
+    Returns:
+        bounds (pd.DataFrame): A DataFrame containing word boundary data.
+    """
+    for root, _, files in os.walk(directory):
+        for filename in files:
+            if 'wordbounds' in filename and filename.endswith('.csv'):
+                print(f"Processing file: {filename}")
+                file_path = os.path.join(root, filename)
+                bounds = pd.read_csv(file_path, names=['top_left_x', 'top_left_y', 'bottom_right_x', 'bottom_right_y'])
+                bounds['block'] = re.findall(r"block-(\d+)_task", filename)[0]
+                bounds['ID'] = root[-11:-4]
+                bounds['word'] = range(1, len(bounds) + 1)
+                bounds.sort_values(by=['ID', 'block', 'word'], inplace=True)
+
+    return bounds
+  
+def preprocess_tpx(participant_info, directory='./data'):
+    logger = logging.getLogger(__name__)
+    tpxsamples = read_mat(directory)
+    tpxsamples.rename(columns={'TimeTag': 'smpl_time', 
+                               'RightEyeX': 'gx_right', 
+                               'LeftEyeX': 'gx_left',
+                               'RightEyeY': 'gy_right', 
+                               'LeftEyeY': 'gy_left', 
+                               'RightBlink' : 'b_right', 
+                               'LeftBlink' : 'b_left', 
+                               'RightPupilDiameter': 'pa_right', 
+                               'LeftPupilDiameter' : 'pa_left'
+                            #    'RightEyeFixationFlag': 'FixationFlag_right',
+                            #    'LeftEyeFixationFlag': 'FixationFlag_left', 
+                            #    'RightEyeSaccadeFlag': 'SaccadeFlag_right',
+                            #    'LeftEyeSaccadeFlag': 'SaccadeFlag_left', 
+                            #    'RightEyeRawX': 'RawX_right', 
+                            #    'RightEyeRawY': 'RawY_right',
+                            #    'LeftEyeRawX': 'RawX_left',
+                            #    'LeftEyeRawY': 'RawY_left'
+                               }, inplace=True)
+    # We had issues with samples with negative time
+    logger.warning('Deleting %.4f%% samples due to time<=0'%(100*np.mean(tpxsamples.smpl_time<=0)))
+    tpxsamples = tpxsamples.loc[tpxsamples.smpl_time > 0]
+    logger.warning('Deleting %.4f%% samples due to time being less than the starting time'%(100*np.mean(tpxsamples.smpl_time <= tpxsamples.smpl_time[0])))
+    tpxsamples = tpxsamples.loc[tpxsamples.smpl_time > tpxsamples.smpl_time[0]]
+    tpxsamples = tpxsamples.reset_index()
+    if np.any(tpxsamples.smpl_time>1e10):
+        logger.error(tpxsamples.smpl_time[tpxsamples.smpl_time>1e10])
+        logger.error('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
+        raise Exception('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
+    
+    # Determine which eye was recorded
+    tpxsamples, tpxevents = drop_eye('sub-001', participant_info, tpxsamples)
+    
+    # for horizontal gaze component
+    # Idea: Logical indexing
+    ix = tpxsamples.gx != -32768
+    # take the pupil area pa of the recorded eye
+    # set pa to NaN instead of 0  or -32768
+    tpxsamples.loc[tpxsamples['pa'] < 1e-20,'pa'] = np.nan
+    tpxsamples.loc[~ix,'pa'] = np.nan
+    ix  = ~np.isnan(tpxsamples.pa)
+    tpxsamples.loc[ix,'pa'] = tpxsamples.pa[ix]
+    # for horizontal gaze component    
+    ix = tpxsamples.gx   != -32768 
+    tpxsamples.loc[ix,'gx']      = tpxsamples.gx[ix]
+    # FIXME there is no velocity information for TrackPixx
+    # for vertical gaze component
+    ix = tpxsamples.gy   != -32768 
+    tpxsamples.loc[ix,'gy']    = tpxsamples.gy[ix]
+    # FIXME there is no velocity information for TrackPixx
+    # Make (0,0) the point bottom left
+    tpxsamples['gy'] = 1080 - tpxsamples['gy']
+    # "select" relevant columns
+    tpxsamples = make_df.make_samples_df(tpxsamples)
+
+    tpxmsgs = load_messages(directory) 
+    tpxmsgs = tpxmsgs.apply(parse.parse_message,axis=1)
+    tpxmsgs = tpxmsgs.drop(tpxmsgs.index[tpxmsgs.isnull().all(1)])
+    wordbounds = load_wordbounds(directory)
+    wordbounds = make_lines(wordbounds, 'top_left_y')
+    
+    return tpxsamples, tpxmsgs, wordbounds
+
+#%% EYELINK
 
 def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subjectname, datapath
@@ -274,7 +187,7 @@ def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     return (elsamples,elevents,elnotes)
     
     
-def import_el(subject, participantinfo, datapath='/net/store/nbp/projects/etcomp/'):
+def import_el(subject, participant_info, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
     # Output:   Returns list of 3 el df (elsamples, elmsgs, elevents)
@@ -338,7 +251,7 @@ def import_el(subject, participantinfo, datapath='/net/store/nbp/projects/etcomp
         raise Exception('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
 
     # Determine which eye was recorded
-    elsamples, elevents = drop_eye(elsamples, elevents, subject, participantinfo)
+    elsamples, elevents = drop_eye(subject, participant_info, elsamples, elevents)
 
     # for horizontal gaze component
     # Idea: Logical indexing
@@ -409,4 +322,143 @@ def fix_smallgrid_parser(etmsgs):
         
     return(etmsgs)
     
+######################################################################
+#                                                                    #
+#  FUNCTIONS THAT PROBABLY NEED TO BE MOVED ELSEWHERE                #
+#                                                                    #
+######################################################################
+
+def drop_eye(subject, participant_info,samples, events=None):
+    """
+    Filters data for the dominant eye from a dataframe (e.g. a sample report) based on a participant reference dataframe.
     
+    Parameters:
+        samples (pd.DataFrame): The samples DataFrame from which COLUMNS will be removed.
+        events (pd.DataFrame): An optional events DataFrame from which ROWS will be removed.
+        subject (str): A string containing the subject ID.
+        participant_info (pd.DataFrame): The DataFrame containing the dominant eye information ('Rechts' for right, 'Links' for left).
+    Returns:
+        samples (pd.DataFrame): The modified DataFrame where non-dominant eye columns are removed and the remaining gaze-related columns are renamed.
+
+    """
+    logger = logging.getLogger(__name__)
+
+    eye = participant_info.loc[participant_info['ID'] == subject, 'DominantEye'].iloc[0]
+    logger.warning('Selecting the eye: %s', eye)
+    if eye == 'Rechts':
+        # Samples right
+        drop_columns = samples.filter(like='_left', axis=1)
+        samples = samples.drop(columns = drop_columns)
+        samples.rename(columns={'gx_right': 'gx', 
+                                  'gy_right': 'gy',
+                                  'gxvel_right': 'gxvel',
+                                  'gyvel_right': 'gyvel',
+                                  'pa_right': 'pa',
+                                  'px_right': 'px',
+                                  'py_right': 'py',
+                                  'hx_right': 'hx',
+                                  'hy_right': 'hy',
+                                  'hxvel_right': 'hxvel',
+                                  'hyvel_right': 'hyvel',
+                                  'rxvel_right': 'rxvel',
+                                  'ryvel_right': 'ryvel'}, 
+                         inplace=True)
+        if 'b_right' not in samples.columns:
+            logger.warning("DataFrame does not have the 'b_right' column.")
+        else:
+            samples.rename(columns={'b_right': 'blink'}, inplace=True)
+
+        # Events right
+        if events is not None:
+            events = events.loc[events['eye'] == 1]
+
+    elif eye == 'Links':
+        # Samples left
+        drop_columns = samples.filter(like='_right', axis=1)
+        samples = samples.drop(columns = drop_columns)
+        samples.rename(columns={'gx_left': 'gx', 
+                                  'gy_left': 'gy',
+                                  'gxvel_left': 'gxvel',
+                                  'gyvel_left': 'gyvel',
+                                  'pa_left': 'pa',
+                                  'px_left': 'px',
+                                  'py_left': 'py',
+                                  'hx_left': 'hx',
+                                  'hy_left': 'hy',
+                                  'hxvel_left': 'hxvel',
+                                  'hyvel_left': 'hyvel',
+                                  'rxvel_left': 'rxvel',
+                                  'ryvel_left': 'ryvel'}, 
+                         inplace=True)
+        if 'b_left' not in samples.columns:
+            logger.warning("DataFrame does not have the 'b_left' column.")
+        else:
+            samples.rename(columns={'b_left': 'blink'}, inplace=True)
+
+        # Events left
+        if events is not None:
+            events = events.loc[events['eye'] == 0]
+    
+    else:
+        logger.error("Unknown eye '%s' for participant ID: %s", eye, subject)
+        
+    return samples, events
+
+
+def make_lines(df, column_name='top_left_y'):
+    """
+    This function adds line information for the reading task. 
+    The text read in this task was split into lines of up to 11 lines per display.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame to be processed.
+        column_name (str): The name of the column containing values to be used for grouping.
+    Returns:
+        new_df (pd.DataFrame): A DataFrame with a new 'group' column containing group numbers.
+    """
+    lines = {
+        1: (100, 105),
+        2: (187, 192),
+        3: (274, 286),
+        4: (361, 366),
+        5: (448, 453),
+        6: (535, 540),
+        7: (622, 627),
+        8: (707, 714),
+        9: (796, 801),
+        10: (883, 888),
+        11: (970, 975)
+    }
+    new_df = df.copy()
+    new_df['line'] = None
+    for group_num, value_range in lines.items():
+        new_df.loc[new_df[column_name].between(value_range[0], value_range[1]), 'line'] = group_num
+    return new_df
+
+
+def load_files(directory, datatype):
+    """
+    Load and merge CSV files from multiple subdirectories into one pandas DataFrame.
+    This is currently only used for loading participant information.
+
+    Parameters:
+        directory (str): Path to the main directory containing subdirectories with CSV files.
+        eyetracker (str): Output of which eyetracker (el or tp)
+        datatype (str): Type of CSV file (samples, msgs, or events)
+    Returns:
+        all_data (pd.DataFrame): Merged DataFrame containing data from all CSV files.
+    """
+    all_data = pd.DataFrame()
+
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(datatype+'.csv'):
+                file_path = os.path.join(root, file)
+                if datatype == "participant_info": 
+                    data = pd.read_csv(file_path, sep=';')
+                else: 
+                    data = pd.read_csv(file_path, sep=',')
+                print("Processing",file_path)
+                all_data = pd.concat([all_data, data])
+
+    return all_data
