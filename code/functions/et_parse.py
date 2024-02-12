@@ -2,9 +2,7 @@
 
 import pandas as pd
 import numpy as np
-
 import functions.et_helper as  helper
-
 import logging
 
 
@@ -263,54 +261,6 @@ def parse_message(msg):
               block = int(split[5]))
 
 
-    # # label "SHAKE"
-    # # msg_time:         timestamp when msg was sent
-    # # exp_event:        experimental event of SHAKE (start, center, stop)
-    # # block:            block of experiment
-  
-    # if split[0] == 'SHAKE':
-    #     parsedmsg = dict(
-    #           msg_time = msg_time,
-    #           exp_event = split[1])
-    
-    #     if split[3] == 'x':
-    #         parsedmsg.update(dict(
-    #             # convert pixels into visual degrees
-    #             # VD
-    #             shake_x = helper.px2deg(float(split[4]), 'horizontal'),
-    #             shake_y = helper.px2deg(1080-float(split[6]), 'vertical'),
-    #             block = int(split[2]),
-    #             exp_event = 'SHAKE_point'
-    #             ))
-
-    #     if split[1] == 'start' or split[1] == 'stop':
-    #         parsedmsg.update(dict(
-    #             block = int(split[3])
-    #             ))
-
-        
-    # # label "TILT"
-    # # msg_time:         timestamp when msg was sent
-    # # exp_event:        experimental event of TILT (start, stop, trial)
-    # # block:            block of experiment
-    
-    # if split[0] == 'TILT':
-    #     parsedmsg = dict(
-    #           msg_time = msg_time,
-    #           exp_event = split[1])
-    
-    #     if split[1] == 'angle':
-    #         parsedmsg.update(dict(
-    #             angle = int(split[2]),
-    #             block = int(split[4])
-    #             ))
-
-    #     if split[1] == 'start' or split[1] == 'stop':
-    #         parsedmsg.update(dict(
-    #             block = int(split[3])
-    #             ))
-
- 
     # add column for condition
     # FIXME why condition and not task?
     parsedmsg['condition'] = split[0] 
