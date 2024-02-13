@@ -50,7 +50,7 @@ def read_mat(directory='./data', excludeID=None):
                 all_data.append(df)
 
     combined_df = pd.concat(all_data, ignore_index=True)
-
+    combined_df.sort_values("TimeTag",inplace=True,ignore_index=True)
     return combined_df
 
 
