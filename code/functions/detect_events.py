@@ -52,17 +52,22 @@ def make_blinks(etsamples, etevents, et):
         discrete_ends = []
 
         # run through them (code taken from cateyes continuous_to_discrete)
-        cur_idx = np.min(indices) - 1
-        for time, idx in zip(etsamples.smpl_time, indices):
+        cur_idx = np.min(indices) 
+
+        for time, idx,prev_idx in zip(range(x.shape[0]), indices,np.append(indices[1:],0)):
             if idx > cur_idx:
-                discrete_starts.append(time)
+                discrete_starts.append(time)    
+               # print("start {}".format(time))
 
-                discrete_ends.append(np.NaN) 
-
+            if prev_idx == 0 and idx > 0.5:
+                discrete_ends.append(time+1)    
+              #  print("end {}".format(time+1))
             cur_idx = idx
-            
-
-        etevents = pd.DataFrame({"start_time": discrete_starts,"end_time": discrete_ends,"type":"blink","duration":np.NaN})
+        #print(len(discrete_starts))
+        #print(len(discrete_ends))
+        discrete_starts = np.array(etsamples.smpl_time.iloc[discrete_starts])
+        discrete_ends   = np.array(etsamples.smpl_time.iloc[discrete_ends])
+        etevents = pd.DataFrame({"start_time": discrete_starts,"end_time": discrete_ends,"type":"blink","duration":np.array(discrete_ends) - np.array(discrete_starts)})
         
     return etsamples, etevents
 
