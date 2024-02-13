@@ -15,33 +15,55 @@ import pandas as pd
 import numpy as np
 
 
-def verify_and_filter_blinks(etsamples, etevents=None):
+def make_blinks(etsamples, etevents, et):
     """
     Detects and verifies blinks in eye tracking samples data. It also removes all non-blink events for an 
     optional events dataframe.
     
     Parameters:
         etsamples (pd.DataFrame): A DataFrame containing eye tracking samples data.
-        etevents (pd.DataFrame, optional): A DataFrame containing eye tracking events data. Defaults to None.
+        etevents (pd.DataFrame): A DataFrame containing eye tracking events data. Defaults to None.
+        et (string): the eyetracker, currently `el` and `tpx`
     Returns: A tuple containing two elements:
         etsamples (pd.DataFrame): The original `etsamples` DataFrame.
-        etevents (pd.DataFrame): The DataFrame containing detected blink events, if `etevents` was provided.
+        etevents (pd.DataFrame): The DataFrame containing detected blink events
     """
 
     logger = logging.getLogger(__name__)
     logger.debug('Detecting blinks in samples.')
 
-    if "blink" in etsamples.columns:
-        logger.warning("Found 'blink' column in DataFrame.")
-    else:
-        logger.warning("No 'blink' column in DataFrame.")
+    #if "blink" in etsamples.columns:
+    #    logger.warning("Found 'blink' column in DataFrame.")
+    #else:
+    #    logger.warning("No 'blink' column in DataFrame.")
 
-    if etevents is not None:
+    if et == "el":
         logger.debug('Eyelink blink events are already in "etevents". Deleting all other eyelink events')
         etevents = etevents.query('blink == True')
         etevents = etevents.rename(columns={'start':'start_time','end':'end_time'})
         etevents['type'] = "blink"
-    
+    if et == "tpx":
+        
+        # generate a blink-index array, e.g. [0,0,1,1,0,11,0,1,0] to [0,0,1,1,0,2,2,0,3,0]
+        x = etsamples.blink
+        indices  = np.cumsum(np.append(0,np.diff(np.copy(x))==1))
+        indices[x<0.5] = 0
+        discrete_starts = []
+        discrete_ends = []
+
+        # run through them (code taken from cateyes continuous_to_discrete)
+        cur_idx = np.min(indices) - 1
+        for time, idx in zip(etsamples.smpl_time, indices):
+            if idx > cur_idx:
+                discrete_starts.append(time)
+
+                discrete_ends.append(np.NaN) 
+
+            cur_idx = idx
+            
+
+        etevents = pd.DataFrame({"start_time": discrete_starts,"end_time": discrete_ends,"type":"blink","duration":np.NaN})
+        
     return etsamples, etevents
 
 #%% PL Events df
@@ -109,7 +131,7 @@ def detect_saccades_cateyes(etsamples):
     return saccade_df
 
 
-def make_saccades(etsamples, etevents=None, engbert_lambda=5):
+def make_saccades(etsamples, etevents, et,engbert_lambda=5):
 
     #saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et,engbert_lambda=engbert_lambda)
 
@@ -127,9 +149,7 @@ def make_saccades(etsamples, etevents=None, engbert_lambda=5):
     # add the type    
     saccadeevents['type'] = 'saccade'
     
-    if etevents is not None:
-        # concatenate to original event df
-        etevents= pd.concat([etevents, saccadeevents], axis=0,sort=False)
+    etevents= pd.concat([etevents, saccadeevents], axis=0,sort=False)
     
     return etsamples, etevents
 

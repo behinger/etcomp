@@ -109,9 +109,9 @@ def load_wordbounds(directory='./data'):
 
     return bounds
   
-def preprocess_tpx(participant_info, directory='./data'):
+def import_tpx(subject,participant_info, datapath='./data'):
     logger = logging.getLogger(__name__)
-    tpxsamples = read_mat(directory)
+    tpxsamples = read_mat(datapath)
     tpxsamples.rename(columns={'TimeTag': 'smpl_time', 
                                'RightEyeX': 'gx_right', 
                                'LeftEyeX': 'gx_left',
@@ -142,7 +142,7 @@ def preprocess_tpx(participant_info, directory='./data'):
         raise Exception('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
     
     # Determine which eye was recorded
-    tpxsamples, tpxevents = drop_eye('sub-001', participant_info, tpxsamples)
+    tpxsamples, tpxevents = drop_eye(subject, participant_info, tpxsamples)
     
     # for horizontal gaze component
     # Idea: Logical indexing
@@ -166,13 +166,13 @@ def preprocess_tpx(participant_info, directory='./data'):
     # "select" relevant columns
     tpxsamples = make_df.make_samples_df(tpxsamples)
 
-    tpxmsgs = load_messages(directory) 
+    tpxmsgs = load_messages(datapath) 
     tpxmsgs = tpxmsgs.apply(parse.parse_message,axis=1)
     tpxmsgs = tpxmsgs.drop(tpxmsgs.index[tpxmsgs.isnull().all(1)])
-    wordbounds = load_wordbounds(directory)
-    wordbounds = make_lines(wordbounds, 'top_left_y')
+    #wordbounds = load_wordbounds(datapath)
+    #wordbounds = make_lines(wordbounds, 'top_left_y')
     
-    return tpxsamples, tpxmsgs, wordbounds
+    return tpxsamples, tpxmsgs, pd.DataFrame()
 
 #%% EYELINK
 
