@@ -22,9 +22,9 @@ import logging
 
 #%% MAKE SAMPLES
 
-def make_samples_df(etsamples,px2deg=True):
+def make_samples_df(etsamples, px2deg=True):
    
-    fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel'])
+    fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel', 'blink'])
     
     fields_to_fillin = fields_to_keep - set(etsamples.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin
