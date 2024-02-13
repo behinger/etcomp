@@ -11,7 +11,7 @@ import functions.add_path
 #import numpy as np
 #import os
 
-from functions.detect_events import make_blinks,make_saccades,make_fixations
+from functions.detect_events import make_saccades,make_fixations
 # from functions.et_import import import_pl
 from functions.detect_bad_samples import detect_bad_samples,remove_bad_samples
 from functions.et_helper import add_events_to_samples
@@ -24,7 +24,7 @@ import logging
 
 #%%
     
-def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=False,save=False,eventfunctions=(make_blinks,make_saccades,make_fixations),outputprefix='', **kwargs):    
+def preprocess_et(et,subject,datapath='/net/store/nbp/projects/etcomp/',load=False,save=False,eventfunctions=(make_saccades,make_fixations),outputprefix='', **kwargs):    
     # Output:     3 cleaned dfs: etsamples, etmsgs, etevents   
     
     # get a logger for the preprocess function    
