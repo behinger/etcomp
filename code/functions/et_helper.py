@@ -121,7 +121,7 @@ def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
     flat_ranges = eventtime_to_sampletime(etsamples,eventstart,eventend)
     # all etsamples with ix in ranges , will the eventype in the column type
     if len(flat_ranges) > 0:
-        etsamples.iloc[flat_ranges, 'type'] = eventtype
+        etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
         
 
     return etsamples
