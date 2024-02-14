@@ -285,7 +285,7 @@ def add_additional_features(etsamples,etevents,el=''):
             
             etevents.loc[ix, 'sd'] = np.sqrt(np.mean(np.square(thetas)))
 
-    return etevents
+    return etsamples, etevents
 
 
 #%%
