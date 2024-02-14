@@ -9,6 +9,7 @@ import cateyes
 import functions.detect_saccades as saccades
 import functions.et_helper as et_helper
 import functions.et_make_df as make_df
+
 import logging
 import os
 import pandas as pd
@@ -101,10 +102,21 @@ def make_blinks(etsamples, etevents, et):
 #     return(etsamples, etevents)
 
 
-def detect_saccades_cateyes(etsamples):
-    cl_disp, classes = cateyes.classify_dispersion(etsamples.gx, etsamples.gy, etsamples.smpl_time, 2.,0.1) # 2°, 100ms
-
-    saccades = []
+def detect_events_cateyes(etsamples,etevents):
+    #
+    # add the blinks to the etsamples.type column
+    etsamples = et_helper.add_events_to_samples(etsamples, etevents)
+    gx = etsamples.gx.copy()
+    gy = etsamples.gy.copy()
+    gx[etsamples.type=="blink"] = np.NaN
+    gy[etsamples.type=="blink"] = np.NaN
+    logger = logging.getLogger(__name__)
+    _,sfreq_empirical = cateyes.classification._get_time(etsamples.gx.iloc[1:10000],etsamples.smpl_time.iloc[1:10000])
+    logger.debug("Assuming a sr=2000 for cateyes remodnav. First 10k samples show {}".format(sfreq_empirical))
+    cl_disp, classes = cateyes.classify_remodnav(gx, gy, 2000,1, simple_output=True,
+                                            classifier_kwargs=dict(pursuit_velthresh=100000),
+                                             preproc_kwargs=dict(dilate_nan=0.05,savgol_length=0.00475,savgol_polyord=2),) # 2°, 100ms
+    events = []
     for idx in np.unique(cl_disp):
         if idx == 0:
             continue
@@ -112,11 +124,12 @@ def detect_saccades_cateyes(etsamples):
         #etsamples.smpl_time[ix[0]])
         #print(classes[ix[0][0]],ix[0])
         
-        if classes[ix[0][0]] != "Saccade":
-            continue
+        #if classes[ix[0][0]] != "Saccade":
+        #    continue
                 # only velocity based
         
-        this_saccade = {
+        this_event = {
+        'type': classes[ix[0][0]],
         'start_time': etsamples.smpl_time.iloc[ix[0][0]],
         'end_time': etsamples.smpl_time.iloc[ix[-1][0]],
         'duration': len(ix)/1000,
@@ -125,22 +138,30 @@ def detect_saccades_cateyes(etsamples):
         'end_gx': etsamples.gx.iloc[ix[-1][0]],
         'end_gy': etsamples.gy.iloc[ix[-1][0]],
         }
-        saccades.append(this_saccade)
+        events.append(this_event)
         # no need to calculate the raw_amplitude here as we will calculate the SPHERICAL amplitude later
         #'raw_amplitude': np.sum(normed_vel_data[cis[0]:cis[1]]),
         #'raw_peak_velocity': np.max(normed_vel_data[cis[0]:cis[1]]) * sample_rate,
 
-    saccade_df = pd.DataFrame(saccades)
-    saccade_df['amplitude']= saccade_df.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
-    saccade_df.reset_index()
-    return saccade_df
+    event_df = pd.DataFrame(events)
+    event_df['amplitude']= event_df.apply(lambda localrow:make_df.calc_3d_angle_points(localrow.start_gx,localrow.start_gy,localrow.end_gx,localrow.end_gy),axis=1)
+    event_df.reset_index()
+    return event_df
 
 
+def make_remodnav_events(etsamples, etevents, et,engbert_lambda=5):
+    newevents = detect_events_cateyes(etsamples,etevents)
+        
+    etevents= pd.concat([newevents,etevents], axis=0,sort=False)
+    
+    return etsamples, etevents
+
+    
 def make_saccades(etsamples, etevents, et,engbert_lambda=5):
 
     #saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et,engbert_lambda=engbert_lambda)
 
-    saccadeevents = detect_saccades_cateyes(etsamples)
+    saccadeevents = detect_saccades_cateyes(etsamples,etevents)
 
     # select only interesting columns: keep only the raw
     #keepcolumns = [s for s in saccadeevents.columns if "raw" in s]
@@ -160,7 +181,7 @@ def make_saccades(etsamples, etevents, et,engbert_lambda=5):
 
     
 def make_fixations(etsamples, etevents, et):
-    from functions.et_helper import winmean
+    
     # this happened already:  
     # etsamples, etevents = make_blinks(etsamples, etevents, et)
     # etsamples, etevents = make_saccades(etsamples, etevents, et)
@@ -213,16 +234,31 @@ def make_fixations(etsamples, etevents, et):
     # delete fixationevents shorter than 50 ms
     #logger.warning("Deleted %s fixationsevents of %s fixationsevents in total cause they were shorter than 50ms", np.sum(fixationevents.duration <= 0.05), len(fixationevents))
     #fixationevents = fixationevents[fixationevents.duration > 0.05]
+
+    fixationevents = add_additional_features(etsamples,fixationevents)
+    # Sanity checks
+
+    # check if negative duration:
+    if (fixationevents.duration < 0).any():
+        logger.warning("something is wrong, empty fixations found" )    
     
+    # concatenate to original event df    
+    etevents= pd.concat([etevents, fixationevents], axis=0,sort=False)
+     
+    return etsamples, etevents
+
     
-    for ix,row in fixationevents.iterrows():
+def add_additional_features(etsamples,etevents,el=''):    
+    from functions.et_helper import winmean
+    logger = logging.getLogger(__name__)
+    etevents = etevents.reset_index(drop=True)
+    for ix,row in etevents.iterrows():
         # take the mean gx/gy position over all samples that belong to that fixation
         # removed bad samples explicitly
         ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time) & (etsamples.zero_pa==False)  & (etsamples.neg_time==False)
-        fixationevents.loc[ix, 'mean_gx'] =  winmean(etsamples.loc[ix_fix, 'gx'])    
-        fixationevents.loc[ix, 'mean_gy'] =  winmean(etsamples.loc[ix_fix, 'gy'])
-
+        #print(ix)
         fix_samples = etsamples.loc[ix_fix,['gx', 'gy']]
+
 
         # calculate rms error (inter-sample distances)
        
@@ -230,6 +266,10 @@ def make_fixations(etsamples, etevents, et):
             logger.error('Empty fixation sample df encountered for fix_event at index %s', ix)
 
         else:                
+            etevents.loc[ix, 'mean_gx'] =  winmean(fix_samples.gx)    
+            etevents.loc[ix, 'mean_gy'] =  winmean(fix_samples.gy)
+
+
             # the thetas are the difference in spherical angle
             fixdf = pd.DataFrame({'x0':fix_samples.iloc[:-1].gx.values,'y0':fix_samples.iloc[:-1].gy.values,'x1':fix_samples.iloc[1:].gx.values,'y1':fix_samples.iloc[1:].gy.values})
             thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
@@ -238,25 +278,15 @@ def make_fixations(etsamples, etevents, et):
             #print('ix : %s', ix)
             #print('fixdf : %s', len(fixdf))
             #print('np.sqrt((np.square(thetas)).mean()) : %s', np.sqrt((np.square(thetas)).mean()))
-            fixationevents.loc[ix, 'rms'] = np.sqrt((np.square(thetas)).mean())
+            etevents.loc[ix, 'rms'] = np.sqrt((np.square(thetas)).mean())
             
             fixdf = pd.DataFrame({'x0':fix_samples.gx.mean(),'y0':fix_samples.gy.mean(),'x1':fix_samples.gx.values,'y1':fix_samples.gy.values})
             thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
             
-            fixationevents.loc[ix, 'sd'] = np.sqrt(np.mean(np.square(thetas)))
+            etevents.loc[ix, 'sd'] = np.sqrt(np.mean(np.square(thetas)))
 
+    return etevents
 
-
-    # Sanity checks
-
-    # check if negative duration:
-    if (fixationevents.duration < 0).any():
-        logger.warning("something is wrong" )    
-    
-    # concatenate to original event df    
-    etevents= pd.concat([etevents, fixationevents], axis=0,sort=False)
-     
-    return etsamples, etevents
 
 #%%
     
