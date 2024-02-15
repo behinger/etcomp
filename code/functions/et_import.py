@@ -221,9 +221,11 @@ def import_el(subject, participant_info, datapath='/net/store/nbp/projects/etcom
         elsamples.loc[::2, 'time'] = elsamples.loc[::2, 'time'] + 0.5
     
     # We also delete Samples with interpolated pupil responses. In one dataset these were ~800samples.
-    logger.warning('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
-    logger.warning('Deleting %.4f%% due to other errors in the import process'%(100*np.mean((elsamples.errors !=8) & (elsamples.errors!=0))))
-    elsamples = elsamples.loc[elsamples.errors == 0]
+    #logger.warning('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
+    logger.warning('Marking as NaN %.4f%% due to other errors (e.g. lost eye / target)'%(100*np.mean((elsamples.errors!=0))))
+    
+    #elsamples = elsamples.loc[elsamples.errors == 0]
+    elsamples.loc[elsamples.errors != 0,["gx_left","gy_left","gx_right","gx_left"]] = np.NaN
     
     # We had issues with samples with negative time
     logger.warning('Deleting %.4f%% samples due to time<=0'%(100*np.mean(elsamples.time<=0)))
@@ -234,7 +236,7 @@ def import_el(subject, participant_info, datapath='/net/store/nbp/projects/etcom
     # refer to artefacts. If you use %SYNCTIME% this might be problematic (don't know how nwilming's edfread incorporates synctime)
     logger.warning('Deleting %.4f%% samples due to time being less than the starting time'%(100*np.mean(elsamples.time <= elsamples.time[0])))
     elsamples = elsamples.loc[elsamples.time > elsamples.time[0]]
-    elsamples = elsamples.reset_index()
+    elsamples.reset_index(inplace=True)
     # Convert to same units
     # change to seconds to be the same as pupil
     elsamples['smpl_time'] = elsamples['time'] / 1000 
@@ -278,7 +280,7 @@ def import_el(subject, participant_info, datapath='/net/store/nbp/projects/etcom
     
     # Make (0,0) the point bottom left
     elsamples['gy'] = 1080 - elsamples['gy']
-    
+    elsamples.loc[elsamples.gy < -900000,'gy'] = np.nan # no idea why this is necessary... should be NaN anyway
     # "select" relevant columns
     elsamples = make_df.make_samples_df(elsamples)
                 
