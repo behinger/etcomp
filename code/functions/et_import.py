@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import edfread # parses SR research EDF data files into pandas df
 import imp # for edfread reload
 import logging
 import os
 import numpy as np
 import pandas as pd
 import re
-# import scipy
-# import scipy.stats
 from scipy import io as sio
 
 from functions.et_helper import findFile
@@ -19,52 +18,75 @@ import functions.et_helper as  helper
 
 #%% TRACKPIXX
 
-def read_mat(directory='./data', excludeID=None):
-    """""
+def read_mat(subject, datapath='./data'):
+    """
     Read raw MAT data files as exported by Matlab for TrackPixx
 
     Parameters:
+        subject (str): Participant ID
         datapath (str): Data location
-        excludeID (list): A list of participant IDs to exclude from file import. These must be the same as the folder names
     Returns: 
         combined_df (pd.DataFrame): A DataFrame with added information about the block and participant
     """
-    all_data = []
-
-    for root, dirs, files in os.walk(directory):
-        if excludeID is not None and os.path.basename(root) in excludeID:
-                continue
-        
-        for filename in files:
-
+    logger = logging.getLogger(__name__)
+    directory = os.path.join(datapath, subject, 'raw')  
+    tpxsamples = []
+    
+    try:
+        for filename in os.listdir(directory):
             if filename.endswith("tpx.mat"):
-                file_path = os.path.join(root, filename)
-                mat = sio.loadmat(file_path)
+                filepath = os.path.join(directory, filename)
+                logger.warning('Reading file %s', filename)
+                mat = sio.loadmat(filepath)
                 data = mat['bufferData']
                 cols = mat['varnames'][0].split(',')
                 df = pd.DataFrame(data=data, columns=cols)
-                
+                    
                 df['block'] = filename[-9:-8]
                 df['ID'] = filename[0:7]
-                
-                all_data.append(df)
+                   
+                tpxsamples.append(df)
+        
+        if not tpxsamples:
+            raise ValueError("No 'tpx.mat' files found in the directory.")
+    
+        combined_df = pd.concat(tpxsamples, ignore_index=True)
+    
+        return combined_df
+    
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        return None
+    
 
-    combined_df = pd.concat(all_data, ignore_index=True)
-    combined_df.sort_values("TimeTag",inplace=True,ignore_index=True)
-    return combined_df
-
-
-def load_messages(directory='./data', pattern=r'^sub-\d{3}_events.csv$', excludeID=None):
-    """""
+def load_messages(subject, datapath='./data', pattern=r'^sub-\d{3}_events.csv$'):
+    """
     Import the message report for TrackPixx.
 
     Parameters:
-        directory (str): Data location
+        subject (str): Participant ID
+        datapath (str): Data location
         pattern (str): A regular expression for parsing participant IDs
-        excludeID (list): A list of participant IDs to exclude from file import. These must be the same as the folder names
     Returns: 
         combined_msgs (pd.DataFrame): A DataFrame with all messages
     """
+    logger = logging.getLogger(__name__)
+    all_msgs = []
+    file_pattern = re.compile(pattern)
+    directory = os.path.join(datapath, subject, 'raw')
+        
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            if file_pattern.match(filename):
+                file_path = os.path.join(root, filename)
+                logger.warning('Reading file %s', filename)
+                df = pd.read_csv(file_path)             
+                df['ID'] = subject
+                all_msgs.append(df)
+
+    combined_msgs = pd.concat(all_msgs, ignore_index=True)
+
+    return combined_msgs
 
     all_msgs = []
     file_pattern = re.compile(pattern)
@@ -109,9 +131,10 @@ def load_wordbounds(directory='./data'):
 
     return bounds
   
-def import_tpx(subject,participant_info, datapath='./data'):
+def import_tpx(subject, participant_info, datapath='./data'):
     logger = logging.getLogger(__name__)
-    tpxsamples = read_mat(datapath)
+    logger.warning(datapath)
+    tpxsamples = read_mat(subject, datapath)
     tpxsamples.rename(columns={'TimeTag': 'smpl_time', 
                                'RightEyeX': 'gx_right', 
                                'LeftEyeX': 'gx_left',
@@ -120,16 +143,7 @@ def import_tpx(subject,participant_info, datapath='./data'):
                                'RightBlink' : 'b_right', 
                                'LeftBlink' : 'b_left', 
                                'RightPupilDiameter': 'pa_right', 
-                               'LeftPupilDiameter' : 'pa_left'
-                            #    'RightEyeFixationFlag': 'FixationFlag_right',
-                            #    'LeftEyeFixationFlag': 'FixationFlag_left', 
-                            #    'RightEyeSaccadeFlag': 'SaccadeFlag_right',
-                            #    'LeftEyeSaccadeFlag': 'SaccadeFlag_left', 
-                            #    'RightEyeRawX': 'RawX_right', 
-                            #    'RightEyeRawY': 'RawY_right',
-                            #    'LeftEyeRawX': 'RawX_left',
-                            #    'LeftEyeRawY': 'RawY_left'
-                               }, inplace=True)
+                               'LeftPupilDiameter' : 'pa_left'}, inplace=True)
     # We had issues with samples with negative time
     logger.warning('Deleting %.4f%% samples due to time<=0'%(100*np.mean(tpxsamples.smpl_time<=0)))
     tpxsamples = tpxsamples.loc[tpxsamples.smpl_time > 0]
@@ -169,10 +183,8 @@ def import_tpx(subject,participant_info, datapath='./data'):
     tpxmsgs = load_messages(datapath) 
     tpxmsgs = tpxmsgs.apply(parse.parse_message,axis=1)
     tpxmsgs = tpxmsgs.drop(tpxmsgs.index[tpxmsgs.isnull().all(1)])
-    #wordbounds = load_wordbounds(datapath)
-    #wordbounds = make_lines(wordbounds, 'top_left_y')
     
-    return tpxsamples, tpxmsgs, pd.DataFrame()
+    return tpxsamples, tpxmsgs, pd.DataFrame() #FIXME why not return tpxevents? it's empty anyway
 
 #%% EYELINK
 
@@ -180,7 +192,6 @@ def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # Input:    subjectname, datapath
     # Output:   Returns pupillabs dictionary
     filename = os.path.join(datapath,subject,'raw')
-    import  edfread # parses SR research EDF data files into pandas df
 
     elsamples, elevents, elnotes = edfread.read_edf(os.path.join(filename,findFile(filename,'.EDF')[0]))#, trial_marker=b'')
     
@@ -295,7 +306,7 @@ def import_el(subject, participant_info, datapath='/net/store/nbp/projects/etcom
     
 
 
-
+# FIXME do we still need this function? If so, it needs to be adjusted to TPX.
 def fix_smallgrid_parser(etmsgs):
     # This fixes the missing separation between smallgrid before and small grid after. During experimental sending both were named identical.
     replaceGrid = pd.Series([k for l in [13*['SMALLGRID_BEFORE'],13*['SMALLGRID_AFTER']]*6 for k in l])
