@@ -33,20 +33,23 @@ def read_mat(subject, datapath='./data'):
     tpxsamples = []
     
     try:
-        for filename in os.listdir(directory):
-            if filename.endswith("tpx.mat"):
-                filepath = os.path.join(directory, filename)
-                logger.warning('Reading file %s', filename)
-                mat = sio.loadmat(filepath)
-                data = mat['bufferData']
-                cols = mat['varnames'][0].split(',')
-                df = pd.DataFrame(data=data, columns=cols)
-                    
-                df['block'] = filename[-9:-8]
-                df['ID'] = filename[0:7]
-                   
-                tpxsamples.append(df)
-        
+        # Get a list of filenames and sort them based on the block number
+        filenames = [filename for filename in os.listdir(directory) if filename.endswith("tpx.mat")]
+        filenames.sort(key=lambda x: int(re.search(r'block-(\d+)_tpx.mat', x).group(1)))
+
+        for filename in filenames:
+            filepath = os.path.join(directory, filename)
+            logger.warning('Reading file %s', filename)
+            mat = sio.loadmat(filepath)
+            data = mat['bufferData']
+            cols = mat['varnames'][0].split(',')
+            df = pd.DataFrame(data=data, columns=cols)
+                
+            df['block'] = int(re.search(r'block-(\d+)_tpx.mat', filename).group(1))
+            df['ID'] = filename[0:7]
+               
+            tpxsamples.append(df)
+    
         if not tpxsamples:
             raise ValueError("No 'tpx.mat' files found in the directory.")
     
@@ -57,7 +60,7 @@ def read_mat(subject, datapath='./data'):
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
-    
+
 
 def load_messages(subject, datapath='./data', pattern=r'^sub-\d{3}_events.csv$'):
     """
