@@ -91,25 +91,25 @@ def load_messages(subject, datapath='./data', pattern=r'^sub-\d{3}_events.csv$')
 
     return combined_msgs
 
-    all_msgs = []
-    file_pattern = re.compile(pattern)
+    # all_msgs = []
+    # file_pattern = re.compile(pattern)
 
-    for root, dirs, files in os.walk(directory):
-        if excludeID is not None and os.path.basename(root) in excludeID:
-                continue
+    # for root, dirs, files in os.walk(directory):
+    #     if excludeID is not None and os.path.basename(root) in excludeID:
+    #             continue
         
-        for filename in files:
-            if file_pattern.match(filename):
-                file_path = os.path.join(root, filename)
-                print('Reading file', filename)
-                df = pd.read_csv(file_path)             
-                df['ID'] = filename[0:7]
+    #     for filename in files:
+    #         if file_pattern.match(filename):
+    #             file_path = os.path.join(root, filename)
+    #             print('Reading file', filename)
+    #             df = pd.read_csv(file_path)             
+    #             df['ID'] = filename[0:7]
                 
-                all_msgs.append(df)
+    #             all_msgs.append(df)
 
-    combined_msgs = pd.concat(all_msgs, ignore_index=True)
+    # combined_msgs = pd.concat(all_msgs, ignore_index=True)
 
-    return combined_msgs
+    # return combined_msgs
 
 def load_wordbounds(directory='./data'):
     """
