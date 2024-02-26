@@ -15,7 +15,6 @@ import functions.et_parse as parse
 import functions.et_make_df as make_df
 import functions.et_helper as  helper
 
-
 #%% TRACKPIXX
 
 def read_mat(subject, datapath='./data'):
@@ -337,7 +336,110 @@ def fix_smallgrid_parser(etmsgs):
         etmsgs.loc[ix,'condition'] = 'SMALLGRID_AFTER'
         
     return(etmsgs)
+
+#%% GENERAL DATA LOADING AND IMPORT
+
+def load_et_data(participant_info, datapath='/data/', excludeID=None, cleaned=True):
+    """
+    Loads eye-tracking data for multiple participants from preprocessed CSV files.
+
+    Parameters:
+        participant_info (pd.DataFrame): A DataFrame containing participant information, including their IDs.
+        datapath (str, optional): The base directory where participant data is stored.
+        excludeID (list, optional): A list of participant IDs to exclude from loading.
+        cleaned (bool, optional): If True, load cleaned samples; if False, load raw samples. Default is True.
+
+    Returns:
+        A tuple containing three pandas DataFrames:
+            - etsamples (pd.DataFrame): DataFrame containing eye-tracking samples data.
+            - etmsgs (pd.DataFrame): DataFrame containing eye-tracking messages data.
+            - etevents (pd.DataFrame): DataFrame containing eye-tracking events data.
+
+    Example:
+        etsamples, etmsgs, etevents = load_et_data(participant_info, datapath, excludeID=['sub-010', 'sub-011'])
+    """
     
+    logger = logging.getLogger(__name__)
+    etsamples = pd.DataFrame()
+    etmsgs= pd.DataFrame()
+    etevents = pd.DataFrame()
+
+    for id in participant_info.ID.unique():
+        preprocessed_folder_path = os.path.join(datapath, id, 'preprocessed')
+
+        # Exclude participants
+        if excludeID is not None and id in excludeID:
+            logger.warning('Warning. Skipping ID: %s', id)
+            continue
+        # Check whether each participant in the reference file has corresponding eyetracking files.
+        if not os.path.exists(preprocessed_folder_path):
+            logger.warning('Warning. No folder found for ID %s in %s', id, datapath)
+            continue
+        
+        logger.warning('Loading ID: %s ...', id)
+        
+        for et in ['el', 'tpx']:
+            try:
+                if cleaned:
+                    filename_samples = f"{et}_cleaned_samples.csv"
+                else:
+                    filename_samples = f"{et}_samples.csv"
+                filename_msgs    = f"{et}_msgs.csv"
+                filename_events  = f"{et}_events.csv"
+                
+                etsamples = pd.concat([etsamples, pd.read_csv(os.path.join(preprocessed_folder_path, filename_samples)).assign(subject=id, eyetracker=et)], ignore_index=True, sort=False)
+                etmsgs    = pd.concat([etmsgs, pd.read_csv(os.path.join(preprocessed_folder_path, filename_msgs)).assign(subject=id, eyetracker=et)], ignore_index=True, sort=False)
+                etevents  = pd.concat([etevents, pd.read_csv(os.path.join(preprocessed_folder_path, filename_events)).assign(subject=id, eyetracker=et)], ignore_index=True, sort=False)
+
+                # FIXME do we still need this part? Does this not already happen elsewhere?
+                # t0 = elmsgs.query("condition=='Instruction'&exp_event=='BEGINNING_start'").msg_time.values
+                # if len(t0)!=1:
+                #     raise error
+                    
+                # elsamples.smpl_time = elsamples.smpl_time - t0
+                # elmsgs.msg_time= elmsgs.msg_time - t0
+                # elevents.start_time = elevents.start_time- t0
+                # elevents.end_time = elevents.end_time- t0
+
+            except FileNotFoundError as error:
+                logger.critical('Warning: data for %s eyetracker not found!\n %s', et, error)
+                continue
+    # FIXME at this point, the original function contained eyetracker regression functionality. 
+    # I'm not sure it really fits here and I don't think we have a function to do this at the moment.
+    # for subject in etmsgs.subject.unique():
+    #     logger.info("fixing subject %s"%(subject))
+    #     etsamples,etmsgs,etevents = regress_eyetracker(etsamples,etevents,etmsgs,subject)
+
+    return etsamples, etmsgs, etevents
+
+
+def load_files(directory, datatype):
+    """
+    Load and merge CSV files from multiple subdirectories into one pandas DataFrame.
+    This is currently only used for loading participant information.
+
+    Parameters:
+        directory (str): Path to the main directory containing subdirectories with CSV files.
+        eyetracker (str): Output of which eyetracker (el or tp)
+        datatype (str): Type of CSV file (samples, msgs, or events)
+    Returns:
+        all_data (pd.DataFrame): Merged DataFrame containing data from all CSV files.
+    """
+    all_data = pd.DataFrame()
+
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(datatype+'.csv'):
+                file_path = os.path.join(root, file)
+                if datatype == "participant_info": 
+                    data = pd.read_csv(file_path, sep=';')
+                else: 
+                    data = pd.read_csv(file_path, sep=',')
+                print("Processing",file_path)
+                all_data = pd.concat([all_data, data])
+
+    return all_data
+
 ######################################################################
 #                                                                    #
 #  FUNCTIONS THAT PROBABLY NEED TO BE MOVED ELSEWHERE                #
@@ -450,31 +552,3 @@ def make_lines(df, column_name='top_left_y'):
     for group_num, value_range in lines.items():
         new_df.loc[new_df[column_name].between(value_range[0], value_range[1]), 'line'] = group_num
     return new_df
-
-
-def load_files(directory, datatype):
-    """
-    Load and merge CSV files from multiple subdirectories into one pandas DataFrame.
-    This is currently only used for loading participant information.
-
-    Parameters:
-        directory (str): Path to the main directory containing subdirectories with CSV files.
-        eyetracker (str): Output of which eyetracker (el or tp)
-        datatype (str): Type of CSV file (samples, msgs, or events)
-    Returns:
-        all_data (pd.DataFrame): Merged DataFrame containing data from all CSV files.
-    """
-    all_data = pd.DataFrame()
-
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(datatype+'.csv'):
-                file_path = os.path.join(root, file)
-                if datatype == "participant_info": 
-                    data = pd.read_csv(file_path, sep=';')
-                else: 
-                    data = pd.read_csv(file_path, sep=',')
-                print("Processing",file_path)
-                all_data = pd.concat([all_data, data])
-
-    return all_data
