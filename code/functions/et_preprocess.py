@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import functions.add_path
 import logging
 
 from functions.detect_events import make_blinks, make_saccades,make_fixations
