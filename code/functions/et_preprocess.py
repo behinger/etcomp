@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os
+import pandas as pd
 
-from functions.detect_events import make_blinks, make_saccades,make_fixations
-from functions.detect_bad_samples import detect_bad_samples,remove_bad_samples
+from functions.detect_events import make_blinks, make_saccades, make_fixations
+from functions.detect_bad_samples import detect_bad_samples, remove_bad_samples
 from functions.et_helper import add_events_to_samples
 from functions.et_helper import load_file, save_file
 from functions.et_make_df import make_events_df
@@ -81,7 +83,7 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
 
 
     # Detect events
-    ## by our default first blinks, then saccades, then fixations
+    ## by default first blinks, then saccades, then fixations
     logger.debug('Making event dataframe ...')
     for evtfunc in eventfunctions:
         logger.debug('Events: calling %s', evtfunc.__name__)
@@ -110,3 +112,48 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
 
 
     return cleaned_etsamples, etmsgs, etevents
+
+
+def load_and_process_all_et_data(participant_info, et, datapath='/data/', excludeID=None):
+    """
+    Preprocesses eye-tracking data for multiple participants and combines the results into a DataFrames.
+
+    This function iterates over the participant IDs, loads and preprocesses the corresponding eye-tracking data files, 
+    and aggregates the cleaned samples, messages, and events data into separate pandas DataFrames.
+
+    Parameters:
+        participant_info (pd.DataFrame): A DataFrame containing participant information, including their IDs.
+        et (str): The type of eye-tracker data to preprocess and load ('el' for Eyelink, 'tpx' for TrackPixx).
+        datapath (str, optional): The base directory where participant data is stored.
+        excludeID (list, optional): A list of participant IDs to exclude from preprocessing.
+
+    Returns:
+        A tuple containing three pandas DataFrames:
+            - cleaned_etsamples (pd.DataFrame): DataFrame containing cleaned eye-tracking samples data.
+            - etmsgs (pd.DataFrame): DataFrame containing eye-tracking messages data.
+            - etevents (pd.DataFrame): DataFrame containing eye-tracking events data.
+    """
+    logger = logging.getLogger(__name__)
+    cleaned_etsamples = pd.DataFrame()
+    etmsgs= pd.DataFrame()
+    etevents = pd.DataFrame()
+
+    for id in participant_info.ID.unique():
+        # Exclude participants
+        if excludeID is not None and id in excludeID:
+            logger.warning('Warning. Skipping ID: %s', id)
+            continue
+        # Check whether each participant in the reference file has corresponding eyetracking files.
+        if not os.path.exists(datapath):
+            logger.warning('Warning. No folder found for ID %s in %s', id, datapath)
+            continue
+        logger.warning('Reading and preprocessing ID: %s', id)
+        cleaned_etsamples, etmsgs, etevents = preprocess_et(et=et,
+                                                            subject=id,
+                                                            participant_info=participant_info,
+                                                            datapath=datapath,
+                                                            load=False,
+                                                            save=True,
+                                                            eventfunctions=(make_blinks, make_saccades, make_fixations),
+                                                            outputprefix='preprocessed_')
+    return cleaned_etsamples, etmsgs, etevents # FIXME do I want to have this as a result? We only ever need the saved data?
