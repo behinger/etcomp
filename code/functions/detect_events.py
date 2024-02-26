@@ -161,7 +161,7 @@ def make_saccades(etsamples, etevents, et,engbert_lambda=5):
 
     #saccadeevents = saccades.detect_saccades_engbert_mergenthaler(etsamples,etevents,et=et,engbert_lambda=engbert_lambda)
 
-    saccadeevents = detect_saccades_cateyes(etsamples,etevents)
+    saccadeevents = detect_events_cateyes(etsamples,etevents)
 
     # select only interesting columns: keep only the raw
     #keepcolumns = [s for s in saccadeevents.columns if "raw" in s]
