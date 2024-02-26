@@ -339,7 +339,7 @@ def fix_smallgrid_parser(etmsgs):
 
 #%% GENERAL DATA LOADING AND IMPORT
 
-def load_et_data(participant_info, datapath='/data/', excludeID=None, cleaned=True):
+def load_preprocessed_data(participant_info, datapath='/data/', excludeID=None, cleaned=True):
     """
     Loads eye-tracking data for multiple participants from preprocessed CSV files.
 
@@ -482,7 +482,7 @@ def drop_eye(subject, participant_info,samples, events=None):
                                   'ryvel_right': 'ryvel'}, 
                          inplace=True)
         if 'b_right' not in samples.columns:
-            logger.warning("DataFrame does not have the 'b_right' column.")
+            logger.warning("DataFrame does not have the 'b_right' column (probably loading not TrackPixx data).")
         else:
             samples.rename(columns={'b_right': 'blink'}, inplace=True)
 
@@ -509,7 +509,7 @@ def drop_eye(subject, participant_info,samples, events=None):
                                   'ryvel_left': 'ryvel'}, 
                          inplace=True)
         if 'b_left' not in samples.columns:
-            logger.warning("DataFrame does not have the 'b_left' column.")
+            logger.warning("DataFrame does not have the 'b_left' column (probably loading not TrackPixx data).")
         else:
             samples.rename(columns={'b_left': 'blink'}, inplace=True)
 
