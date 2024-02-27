@@ -10,25 +10,23 @@ import pandas as pd
 import re
 from scipy import io as sio
 
-from functions.et_helper import findFile, check_directory
+from functions.et_helper import findFile, check_directory, drop_eye
 import functions.et_parse as parse
 import functions.et_make_df as make_df
 import functions.et_helper as  helper
 
 #%% TRACKPIXX
 
-def read_mat(subject, datapath='./data'):
+def read_mat(datapath='./data'):
     """
     Read raw MAT data files as exported by Matlab for TrackPixx
 
     Parameters:
-        subject (str): Participant ID
         datapath (str): Data location
     Returns: 
         combined_df (pd.DataFrame): A DataFrame with added information about the block and participant
     """
     logger = logging.getLogger(__name__)
-    # directory = os.path.join(datapath, subject, 'raw')  
     tpxsamples = []
     
     try:
@@ -93,25 +91,6 @@ def load_messages(subject, datapath='./data', pattern=r'^sub-\d{3}_events.csv$')
 
     return combined_msgs
 
-    # all_msgs = []
-    # file_pattern = re.compile(pattern)
-
-    # for root, dirs, files in os.walk(directory):
-    #     if excludeID is not None and os.path.basename(root) in excludeID:
-    #             continue
-        
-    #     for filename in files:
-    #         if file_pattern.match(filename):
-    #             file_path = os.path.join(root, filename)
-    #             print('Reading file', filename)
-    #             df = pd.read_csv(file_path)             
-    #             df['ID'] = filename[0:7]
-                
-    #             all_msgs.append(df)
-
-    # combined_msgs = pd.concat(all_msgs, ignore_index=True)
-
-    # return combined_msgs
 
 def load_wordbounds(directory='./data'):
     """
@@ -135,7 +114,8 @@ def load_wordbounds(directory='./data'):
                 bounds.sort_values(by=['ID', 'block', 'word'], inplace=True)
 
     return bounds
-  
+
+
 def import_tpx(subject, participant_info, datapath='/data/'):
     logger = logging.getLogger(__name__)
 
@@ -144,7 +124,7 @@ def import_tpx(subject, participant_info, datapath='/data/'):
     except FileNotFoundError as error:
         logger.warning("Directory not found. Error: %s", error)
 
-    tpxsamples = read_mat(subject, datapath)
+    tpxsamples = read_mat(datapath)
     tpxsamples.rename(columns={'TimeTag': 'smpl_time', 
                                'RightEyeX': 'gx_right', 
                                'LeftEyeX': 'gx_left',
@@ -194,21 +174,34 @@ def import_tpx(subject, participant_info, datapath='/data/'):
     tpxmsgs = tpxmsgs.apply(parse.parse_message,axis=1)
     tpxmsgs = tpxmsgs.drop(tpxmsgs.index[tpxmsgs.isnull().all(1)])
     
-    return tpxsamples, tpxmsgs, pd.DataFrame() #FIXME why not return tpxevents? it's empty anyway
+    return tpxsamples, tpxmsgs, tpxevents
 
 #%% EYELINK
 
-def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
-    # Input:    subjectname, datapath
-    # Output:   Returns pupillabs dictionary
-    filename = os.path.join(datapath,subject,'raw')
+def raw_el_data(datapath='/data/'):
+    """
+    Read raw Eyelink eye-tracking data from an EDF file.
 
-    elsamples, elevents, elnotes = edfread.read_edf(os.path.join(filename,findFile(filename,'.EDF')[0]))#, trial_marker=b'')
+    Parameters:
+        datapath (str, optional): The directory path where the EDF files are located. 
+
+    Returns A tuple containing three elements:
+        elsamples (pd.Dataframe): A dataframe containing samples data from the EDF file.
+        elevents (pd.Dataframe): A dataframe containing events data from the EDF file.
+        elnotes (pd.Dataframe): A dataframe containing message data from the EDF file.
+    """
+    logger = logging.getLogger(__name__)
+    try:
+        check_directory(datapath)
+    except FileNotFoundError as error:
+        logger.warning("Directory not found while reading raw EyeLink data. Error: %s", error)
+
+    elsamples, elevents, elnotes = edfread.read_edf(os.path.join(datapath,findFile(datapath,'.EDF')[0]))
     
     return (elsamples,elevents,elnotes)
     
     
-def import_el(subject, participant_info, datapath='/net/store/nbp/projects/etcomp/'):
+def import_el(subject, participant_info, datapath='/data/'):
     # Input:    subject:         (str) name
     #           datapath:        (str) location where data is stored
     # Output:   Returns list of 3 el df (elsamples, elmsgs, elevents)
@@ -217,7 +210,11 @@ def import_el(subject, participant_info, datapath='/net/store/nbp/projects/etcom
     
     # get a logger
     logger = logging.getLogger(__name__)
-     
+
+    try:
+        check_directory(datapath)
+    except FileNotFoundError as error:
+        logger.warning("Directory not found. Error: %s", error)     
     
     # Load edf
     
@@ -225,7 +222,8 @@ def import_el(subject, participant_info, datapath='/net/store/nbp/projects/etcom
     # elsamples:  contains individual EL samples
     # elevents:   contains fixation and saccade definitions
     # elnotes:    contains notes (meta data) associated with each trial
-    elsamples,elevents,elnotes = raw_el_data(subject,datapath)
+   
+    elsamples,elevents,elnotes = raw_el_data(datapath)
     
     # TODO understand and fix this
     count = 0
@@ -447,117 +445,3 @@ def load_files(directory, datatype):
                 all_data = pd.concat([all_data, data])
 
     return all_data
-
-######################################################################
-#                                                                    #
-#  FUNCTIONS THAT PROBABLY NEED TO BE MOVED ELSEWHERE                #
-#                                                                    #
-######################################################################
-
-def drop_eye(subject, participant_info, samples, events=None):
-    """
-    Filters data for the dominant eye from a dataframe (e.g. a sample report) based on a participant reference dataframe.
-    
-    Parameters:
-        samples (pd.DataFrame): The samples DataFrame from which COLUMNS will be removed.
-        events (pd.DataFrame): An optional events DataFrame from which ROWS will be removed.
-        subject (str): A string containing the subject ID.
-        participant_info (pd.DataFrame): The DataFrame containing the dominant eye information ('Rechts' for right, 'Links' for left).
-    Returns:
-        samples (pd.DataFrame): The modified DataFrame where non-dominant eye columns are removed and the remaining gaze-related columns are renamed.
-
-    """
-    logger = logging.getLogger(__name__)
-
-    eye = participant_info.loc[participant_info['ID'] == subject, 'DominantEye'].iloc[0]
-    if eye == 'Rechts':
-        logger.warning('Selecting the right eye.')
-        # Samples right
-        drop_columns = samples.filter(like='_left', axis=1)
-        samples = samples.drop(columns = drop_columns)
-        samples.rename(columns={'gx_right': 'gx', 
-                                  'gy_right': 'gy',
-                                  'gxvel_right': 'gxvel',
-                                  'gyvel_right': 'gyvel',
-                                  'pa_right': 'pa',
-                                  'px_right': 'px',
-                                  'py_right': 'py',
-                                  'hx_right': 'hx',
-                                  'hy_right': 'hy',
-                                  'hxvel_right': 'hxvel',
-                                  'hyvel_right': 'hyvel',
-                                  'rxvel_right': 'rxvel',
-                                  'ryvel_right': 'ryvel'}, 
-                         inplace=True)
-        if 'b_right' not in samples.columns:
-            logger.warning("DataFrame does not have the 'b_right' column (probably loading not TrackPixx data).")
-        else:
-            samples.rename(columns={'b_right': 'blink'}, inplace=True)
-
-        # Events right
-        if events is not None:
-            events = events.loc[events['eye'] == 1]
-
-    elif eye == 'Links':
-        # Samples left
-        logger.warning('Selecting the left eye.')
-        drop_columns = samples.filter(like='_right', axis=1)
-        samples = samples.drop(columns = drop_columns)
-        samples.rename(columns={'gx_left': 'gx', 
-                                  'gy_left': 'gy',
-                                  'gxvel_left': 'gxvel',
-                                  'gyvel_left': 'gyvel',
-                                  'pa_left': 'pa',
-                                  'px_left': 'px',
-                                  'py_left': 'py',
-                                  'hx_left': 'hx',
-                                  'hy_left': 'hy',
-                                  'hxvel_left': 'hxvel',
-                                  'hyvel_left': 'hyvel',
-                                  'rxvel_left': 'rxvel',
-                                  'ryvel_left': 'ryvel'}, 
-                         inplace=True)
-        if 'b_left' not in samples.columns:
-            logger.warning("DataFrame does not have the 'b_left' column (probably loading not TrackPixx data).")
-        else:
-            samples.rename(columns={'b_left': 'blink'}, inplace=True)
-
-        # Events left
-        if events is not None:
-            events = events.loc[events['eye'] == 0]
-    
-    else:
-        logger.error("Unknown eye '%s' for subject ID: %s", eye, subject)
-        
-    return samples, events
-
-
-def make_lines(df, column_name='top_left_y'):
-    """
-    This function adds line information for the reading task. 
-    The text read in this task was split into lines of up to 11 lines per display.
-
-    Parameters:
-        df (pd.DataFrame): The DataFrame to be processed.
-        column_name (str): The name of the column containing values to be used for grouping.
-    Returns:
-        new_df (pd.DataFrame): A DataFrame with a new 'group' column containing group numbers.
-    """
-    lines = {
-        1: (100, 105),
-        2: (187, 192),
-        3: (274, 286),
-        4: (361, 366),
-        5: (448, 453),
-        6: (535, 540),
-        7: (622, 627),
-        8: (707, 714),
-        9: (796, 801),
-        10: (883, 888),
-        11: (970, 975)
-    }
-    new_df = df.copy()
-    new_df['line'] = None
-    for group_num, value_range in lines.items():
-        new_df.loc[new_df[column_name].between(value_range[0], value_range[1]), 'line'] = group_num
-    return new_df
