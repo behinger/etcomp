@@ -110,7 +110,7 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
 
 
 
-def load_and_process_all_et_data(participant_info, et, datapath='/data/', excludeID=None):
+def load_and_process_all_et_data(participant_info, et, eventfunctions, datapath='/data/', excludeID=None):
     """
     Preprocesses eye-tracking data for multiple participants and combines the results into a DataFrames.
 
@@ -120,6 +120,7 @@ def load_and_process_all_et_data(participant_info, et, datapath='/data/', exclud
     Parameters:
         participant_info (pd.DataFrame): A DataFrame containing participant information, including their IDs.
         et (str): The type of eye-tracker data to preprocess and load ('el' for Eyelink, 'tpx' for TrackPixx).
+        eventfunctions (tuple): Functions that are used to identify events (e.g. fixation, saccades).
         datapath (str, optional): The base directory where participant data is stored.
         excludeID (list, optional): A list of participant IDs to exclude from preprocessing.
 
@@ -154,7 +155,7 @@ def load_and_process_all_et_data(participant_info, et, datapath='/data/', exclud
                                                                 datapath=raw_folder_path,
                                                                 load=False,
                                                                 save=True,
-                                                                eventfunctions=(make_blinks, make_saccades, make_fixations),
+                                                                eventfunctions=eventfunctions,
                                                                 outputprefix='preprocessed_')
         except FileNotFoundError as error:
             logger.warning("Directory not found. Error: %s", error)
