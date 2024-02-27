@@ -1,21 +1,37 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from plotnine import *
+from plotnine.stats.stat_summary import bootstrap_statistics
+from scipy.stats.mstats import winsorize
+import logging
 import math
-import os
 import numpy as np
-from numpy import pi,cos,sin
-
+import os
 import pandas as pd
 
-import logging
 
-from plotnine import *
+def check_directory(directory):
+    """
+    Check whether a directory exists.
 
+    Parameters:
+        directory (str): The directory to check for existence.
 
-from scipy.stats.mstats import winsorize
-from plotnine.stats.stat_summary import bootstrap_statistics
+    Raises:
+        FileNotFoundError: If the directory does not exist.
 
+    Returns:
+        None
+    """
+    if not os.path.isdir(directory):
+        raise FileNotFoundError(f"The directory '{directory}' does not exist.")
+
+######################################################################
+#                                                                    #
+#  FUNCTIONS THAT MAY BE REDUNDANT                                   #
+#                                                                    #
+######################################################################
 
 #%% put PUPIL LABS data into PANDAS DF
 
@@ -297,9 +313,9 @@ def px2deg(px, orientation, mm_per_px=0.276,distance=600):
 
 
 def sph2cart(theta_sph,phi_sph,rho_sph=1):
-    xyz_sph = np.asarray([rho_sph * sin(theta_sph) * cos(phi_sph), 
-           rho_sph * sin(theta_sph) * sin(phi_sph), 
-           rho_sph * cos(theta_sph)])
+    xyz_sph = np.asarray([rho_sph * np.sin(theta_sph) * np.cos(phi_sph), 
+           rho_sph * np.sin(theta_sph) * np.sin(phi_sph), 
+           rho_sph * np.cos(theta_sph)])
 
     return xyz_sph
 
