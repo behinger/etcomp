@@ -376,7 +376,8 @@ def fix_smallgrid_parser(etmsgs):
 
 def load_preprocessed_data(participant_info, datapath='/data/', excludeID=None, cleaned=True):
     """
-    Loads eye-tracking data for multiple participants from preprocessed CSV files.
+    Loads eye-tracking data for multiple participants from preprocessed CSV files. 
+    This is formerly "be_load"
 
     Parameters:
         participant_info (pd.DataFrame): A DataFrame containing participant information, including their IDs.
