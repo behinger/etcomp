@@ -113,7 +113,6 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
 def load_and_process_all_et_data(participant_info, et, datapath='/data/', excludeID=None):
     """
     Preprocesses eye-tracking data for multiple participants and combines the results into a DataFrames.
-    Formerly 'be_load'.
 
     This function iterates over the participant IDs, loads and preprocesses the corresponding eye-tracking data files, 
     and aggregates the cleaned samples, messages, and events data into separate pandas DataFrames.
