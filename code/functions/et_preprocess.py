@@ -7,11 +7,9 @@ import pandas as pd
 
 from functions.detect_events import make_blinks, make_saccades, make_fixations
 from functions.detect_bad_samples import detect_bad_samples, remove_bad_samples
-from functions.et_helper import add_events_to_samples
-from functions.et_helper import load_file, save_file
+from functions.et_helper import add_events_to_samples, load_file, save_file, check_directory
+from functions.et_import import import_el, import_tpx
 from functions.et_make_df import make_events_df
-import functions.et_helper as helper
-
 
 
 def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, save=False, eventfunctions=(make_blinks,make_saccades,make_fixations), outputprefix='', **kwargs):
@@ -68,10 +66,8 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
     # Import eyetracking data based on the eyetracker type (EyeLink or TrackPixx).
     logger.debug("Importing eyetracking data ...")
     if et == 'el':
-        from functions.et_import import import_el
         etsamples, etmsgs, etevents = import_el(subject=subject, participant_info=participant_info, datapath=datapath, **kwargs)
     elif et =="tpx":
-        from functions.et_import import import_tpx
         etsamples, etmsgs, etevents = import_tpx(subject=subject, participant_info=participant_info, datapath=datapath, **kwargs)
     else:
         raise ValueError("Unknown eyetracker! 'et' value must be 'el'for EyeLink or 'tpx' for TrackPixx!") 
@@ -110,13 +106,14 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
         logger.info('Saving preprocessed et data ...')
         save_file([etsamples, cleaned_etsamples, etmsgs, etevents], et, subject, datapath, outputprefix=outputprefix)
 
-
     return cleaned_etsamples, etmsgs, etevents
+
 
 
 def load_and_process_all_et_data(participant_info, et, datapath='/data/', excludeID=None):
     """
     Preprocesses eye-tracking data for multiple participants and combines the results into a DataFrames.
+    Formerly 'be_load'.
 
     This function iterates over the participant IDs, loads and preprocesses the corresponding eye-tracking data files, 
     and aggregates the cleaned samples, messages, and events data into separate pandas DataFrames.
@@ -138,22 +135,29 @@ def load_and_process_all_et_data(participant_info, et, datapath='/data/', exclud
     etmsgs= pd.DataFrame()
     etevents = pd.DataFrame()
 
-    for id in participant_info.ID.unique():
+    for subject in participant_info.ID.unique():
         # Exclude participants
-        if excludeID is not None and id in excludeID:
-            logger.warning('Warning. Skipping ID: %s', id)
+        if excludeID is not None and subject in excludeID:
+            logger.warning('Warning. Skipping subject ID: %s', subject)
             continue
         # Check whether each participant in the reference file has corresponding eyetracking files.
         if not os.path.exists(datapath):
-            logger.warning('Warning. No folder found for ID %s in %s', id, datapath)
+            logger.warning('Warning. No folder found for subject ID %s in %s', subject, datapath)
             continue
-        logger.warning('Reading and preprocessing ID: %s', id)
-        cleaned_etsamples, etmsgs, etevents = preprocess_et(et=et,
-                                                            subject=id,
-                                                            participant_info=participant_info,
-                                                            datapath=datapath,
-                                                            load=False,
-                                                            save=True,
-                                                            eventfunctions=(make_blinks, make_saccades, make_fixations),
-                                                            outputprefix='preprocessed_')
+        logger.warning('Reading and preprocessing subject ID: %s', subject)
+        raw_folder_path = os.path.join(datapath, subject, 'raw')
+        
+        try:
+            check_directory(raw_folder_path)
+            cleaned_etsamples, etmsgs, etevents = preprocess_et(et=et,
+                                                                subject=subject,
+                                                                participant_info=participant_info,
+                                                                datapath=raw_folder_path,
+                                                                load=False,
+                                                                save=True,
+                                                                eventfunctions=(make_blinks, make_saccades, make_fixations),
+                                                                outputprefix='preprocessed_')
+        except FileNotFoundError as error:
+            logger.warning("Directory not found. Error: %s", error)
+
     return cleaned_etsamples, etmsgs, etevents # FIXME do I want to have this as a result? We only ever need the saved data?
