@@ -10,7 +10,7 @@ import pandas as pd
 import re
 from scipy import io as sio
 
-from functions.et_helper import findFile
+from functions.et_helper import findFile, check_directory
 import functions.et_parse as parse
 import functions.et_make_df as make_df
 import functions.et_helper as  helper
@@ -28,16 +28,16 @@ def read_mat(subject, datapath='./data'):
         combined_df (pd.DataFrame): A DataFrame with added information about the block and participant
     """
     logger = logging.getLogger(__name__)
-    directory = os.path.join(datapath, subject, 'raw')  
+    # directory = os.path.join(datapath, subject, 'raw')  
     tpxsamples = []
     
     try:
         # Get a list of filenames and sort them based on the block number
-        filenames = [filename for filename in os.listdir(directory) if filename.endswith("tpx.mat")]
+        filenames = [filename for filename in os.listdir(datapath) if filename.endswith("tpx.mat")]
         filenames.sort(key=lambda x: int(re.search(r'block-(\d+)_tpx.mat', x).group(1)))
 
         for filename in filenames:
-            filepath = os.path.join(directory, filename)
+            filepath = os.path.join(datapath, filename)
             logger.warning('Reading file %s', filename)
             mat = sio.loadmat(filepath)
             data = mat['bufferData']
@@ -75,13 +75,16 @@ def load_messages(subject, datapath='./data', pattern=r'^sub-\d{3}_events.csv$')
     logger = logging.getLogger(__name__)
     all_msgs = []
     file_pattern = re.compile(pattern)
-    directory = os.path.join(datapath, subject, 'raw')
-        
-    for root, dirs, files in os.walk(directory):
+
+    try:
+        check_directory(datapath)
+    except FileNotFoundError as error:
+        logger.warning("Directory not found. Error: %s", error)
+
+    for root, dirs, files in os.walk(datapath):
         for filename in files:
             if file_pattern.match(filename):
                 file_path = os.path.join(root, filename)
-                logger.warning('Reading file %s', filename)
                 df = pd.read_csv(file_path)             
                 df['ID'] = subject
                 all_msgs.append(df)
@@ -133,9 +136,14 @@ def load_wordbounds(directory='./data'):
 
     return bounds
   
-def import_tpx(subject, participant_info, datapath='./data'):
+def import_tpx(subject, participant_info, datapath='/data/'):
     logger = logging.getLogger(__name__)
-    logger.warning(datapath)
+
+    try:
+        check_directory(datapath)
+    except FileNotFoundError as error:
+        logger.warning("Directory not found. Error: %s", error)
+
     tpxsamples = read_mat(subject, datapath)
     tpxsamples.rename(columns={'TimeTag': 'smpl_time', 
                                'RightEyeX': 'gx_right', 
@@ -182,7 +190,7 @@ def import_tpx(subject, participant_info, datapath='./data'):
     # "select" relevant columns
     tpxsamples = make_df.make_samples_df(tpxsamples)
 
-    tpxmsgs = load_messages(datapath) 
+    tpxmsgs = load_messages(subject, datapath) 
     tpxmsgs = tpxmsgs.apply(parse.parse_message,axis=1)
     tpxmsgs = tpxmsgs.drop(tpxmsgs.index[tpxmsgs.isnull().all(1)])
     
@@ -364,19 +372,19 @@ def load_preprocessed_data(participant_info, datapath='/data/', excludeID=None, 
     etmsgs= pd.DataFrame()
     etevents = pd.DataFrame()
 
-    for id in participant_info.ID.unique():
-        preprocessed_folder_path = os.path.join(datapath, id, 'preprocessed')
+    for subject in participant_info.ID.unique():
+        preprocessed_folder_path = os.path.join(datapath, subject, 'preprocessed')
 
         # Exclude participants
-        if excludeID is not None and id in excludeID:
-            logger.warning('Warning. Skipping ID: %s', id)
+        if excludeID is not None and subject in excludeID:
+            logger.warning('Warning. Skipping subject ID: %s', subject)
             continue
         # Check whether each participant in the reference file has corresponding eyetracking files.
         if not os.path.exists(preprocessed_folder_path):
-            logger.warning('Warning. No folder found for ID %s in %s', id, datapath)
+            logger.warning('Warning. No folder found for subject ID %s in %s', subject, datapath)
             continue
         
-        logger.warning('Loading ID: %s ...', id)
+        logger.warning('Loading subject ID: %s ...', subject)
         
         for et in ['el', 'tpx']:
             try:
@@ -387,9 +395,9 @@ def load_preprocessed_data(participant_info, datapath='/data/', excludeID=None, 
                 filename_msgs    = f"{et}_msgs.csv"
                 filename_events  = f"{et}_events.csv"
                 
-                etsamples = pd.concat([etsamples, pd.read_csv(os.path.join(preprocessed_folder_path, filename_samples)).assign(subject=id, eyetracker=et)], ignore_index=True, sort=False)
-                etmsgs    = pd.concat([etmsgs, pd.read_csv(os.path.join(preprocessed_folder_path, filename_msgs)).assign(subject=id, eyetracker=et)], ignore_index=True, sort=False)
-                etevents  = pd.concat([etevents, pd.read_csv(os.path.join(preprocessed_folder_path, filename_events)).assign(subject=id, eyetracker=et)], ignore_index=True, sort=False)
+                etsamples = pd.concat([etsamples, pd.read_csv(os.path.join(preprocessed_folder_path, filename_samples)).assign(subject=subject, eyetracker=et)], ignore_index=True, sort=False)
+                etmsgs    = pd.concat([etmsgs, pd.read_csv(os.path.join(preprocessed_folder_path, filename_msgs)).assign(subject=subject, eyetracker=et)], ignore_index=True, sort=False)
+                etevents  = pd.concat([etevents, pd.read_csv(os.path.join(preprocessed_folder_path, filename_events)).assign(subject=subject, eyetracker=et)], ignore_index=True, sort=False)
 
                 # FIXME do we still need this part? Does this not already happen elsewhere?
                 # t0 = elmsgs.query("condition=='Instruction'&exp_event=='BEGINNING_start'").msg_time.values
@@ -446,7 +454,7 @@ def load_files(directory, datatype):
 #                                                                    #
 ######################################################################
 
-def drop_eye(subject, participant_info,samples, events=None):
+def drop_eye(subject, participant_info, samples, events=None):
     """
     Filters data for the dominant eye from a dataframe (e.g. a sample report) based on a participant reference dataframe.
     
@@ -462,8 +470,8 @@ def drop_eye(subject, participant_info,samples, events=None):
     logger = logging.getLogger(__name__)
 
     eye = participant_info.loc[participant_info['ID'] == subject, 'DominantEye'].iloc[0]
-    logger.warning('Selecting the eye: %s', eye)
     if eye == 'Rechts':
+        logger.warning('Selecting the right eye.')
         # Samples right
         drop_columns = samples.filter(like='_left', axis=1)
         samples = samples.drop(columns = drop_columns)
@@ -492,6 +500,7 @@ def drop_eye(subject, participant_info,samples, events=None):
 
     elif eye == 'Links':
         # Samples left
+        logger.warning('Selecting the left eye.')
         drop_columns = samples.filter(like='_right', axis=1)
         samples = samples.drop(columns = drop_columns)
         samples.rename(columns={'gx_left': 'gx', 
@@ -518,7 +527,7 @@ def drop_eye(subject, participant_info,samples, events=None):
             events = events.loc[events['eye'] == 0]
     
     else:
-        logger.error("Unknown eye '%s' for participant ID: %s", eye, subject)
+        logger.error("Unknown eye '%s' for subject ID: %s", eye, subject)
         
     return samples, events
 
