@@ -72,35 +72,6 @@ def make_blinks(etsamples, etevents, et):
         
     return etsamples, etevents
 
-#%% PL Events df
-
-# def make_blinks(etsamples, etevents, et):
-    
-#     # get a logger
-#     logger = logging.getLogger(__name__)
-    
-#     if et == 'tpx':
-#         logger.debug('Detecting TrackPixx Blinks')
-        
-#         # add Blink information to pldata
-#         etsamples = pl_detect_blinks(etsamples)
-#         etsamples['blink_id'] = (1*(etsamples['is_blink']==1)) * ((1*(etsamples['is_blink']==1)).diff()==1).cumsum()
-
-#         blinkevents = pl_make_blink_events(etsamples)        
-#         etsamples = etsamples.drop('is_blink',axis=1)
-        
-#         # etevents is empty
-#         etevents= pd.concat([etevents, blinkevents], axis=0,sort=False)
-    
-#     elif et == 'el':
-#         logger.debug('Eyelink blink events are already in "etevents". Deleting all other eyelink events')
-        
-#         etevents = etevents.query('blink == True')
-#         etevents = etevents.rename(columns={'start':'start_time','end':'end_time'})
-#         etevents['type'] = "blink"
-    
-#     return(etsamples, etevents)
-
 
 def detect_events_cateyes(etsamples,etevents):
     #
@@ -240,7 +211,7 @@ def make_fixations(etsamples, etevents, et):
 
     # check if negative duration:
     if (fixationevents.duration < 0).any():
-        logger.warning("something is wrong, empty fixations found" )    
+        logger.warning("something is wrong, empty fixations found" )
     
     # concatenate to original event df    
     etevents= pd.concat([etevents, fixationevents], axis=0,sort=False)
@@ -286,44 +257,3 @@ def add_additional_features(etsamples,etevents,el=''):
             etevents.loc[ix, 'sd'] = np.sqrt(np.mean(np.square(thetas)))
 
     return etsamples, etevents
-
-
-#%%
-    
-# def pl_make_blink_events(pl_extended_samples):
-#     # detects Blink events for pupillabs
-    
-#     assert('is_blink' in pl_extended_samples)
-#     assert('blink_id' in pl_extended_samples)
-    
-#     # init lists to store info
-#     blink_id = []
-#     start    = []
-#     end      = []
-#     #is_blink = []
-#     event_type = []
-    
-#     # for each sample look at the blink_id
-#     for int_blink_id in pl_extended_samples.blink_id.unique():
-#         # if it is a blink (then the id is not zero)
-#         if int_blink_id != 0:
-#             # take all samples that the current unique blink_id
-#             query = 'blink_id == ' + str(int_blink_id)
-#             blink_samples = pl_extended_samples.query(query)
-            
-#             # append infos from queried samples to lists 
-#             # is_blink.append(True)
-#             blink_id.append(int_blink_id)
-#             # blink starts with first marked sample
-#             start.append(blink_samples.iloc[0]['smpl_time'])
-#             # blink ends with last marked sample
-#             end.append(blink_samples.iloc[-1]['smpl_time'])
-#             event_type.append("blink")
-            
-#     # create df and store collected infos there
-#     pl_blink_events = pd.DataFrame({'blink_id': blink_id, 'start_time': start, 'end_time': end, 'type': event_type})
-    
-#     return pl_blink_events      
-     
-
-
