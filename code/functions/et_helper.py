@@ -27,6 +27,115 @@ def check_directory(directory):
     if not os.path.isdir(directory):
         raise FileNotFoundError(f"The directory '{directory}' does not exist.")
 
+
+def drop_eye(subject, participant_info, samples, events=None):
+    """
+    Filters data for the dominant eye from a dataframe (e.g. a sample report) based on a participant reference dataframe.
+    
+    Parameters:
+        samples (pd.DataFrame): The samples DataFrame from which COLUMNS will be removed.
+        events (pd.DataFrame): An optional events DataFrame from which ROWS will be removed.
+        subject (str): A string containing the subject ID.
+        participant_info (pd.DataFrame): The DataFrame containing the dominant eye information ('Rechts' for right, 'Links' for left).
+    Returns:
+        samples (pd.DataFrame): The modified DataFrame where non-dominant eye columns are removed and the remaining gaze-related columns are renamed.
+
+    """
+    logger = logging.getLogger(__name__)
+
+    eye = participant_info.loc[participant_info['ID'] == subject, 'DominantEye'].iloc[0]
+    if eye == 'Rechts':
+        logger.warning('Selecting the right eye.')
+        # Samples right
+        drop_columns = samples.filter(like='_left', axis=1)
+        samples = samples.drop(columns = drop_columns)
+        samples.rename(columns={'gx_right': 'gx', 
+                                  'gy_right': 'gy',
+                                  'gxvel_right': 'gxvel',
+                                  'gyvel_right': 'gyvel',
+                                  'pa_right': 'pa',
+                                  'px_right': 'px',
+                                  'py_right': 'py',
+                                  'hx_right': 'hx',
+                                  'hy_right': 'hy',
+                                  'hxvel_right': 'hxvel',
+                                  'hyvel_right': 'hyvel',
+                                  'rxvel_right': 'rxvel',
+                                  'ryvel_right': 'ryvel'}, 
+                         inplace=True)
+        if 'b_right' not in samples.columns:
+            logger.warning("DataFrame does not have the 'b_right' column (probably loading not TrackPixx data).")
+        else:
+            samples.rename(columns={'b_right': 'blink'}, inplace=True)
+
+        # Events right
+        if events is not None:
+            events = events.loc[events['eye'] == 1]
+
+    elif eye == 'Links':
+        # Samples left
+        logger.warning('Selecting the left eye.')
+        drop_columns = samples.filter(like='_right', axis=1)
+        samples = samples.drop(columns = drop_columns)
+        samples.rename(columns={'gx_left': 'gx', 
+                                  'gy_left': 'gy',
+                                  'gxvel_left': 'gxvel',
+                                  'gyvel_left': 'gyvel',
+                                  'pa_left': 'pa',
+                                  'px_left': 'px',
+                                  'py_left': 'py',
+                                  'hx_left': 'hx',
+                                  'hy_left': 'hy',
+                                  'hxvel_left': 'hxvel',
+                                  'hyvel_left': 'hyvel',
+                                  'rxvel_left': 'rxvel',
+                                  'ryvel_left': 'ryvel'}, 
+                         inplace=True)
+        if 'b_left' not in samples.columns:
+            logger.warning("DataFrame does not have the 'b_left' column (probably loading not TrackPixx data).")
+        else:
+            samples.rename(columns={'b_left': 'blink'}, inplace=True)
+
+        # Events left
+        if events is not None:
+            events = events.loc[events['eye'] == 0]
+    
+    else:
+        logger.error("Unknown eye '%s' for subject ID: %s", eye, subject)
+        
+    return samples, events
+
+
+def make_lines(df, column_name='top_left_y'):
+    """
+    This function adds line information for the reading task. 
+    The text read in this task was split into lines of up to 11 lines per display.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame to be processed.
+        column_name (str): The name of the column containing values to be used for grouping.
+    Returns:
+        new_df (pd.DataFrame): A DataFrame with a new 'group' column containing group numbers.
+    """
+    lines = {
+        1: (100, 105),
+        2: (187, 192),
+        3: (274, 286),
+        4: (361, 366),
+        5: (448, 453),
+        6: (535, 540),
+        7: (622, 627),
+        8: (707, 714),
+        9: (796, 801),
+        10: (883, 888),
+        11: (970, 975)
+    }
+    new_df = df.copy()
+    new_df['line'] = None
+    for group_num, value_range in lines.items():
+        new_df.loc[new_df[column_name].between(value_range[0], value_range[1]), 'line'] = group_num
+    return new_df
+
 ######################################################################
 #                                                                    #
 #  FUNCTIONS THAT MAY BE REDUNDANT                                   #
