@@ -117,6 +117,24 @@ def load_wordbounds(directory='./data'):
 
 
 def import_tpx(subject, participant_info, datapath='/data/'):
+    """
+    This function imports TrackPixx eyetracking data for a specific subject from the specified 'datapath'.
+    It first reads samples data from a .mat file using the `read_mat()` function. It then preprocesses the samples
+    data, handling issues such as negative time values, sampling time above 1*e100, determining which eye was
+    recorded, and setting pupil area and gaze components appropriately. It also reads and parses messages data
+    using the `load_messages()` function.
+
+    Parameters:
+        subject (str): The subject ID.
+        participant_info (pd.DataFrame): DataFrame containing participant information.
+        datapath (str, optional): The directory path where the eyetracking data is located.
+
+    Returns: A tuple containing three elements:
+        tpxsamples (pandas.DataFrame): DataFrame containing samples report data.
+        tpxmsgs (pandas.DataFrame): DataFrame containing messages data.
+        tpxevents (pandas.DataFrame): DataFrame containing events data.
+    """
+
     logger = logging.getLogger(__name__)
 
     try:
@@ -180,7 +198,7 @@ def import_tpx(subject, participant_info, datapath='/data/'):
 
 def raw_el_data(datapath='/data/'):
     """
-    Read raw Eyelink eye-tracking data from an EDF file.
+    Read raw EyeLink eye-tracking data from an EDF file.
 
     Parameters:
         datapath (str, optional): The directory path where the EDF files are located. 
@@ -202,13 +220,24 @@ def raw_el_data(datapath='/data/'):
     
     
 def import_el(subject, participant_info, datapath='/data/'):
-    # Input:    subject:         (str) name
-    #           datapath:        (str) location where data is stored
-    # Output:   Returns list of 3 el df (elsamples, elmsgs, elevents)
+    """
+    This function imports EyeLink eyetracking data for a specific subject from the specified 'datapath'.
+    It loads and preprocesses the raw eyetracking data files, including individual samples, fixation and 
+    saccade definitions, and messages/notes associated with each trial. The function handles issues such as 
+    sampling time above 1*e100, negative time values, and incorrect time ordering. It also determines which 
+    eye was recorded and preprocesses gaze components and pupil area.
 
+    Parameters:
+        subject (str): The subject ID.
+        participant_info (pd.DataFrame): DataFrame containing participant information.
+        datapath (str, optional): The directory path where the Eyelink eye-tracking data is located.
+
+    Returns: A tuple containing three elements:
+        elsamples (pd.DataFrame): DataFrame containing samples data.
+        elmsgs (pd.DataFrame): DataFrame containing messages data.
+        elevents (pd.DataFrame): DataFrame containing event data.
+    """
     assert(type(subject)==str)
-    
-    # get a logger
     logger = logging.getLogger(__name__)
 
     try:
