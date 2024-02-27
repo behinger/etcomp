@@ -22,14 +22,14 @@ import logging
 
 #%% MAKE SAMPLES
 
-def make_samples_df(etsamples,px2deg=True):
+def make_samples_df(etsamples, px2deg=True):
    
-    fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel'])
+    fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel', 'blink'])
     
     fields_to_fillin = fields_to_keep - set(etsamples.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin
     
-    etsamples_reduced = etsamples.loc[:,fields_to_copy]
+    etsamples_reduced = etsamples.loc[:,list(fields_to_copy)]
     
     for fieldname in fields_to_fillin:
         etsamples_reduced.loc[:,fieldname] = np.nan
@@ -51,7 +51,7 @@ def make_events_df(etevents):
     fields_to_fillin = fields_to_keep - set(etevents.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin
     
-    etevents_reduced = etevents.loc[:,fields_to_copy]
+    etevents_reduced = etevents.loc[:,list(fields_to_copy)]
     
     for fieldname in fields_to_fillin:
         etevents_reduced.loc[:,fieldname] = np.nan

@@ -2,9 +2,7 @@
 
 import pandas as pd
 import numpy as np
-
 import functions.et_helper as  helper
-
 import logging
 
 
@@ -23,23 +21,22 @@ def parse_message(msg):
     try:
         # for EyeLink
         msg_time = msg['msg_time']
-        string = msg['trialid '] # space on purpose
+        string = msg['message'] # space on purpose
         
     except:
         try:
-        # for Pupillabs
-            msg_time = msg['timestamp']
-            string = msg['label']
+        # for TrackPixx
+            msg_time = msg['tpx_timestamp']
+            string = msg['msg']
         except:
                 return(np.nan)
     
     # splits msg into list of str and removes punctuation
     split = string.split(' ')
     split = [remove_punctuation(elem) for elem in split]
-    
+    split = [s for s in split if s != ''] # in etcomp2 we saw that sometimes we have an empty string in here, double space in experiment?
     parsedmsg = dict(msg_time = msg_time)
         
-    
     # if msg has label "GRID", then extract infos:
     # msg_time:  timestamp when msg was sent
     # exp_event: experimental event of GRID (buttonpress, element, start, stop)
@@ -50,14 +47,13 @@ def parse_message(msg):
         # grid_size:     49=large Grid ; 13=calibration Grid
 
     if split[0] == 'GRID':
-        # print(split)
         parsedmsg = dict(
                 msg_time = msg_time,
                 exp_event = split[1])     
         # buttonpress is an exp_event with no additional information at  split[1]
 
         if split[1] == 'element':
-            #print(split)
+            
             parsedmsg.update(dict(
                     element = int(split[2]),
                     # convert pixels into visual degrees
@@ -65,17 +61,18 @@ def parse_message(msg):
                     posx = helper.px2deg(float(split[4]), 'horizontal'),
                     posy = helper.px2deg(1080-float(split[6]), 'vertical'),
                     grid_size = int(split[8]),
-                    block = int(split[10])
+                    block = int(split[12])
                     ))
 
         elif split[1] == 'start':
-            #print(split)
+            
             parsedmsg.update(dict(
-                    block = int(split[3])))
+                    block = int(split[5])))
 
         elif split[1] == 'stop':
+            
             parsedmsg.update(dict(
-                    block = int(split[3])))
+                    block = int(split[5])))
 
     
     # label "DILATION"
@@ -173,9 +170,7 @@ def parse_message(msg):
     # block:    block of experiment
    
     if split[0] == 'FREEVIEW':
-        
-        #logger.warning(split)
-        
+     
         parsedmsg = dict(
               msg_time = msg_time,
               exp_event = split[1])
@@ -192,7 +187,6 @@ def parse_message(msg):
                 block = int(split[3])
                 ))
             
-        #logger.warning(parsedmsg)
 
     # label "MICROSACC"
     # msg_time: timestamp when msg was sent
@@ -205,7 +199,17 @@ def parse_message(msg):
               exp_event = split[1],
               block = int(split[3]))
                
+    # label "READING"
+    # msg_time: timestamp when msg was sent
+    # exp_event:  experimental event of READING (start, stop)
+    # block:    block of experiment
 
+    if split[0] == 'READING':
+        parsedmsg = dict(
+              msg_time = msg_time,
+              exp_event = split[1],
+              block = split[2])
+        
     # label "Connect Pupil"
     # msg_time:         timestamp when msg was sent
     # exp_event:        connectpupil
@@ -244,8 +248,7 @@ def parse_message(msg):
     # block:            block of experiment
   
     if split[0] == 'Instruction':
-        #print(split)
-        #LARGEGG in LARGEGRID umbennen
+        # LARGEGG in LARGEGRID umbennen
         if split[2] == "LARGEGG":
             split[2] = "LARGEGRID"
   
@@ -258,56 +261,8 @@ def parse_message(msg):
               block = int(split[5]))
 
 
-    # label "SHAKE"
-    # msg_time:         timestamp when msg was sent
-    # exp_event:        experimental event of SHAKE (start, center, stop)
-    # block:            block of experiment
-  
-    if split[0] == 'SHAKE':
-        #print(split)
-        parsedmsg = dict(
-              msg_time = msg_time,
-              exp_event = split[1])
-    
-        if split[3] == 'x':
-            parsedmsg.update(dict(
-                # convert pixels into visual degrees
-                # VD
-                shake_x = helper.px2deg(float(split[4]), 'horizontal'),
-                shake_y = helper.px2deg(1080-float(split[6]), 'vertical'),
-                block = int(split[2]),
-                exp_event = 'SHAKE_point'
-                ))
-
-        if split[1] == 'start' or split[1] == 'stop':
-            parsedmsg.update(dict(
-                block = int(split[3])
-                ))
-
-        
-    # label "TILT"
-    # msg_time:         timestamp when msg was sent
-    # exp_event:        experimental event of TILT (start, stop, trial)
-    # block:            block of experiment
-    
-    if split[0] == 'TILT':
-        parsedmsg = dict(
-              msg_time = msg_time,
-              exp_event = split[1])
-    
-        if split[1] == 'angle':
-            parsedmsg.update(dict(
-                angle = int(split[2]),
-                block = int(split[4])
-                ))
-
-        if split[1] == 'start' or split[1] == 'stop':
-            parsedmsg.update(dict(
-                block = int(split[3])
-                ))
-
- 
     # add column for condition
+    # FIXME why condition and not task?
     parsedmsg['condition'] = split[0] 
 
     return(pd.Series(parsedmsg))

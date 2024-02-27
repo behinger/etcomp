@@ -1,213 +1,249 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
+import edfread # parses SR research EDF data files into pandas df
+import imp # for edfread reload
+import logging
+import os
 import numpy as np
 import pandas as pd
+import re
+from scipy import io as sio
 
-import os
-import logging
-
-from functions.et_helper import findFile,gaze_to_pandas
+from functions.et_helper import findFile, check_directory, drop_eye
 import functions.et_parse as parse
 import functions.et_make_df as make_df
 import functions.et_helper as  helper
 
-import imp # for edfread reload
+#%% TRACKPIXX
 
+def read_mat(datapath='./data'):
+    """
+    Read raw MAT data files as exported by Matlab for TrackPixx
 
-import scipy
-import scipy.stats
-
-#%% PUPILLABS
-def pl_fix_timelag(pl):
-    #fixes the pupillabs latency lag (which can be super large!!)
-
-    t_cam = np.asarray([p['recent_frame_timestamp'] for p in pl['notifications'] if p['subject']=='trigger'])# camera time
-    t_msg = np.asarray([p['timestamp'] for p in pl['notifications'] if p['subject']=='trigger']) # msg time
-    
-    #slope, intercept, r_value, p_value, std_err  = scipy.stats.linregress(t_msg,t_cam) # predict camera time based on msg time
-    slope,intercept,low,high = scipy.stats.theilslopes(t_cam,t_msg)
+    Parameters:
+        datapath (str): Data location
+    Returns: 
+        combined_df (pd.DataFrame): A DataFrame with added information about the block and participant
+    """
     logger = logging.getLogger(__name__)
-    logger.warning("fixing lag (at t=0) of :%.2fms, slope of %.7f (in a perfect world this is 0ms & 1.0)"%(intercept*1000,slope))
-    # fill it back in
-    # gonna do it with a for-loop because other stuff is too voodo or not readable for me
+    tpxsamples = []
     
-    
-    # Use this code (and change t_cam and t_msg above) if you want everything in computer time timestamps
-    #for ix,m in enumerate(pl['gaze_positions']):
-    #    pl['gaze_positions'][ix]['timestamp'] = pl['gaze_positions'][ix]['timestamp']  * slope + intercept   
-    #    for ix2,m2 in enumerate(pl['gaze_positions'][ix]['pupil_positions']):
-    #            pl['gaze_positions'][ix]['pupil_positions']['timestamp'] = pl['gaze_positions'][ix]['pupil_positions']['timestamp']  * slope + intercept
-    #for ix,m in enumerate(pl['gaze_positions']):
-    #     pl['pupil_positions'][ix]['timestamp'] = pl['pupil_positions'][ix]['timestamp']  * slope + intercept# + 0.045 # the 45ms  are the pupillabs defined delay between camera image & timestamp3   
-        
-    # this code is to get notifications into sample time stamp. But for now we 
-    for ix,m in enumerate(pl['notifications']):
-        pl['notifications'][ix]['timestamp'] = pl['notifications'][ix]['timestamp']  * slope + intercept + 0.045 # the 45ms  are the pupillabs defined delay between camera image & timestamp3
-        
-    return(pl)
+    try:
+        # Get a list of filenames and sort them based on the block number
+        filenames = [filename for filename in os.listdir(datapath) if filename.endswith("tpx.mat")]
+        filenames.sort(key=lambda x: int(re.search(r'block-(\d+)_tpx.mat', x).group(1)))
 
-def raw_pl_data(subject='',datapath='/net/store/nbp/projects/etcomp/',postfix='raw'):
-    # Input:    subjectname, datapath
-    # Output:   Returns pupillabs dictionary
-    from lib.pupil.pupil_src.shared_modules import file_methods as pl_file_methods
+        for filename in filenames:
+            filepath = os.path.join(datapath, filename)
+            logger.warning('Reading file %s', filename)
+            mat = sio.loadmat(filepath)
+            data = mat['bufferData']
+            cols = mat['varnames'][0].split(',')
+            df = pd.DataFrame(data=data, columns=cols)
+                
+            df['block'] = int(re.search(r'block-(\d+)_tpx.mat', filename).group(1))
+            df['ID'] = filename[0:7]
+               
+            tpxsamples.append(df)
     
-    if subject == '':
-        filename = datapath
-    else:
-        filename = os.path.join(datapath,subject,postfix)
-    print(os.path.join(filename,'pupil_data'))
-    # with dict_keys(['notifications', 'pupil_positions', 'gaze_positions'])
-    # where each value is a list that contains a dictionary
-    original_pldata = pl_file_methods.load_object(os.path.join(filename,'pupil_data'))
-    #original_pldata = pl_file_methods.Incremental_Legacy_Pupil_Data_Loader(os.path.join(filename,'pupil_data'))
-    # 'notification'
-    # dict_keys(['record', 'subject', 'timestamp', 'label', 'duration'])
+        if not tpxsamples:
+            raise ValueError("No 'tpx.mat' files found in the directory.")
     
-    # 'pupil_positions'
-    # dict_keys(['diameter', 'confidence', 'method', 'norm_pos', 'timestamp', 'id', 'topic', 'ellipse'])
+        combined_df = pd.concat(tpxsamples, ignore_index=True)
     
-    # 'gaze_positions'
-    # dict_keys(['base_data', 'timestamp', 'topic', 'confidence', 'norm_pos'])
-        # where 'base_data' has a dict within a list 
-        # dict_keys(['diameter', 'confidence', 'method', 'norm_pos', 'timestamp', 'id', 'topic', 'ellipse'])
-        # where 'normpos' is a list (with horizon. and vert. component)
+        return combined_df
     
-    # Fix the (possible) timelag of pupillabs camera vs. computer time
-    
-    
-    
-    return original_pldata
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        return None
 
 
-def import_pl(subject='', datapath='/net/store/nbp/projects/etcomp/', recalib=True, surfaceMap=True,parsemsg=True,fixTimeLag=True,px2deg=True,pupildetect=None,
-             pupildetect_options=None):
-    # Input:    subject:         (str) name
-    #           datapath:        (str) location where data is stored
-    #           surfaceMap:
-    # Output:   Returns 2 dfs (plsamples and plmsgs)
-    
-    # get a logger
+def load_messages(subject, datapath='./data', pattern=r'^sub-\d{3}_events.csv$'):
+    """
+    Import the message report for TrackPixx.
+
+    Parameters:
+        subject (str): Participant ID
+        datapath (str): Data location
+        pattern (str): A regular expression for parsing participant IDs
+    Returns: 
+        combined_msgs (pd.DataFrame): A DataFrame with all messages
+    """
     logger = logging.getLogger(__name__)
-    if pupildetect:
-        # has to be imported first
-        import av
-        import ctypes
-        ctypes.cdll.LoadLibrary('/net/store/nbp/users/behinger/projects/etcomp/local/build/build_ceres_working/lib/libceres.so.2')
+    all_msgs = []
+    file_pattern = re.compile(pattern)
 
+    try:
+        check_directory(datapath)
+    except FileNotFoundError as error:
+        logger.warning("Directory not found. Error: %s", error)
+
+    for root, dirs, files in os.walk(datapath):
+        for filename in files:
+            if file_pattern.match(filename):
+                file_path = os.path.join(root, filename)
+                df = pd.read_csv(file_path)             
+                df['ID'] = subject
+                all_msgs.append(df)
+
+    combined_msgs = pd.concat(all_msgs, ignore_index=True)
+
+    return combined_msgs
+
+
+def load_wordbounds(directory='./data'):
+    """
+    This function reads and processes CSV files with word bounding box coordinates 
+    for the reading task.
+
+    Parameters:
+        directory (str): The path to the directory containing the CSV files.
+    Returns:
+        bounds (pd.DataFrame): A DataFrame containing word boundary data.
+    """
+    for root, _, files in os.walk(directory):
+        for filename in files:
+            if 'wordbounds' in filename and filename.endswith('.csv'):
+                print(f"Processing file: {filename}")
+                file_path = os.path.join(root, filename)
+                bounds = pd.read_csv(file_path, names=['top_left_x', 'top_left_y', 'bottom_right_x', 'bottom_right_y'])
+                bounds['block'] = re.findall(r"block-(\d+)_task", filename)[0]
+                bounds['ID'] = root[-11:-4]
+                bounds['word'] = range(1, len(bounds) + 1)
+                bounds.sort_values(by=['ID', 'block', 'word'], inplace=True)
+
+    return bounds
+
+
+def import_tpx(subject, participant_info, datapath='/data/'):
+    """
+    This function imports TrackPixx eyetracking data for a specific subject from the specified 'datapath'.
+    It first reads samples data from a .mat file using the `read_mat()` function. It then preprocesses the samples
+    data, handling issues such as negative time values, sampling time above 1*e100, determining which eye was
+    recorded, and setting pupil area and gaze components appropriately. It also reads and parses messages data
+    using the `load_messages()` function.
+
+    Parameters:
+        subject (str): The subject ID.
+        participant_info (pd.DataFrame): DataFrame containing participant information.
+        datapath (str, optional): The directory path where the eyetracking data is located.
+
+    Returns: A tuple containing three elements:
+        tpxsamples (pandas.DataFrame): DataFrame containing samples report data.
+        tpxmsgs (pandas.DataFrame): DataFrame containing messages data.
+        tpxevents (pandas.DataFrame): DataFrame containing events data.
+    """
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        check_directory(datapath)
+    except FileNotFoundError as error:
+        logger.warning("Directory not found. Error: %s", error)
+
+    tpxsamples = read_mat(datapath)
+    tpxsamples.rename(columns={'TimeTag': 'smpl_time', 
+                               'RightEyeX': 'gx_right', 
+                               'LeftEyeX': 'gx_left',
+                               'RightEyeY': 'gy_right', 
+                               'LeftEyeY': 'gy_left', 
+                               'RightBlink' : 'b_right', 
+                               'LeftBlink' : 'b_left', 
+                               'RightPupilDiameter': 'pa_right', 
+                               'LeftPupilDiameter' : 'pa_left'}, inplace=True)
+    # We had issues with samples with negative time
+    logger.warning('Deleting %.4f%% samples due to time<=0'%(100*np.mean(tpxsamples.smpl_time<=0)))
+    tpxsamples = tpxsamples.loc[tpxsamples.smpl_time > 0]
+    logger.warning('Deleting %.4f%% samples due to time being less than the starting time'%(100*np.mean(tpxsamples.smpl_time <= tpxsamples.smpl_time[0])))
+    tpxsamples = tpxsamples.loc[tpxsamples.smpl_time > tpxsamples.smpl_time[0]]
+    tpxsamples = tpxsamples.reset_index()
+    if np.any(tpxsamples.smpl_time>1e10):
+        logger.error(tpxsamples.smpl_time[tpxsamples.smpl_time>1e10])
+        logger.error('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
+        raise Exception('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
     
-    if surfaceMap:
-        # has to be imported before nbp recalib
-        try:
-            import functions.pl_surface as pl_surface
-        except ImportError:
-            raise('Custom Error:Could not import pl_surface')
-
-
-    assert(type(subject)==str)
+    # Determine which eye was recorded
+    tpxsamples, tpxevents = drop_eye(subject, participant_info, tpxsamples)
     
-    # Get samples df
-    # (is still a dictionary here)
-    original_pldata = raw_pl_data(subject=subject, datapath=datapath)
-        
-    if pupildetect is not None: # can be 2d or 3d
-        from functions.nbp_pupildetect import  nbp_pupildetect
-        if subject == '':
-            filename = datapath
-        else:
-            filename = os.path.join(datapath,subject,'raw')
-   
-        pupil_positions_0= nbp_pupildetect(detector_type = pupildetect, eye_id = 0,folder=filename,pupildetect_options=pupildetect_options)
-        pupil_positions_1= nbp_pupildetect(detector_type = pupildetect, eye_id = 1,folder=filename,pupildetect_options=pupildetect_options)
-        pupil_positions = pupil_positions_0 + pupil_positions_1
-        original_pldata['pupil_positions'] = pupil_positions
-        recalib=True
-        
-    # recalibrate data
-    if recalib:
-        from functions import nbp_recalib
-        if pupildetect is not None:
-            original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata,calibration_mode=pupildetect)
-        original_pldata['gaze_positions'] = nbp_recalib.nbp_recalib(original_pldata)
-    # Fix timing 
-    # Pupillabs cameras ,have their own timestamps & clock. The msgs are clocked via computertime. Sometimes computertime&cameratime show drift (~40% of cases).
-    # We fix this here
-    if fixTimeLag:
-        original_pldata = pl_fix_timelag(original_pldata)  
-    
-    if surfaceMap:
+    # for horizontal gaze component
+    # Idea: Logical indexing
+    ix = tpxsamples.gx != -32768
+    # take the pupil area pa of the recorded eye
+    # set pa to NaN instead of 0  or -32768
+    tpxsamples.loc[tpxsamples['pa'] < 1e-20,'pa'] = np.nan
+    tpxsamples.loc[~ix,'pa'] = np.nan
+    ix  = ~np.isnan(tpxsamples.pa)
+    tpxsamples.loc[ix,'pa'] = tpxsamples.pa[ix]
+    # for horizontal gaze component    
+    ix = tpxsamples.gx   != -32768 
+    tpxsamples.loc[ix,'gx']      = tpxsamples.gx[ix]
+    # FIXME there is no velocity information for TrackPixx
+    # for vertical gaze component
+    ix = tpxsamples.gy   != -32768 
+    tpxsamples.loc[ix,'gy']    = tpxsamples.gy[ix]
+    # FIXME there is no velocity information for TrackPixx
+    # Make (0,0) the point bottom left
+    tpxsamples['gy'] = 1080 - tpxsamples['gy']
+    # "select" relevant columns
+    tpxsamples = make_df.make_samples_df(tpxsamples)
 
-        folder= os.path.join(datapath,subject,'raw')
-        tracker = pl_surface.map_surface(folder)   
-        gaze_on_srf  = pl_surface.surface_map_data(tracker,original_pldata['gaze_positions'])
-        logger.warning('Original Data Samples: %s on surface: %s',len(original_pldata['gaze_positions']),len(gaze_on_srf))
-        original_pldata['gaze_positions'] = gaze_on_srf
-        
+    tpxmsgs = load_messages(subject, datapath) 
+    tpxmsgs = tpxmsgs.apply(parse.parse_message,axis=1)
+    tpxmsgs = tpxmsgs.drop(tpxmsgs.index[tpxmsgs.isnull().all(1)])
     
-    # use pupilhelper func to make samples df (confidence, gx, gy, smpl_time, diameter)
-    pldata = gaze_to_pandas(original_pldata['gaze_positions'])
-    
-    
-    
-    if surfaceMap:   
-        pldata.gx = pldata.gx*(1920 - 2*(75+18))+(75+18) # minus white border of marker & marker
-        pldata.gy = pldata.gy*(1080- 2*(75+18))+(75+18)
-        logger.debug('Mapped Surface to ScreenSize 1920 & 1080 (minus markers)')
-        del tracker
+    return tpxsamples, tpxmsgs, tpxevents
 
-    # sort according to smpl_time
-    pldata.sort_values('smpl_time',inplace=True)
-    
-
-    # get the nice samples df
-    plsamples = make_df.make_samples_df(pldata,px2deg=px2deg) #
-    
-    
-    if parsemsg:
-        # Get msgs df      
-        # make a list of gridnotes that contain all notifications of original_pldata if they contain 'label'
-        gridnotes = [note for note in original_pldata['notifications'] if 'label' in note.keys()]
-        plmsgs = pd.DataFrame();
-        for note in gridnotes:
-            msg = parse.parse_message(note)
-            if not msg.empty:
-                plmsgs = plmsgs.append(msg, ignore_index=True)
-
-        
-        plmsgs = fix_smallgrid_parser(plmsgs)
-    else:
-        plmsgs = original_pldata['notifications']
-        
-    plevents = pd.DataFrame()
-    return plsamples, plmsgs,plevents
-
-
-
-
-  
 #%% EYELINK
-def raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/'):
-    # Input:    subjectname, datapath
-    # Output:   Returns pupillabs dictionary
-    filename = os.path.join(datapath,subject,'raw')
-    from pyedfread import edf # parses SR research EDF data files into pandas df
 
-    elsamples, elevents, elnotes = edf.pread(os.path.join(filename,findFile(filename,'.EDF')[0]), trial_marker=b'')
+def raw_el_data(datapath='/data/'):
+    """
+    Read raw EyeLink eye-tracking data from an EDF file.
+
+    Parameters:
+        datapath (str, optional): The directory path where the EDF files are located. 
+
+    Returns A tuple containing three elements:
+        elsamples (pd.Dataframe): A dataframe containing samples data from the EDF file.
+        elevents (pd.Dataframe): A dataframe containing events data from the EDF file.
+        elnotes (pd.Dataframe): A dataframe containing message data from the EDF file.
+    """
+    logger = logging.getLogger(__name__)
+    try:
+        check_directory(datapath)
+    except FileNotFoundError as error:
+        logger.warning("Directory not found while reading raw EyeLink data. Error: %s", error)
+
+    elsamples, elevents, elnotes = edfread.read_edf(os.path.join(datapath,findFile(datapath,'.EDF')[0]))
     
     return (elsamples,elevents,elnotes)
     
     
-def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
-    # Input:    subject:         (str) name
-    #           datapath:        (str) location where data is stored
-    # Output:   Returns list of 3 el df (elsamples, elmsgs, elevents)
+def import_el(subject, participant_info, datapath='/data/'):
+    """
+    This function imports EyeLink eyetracking data for a specific subject from the specified 'datapath'.
+    It loads and preprocesses the raw eyetracking data files, including individual samples, fixation and 
+    saccade definitions, and messages/notes associated with each trial. The function handles issues such as 
+    sampling time above 1*e100, negative time values, and incorrect time ordering. It also determines which 
+    eye was recorded and preprocesses gaze components and pupil area.
 
+    Parameters:
+        subject (str): The subject ID.
+        participant_info (pd.DataFrame): DataFrame containing participant information.
+        datapath (str, optional): The directory path where the Eyelink eye-tracking data is located.
+
+    Returns: A tuple containing three elements:
+        elsamples (pd.DataFrame): DataFrame containing samples data.
+        elmsgs (pd.DataFrame): DataFrame containing messages data.
+        elevents (pd.DataFrame): DataFrame containing event data.
+    """
     assert(type(subject)==str)
-    
-    # get a logger
     logger = logging.getLogger(__name__)
-     
+
+    try:
+        check_directory(datapath)
+    except FileNotFoundError as error:
+        logger.warning("Directory not found. Error: %s", error)     
     
     # Load edf
     
@@ -215,24 +251,29 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # elsamples:  contains individual EL samples
     # elevents:   contains fixation and saccade definitions
     # elnotes:    contains notes (meta data) associated with each trial
-    elsamples,elevents,elnotes = raw_el_data(subject,datapath)
+   
+    elsamples,elevents,elnotes = raw_el_data(datapath)
     
     # TODO understand and fix this
     count = 0
     while np.any(elsamples.time>1e10) and count < 40:
-        from pyedfread import edf # parses SR research EDF data files into pandas df
+        from edfread import edf # parses SR research EDF data files into pandas df
         imp.reload(edf)
         count = count + 1
         # logger.error(elsamples.time[elsamples.time>1e10])
         logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')
         elsamples, elevents, elnotes = raw_el_data(subject,datapath)
     
-    
+    if elsamples.iloc[0].time == elsamples.iloc[1].time:
+        logger.warning('detected 2000Hz recording, adding 0.5 to every second sample (following SR-Support)')
+        elsamples.loc[::2, 'time'] = elsamples.loc[::2, 'time'] + 0.5
     
     # We also delete Samples with interpolated pupil responses. In one dataset these were ~800samples.
-    logger.warning('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
-    logger.warning('Deleting %.4f%% due to other errors in the import process'%(100*np.mean((elsamples.errors !=8) & (elsamples.errors!=0))))
-    elsamples = elsamples.loc[elsamples.errors == 0]
+    #logger.warning('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
+    logger.warning('Marking as NaN %.4f%% due to other errors (e.g. lost eye / target)'%(100*np.mean((elsamples.errors!=0))))
+    
+    #elsamples = elsamples.loc[elsamples.errors == 0]
+    elsamples.loc[elsamples.errors != 0,["gx_left","gy_left","gx_right","gx_left"]] = np.NaN
     
     # We had issues with samples with negative time
     logger.warning('Deleting %.4f%% samples due to time<=0'%(100*np.mean(elsamples.time<=0)))
@@ -243,12 +284,13 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
     # refer to artefacts. If you use %SYNCTIME% this might be problematic (don't know how nwilming's edfread incorporates synctime)
     logger.warning('Deleting %.4f%% samples due to time being less than the starting time'%(100*np.mean(elsamples.time <= elsamples.time[0])))
     elsamples = elsamples.loc[elsamples.time > elsamples.time[0]]
-    elsamples = elsamples.reset_index()
+    elsamples.reset_index(inplace=True)
     # Convert to same units
     # change to seconds to be the same as pupil
     elsamples['smpl_time'] = elsamples['time'] / 1000 
-    elnotes['msg_time']    = elnotes['trialid_time'] / 1000
-    elnotes = elnotes.drop('trialid_time',axis=1)  
+    elnotes['msg_time']    = elnotes['time'] / 1000
+    #logger.warning(type(elnotes))
+    elnotes = elnotes.drop('time',axis=1)  
     elevents['start']      = elevents['start'] / 1000     
     elevents['end']        = elevents['end'] / 1000             
     
@@ -258,101 +300,178 @@ def import_el(subject, datapath='/net/store/nbp/projects/etcomp/'):
         logger.error('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
         raise Exception('Error, even after reloading the data once, found sampling time above 1*e100. This is clearly wrong. Investigate')
 
+    # Determine which eye was recorded
+    elsamples, elevents = drop_eye(subject, participant_info, elsamples, elevents)
+
     # for horizontal gaze component
     # Idea: Logical indexing
-    ix_left = elsamples.gx_left  != -32768 
-    ix_right = elsamples.gx_right != -32768
+    ix = elsamples.gx != -32768
 
     # take the pupil area pa of the recorded eye
     # set pa to NaN instead of 0  or -32768
-    elsamples.loc[elsamples['pa_right'] < 1e-20,'pa_right'] = np.nan
-    elsamples.loc[~ix_right,'pa_right'] = np.nan
-    elsamples.loc[elsamples['pa_left'] < 1e-20,'pa_left'] = np.nan
-    elsamples.loc[~ix_left,'pa_left'] = np.nan
-    
-    # add pa column that takes the value that is not NaN
-    ix_left  = ~np.isnan(elsamples.pa_left)
-    ix_right = ~np.isnan(elsamples.pa_right)
-    
-    # init with nan
-    elsamples['pa'] = np.nan
-    
-    elsamples.loc[ix_left, 'pa'] = elsamples.pa_left[ix_left]
-    elsamples.loc[ix_right,'pa'] = elsamples.pa_right[ix_right]
-    
-    
-    # Determine which eye was recorded
+    elsamples.loc[elsamples['pa'] < 1e-20,'pa'] = np.nan
+    elsamples.loc[~ix,'pa'] = np.nan
+    ix  = ~np.isnan(elsamples.pa)
+    elsamples.loc[ix,'pa'] = elsamples.pa[ix]
 
-    ix_left = elsamples.gx_left   != -32768 
-    ix_right = elsamples.gx_right != -32768
-
-    if (np.mean(ix_left | ix_right)<0.99):
-        raise NameError('In more than 1 % neither left or right data')
-        
-    
     # for horizontal gaze component    
-    elsamples.loc[ix_left,'gx']      = elsamples.gx_left[ix_left]
-    elsamples.loc[ix_right,'gx']     = elsamples.gx_right[ix_right]
-
+    ix = elsamples.gx   != -32768 
+    elsamples.loc[ix,'gx']      = elsamples.gx[ix]
     # for horizontal gaze velocity component
-    elsamples.loc[ix_left,'gx_vel']  = elsamples.gxvel_left[ix_left]
-    elsamples.loc[ix_right,'gx_vel'] = elsamples.gxvel_right[ix_right]
-    
-    
+    elsamples.loc[ix,'gx_vel']  = elsamples.gxvel[ix]
+       
     # for vertical gaze component
-    ix_left = elsamples.gy_left   != -32768 
-    ix_right = elsamples.gy_right != -32768
-    
-    elsamples.loc[ix_left,'gy']    = elsamples.gy_left[ix_left]
-    elsamples.loc[ix_right,'gy']   = elsamples.gy_right[ix_right]
-    
+    ix = elsamples.gy   != -32768 
+    elsamples.loc[ix,'gy']    = elsamples.gy[ix]
     # for vertical gaze velocity component
-    elsamples.loc[ix_left,'gy_vel']  = elsamples.gyvel_left[ix_left]
-    elsamples.loc[ix_right,'gy_vel'] = elsamples.gyvel_right[ix_right]
+    elsamples.loc[ix,'gy_vel']  = elsamples.gyvel[ix]
     
     # Make (0,0) the point bottom left
     elsamples['gy'] = 1080 - elsamples['gy']
-    
+    elsamples.loc[elsamples.gy < -900000,'gy'] = np.nan # no idea why this is necessary... should be NaN anyway
     # "select" relevant columns
     elsamples = make_df.make_samples_df(elsamples)
-            
-        
+                
     # Parse EL msg
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
+    #logger.warning(elmsgs)
+    
     elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
-    elmsgs = fix_smallgrid_parser(elmsgs)
+    #elmsgs = fix_smallgrid_parser(elmsgs)
     
     return elsamples, elmsgs, elevents
     
 
 
+# # FIXME do we still need this function? If so, it needs to be adjusted to TPX.
+# def fix_smallgrid_parser(etmsgs):
+#     # This fixes the missing separation between smallgrid before and small grid after. During experimental sending both were named identical.
+#     replaceGrid = pd.Series([k for l in [13*['SMALLGRID_BEFORE'],13*['SMALLGRID_AFTER']]*6 for k in l])
+#     ix = etmsgs.query('grid_size==13').index
+#     if len(ix) is not  156:
+#         raise RuntimeError('we need to have 156 small grid msgs')
 
-def fix_smallgrid_parser(etmsgs):
-    # This fixes the missing separation between smallgrid before and small grid after. During experimental sending both were named identical.
-    replaceGrid = pd.Series([k for l in [13*['SMALLGRID_BEFORE'],13*['SMALLGRID_AFTER']]*6 for k in l])
-    ix = etmsgs.query('grid_size==13').index
-    if len(ix) is not  156:
-        raise RuntimeError('we need to have 156 small grid msgs')
-
-    replaceGrid.index = ix
-    etmsgs.loc[ix,'condition'] = replaceGrid
+#     replaceGrid.index = ix
+#     etmsgs.loc[ix,'condition'] = replaceGrid
     
-    # this here fixes that all buttonpresses and stop messages etc. were send as GRID and not SMALLGG 
-    for blockid in etmsgs.block.dropna().unique():
-        if blockid == 0:
+#     # this here fixes that all buttonpresses and stop messages etc. were send as GRID and not SMALLGG 
+#     for blockid in etmsgs.block.dropna().unique():
+#         if blockid == 0:
+#             continue
+#         tmp = etmsgs.query('block==@blockid')
+#         t_before_start = tmp.query('condition=="DILATION"& exp_event=="stop"').msg_time.values
+#         t_before_end   = tmp.query('condition=="SHAKE"   & exp_event=="stop"').msg_time.values
+#         t_after_start  = tmp.query('condition=="SHAKE"   & exp_event=="stop"').msg_time.values
+#         t_after_end    =tmp.iloc[-1].msg_time
+
+#         ix = tmp.query('condition=="GRID"&msg_time>@t_before_start & msg_time<=@t_before_end').index
+#         etmsgs.loc[ix,'condition'] = 'SMALLGRID_BEFORE'
+        
+#         ix = tmp.query('condition=="GRID"&msg_time>@t_after_start  & msg_time<=@t_after_end').index
+#         etmsgs.loc[ix,'condition'] = 'SMALLGRID_AFTER'
+        
+#     return(etmsgs)
+
+#%% GENERAL DATA LOADING AND IMPORT
+
+def load_preprocessed_data(participant_info, datapath='/data/', excludeID=None, cleaned=True):
+    """
+    Loads eye-tracking data for multiple participants from preprocessed CSV files. 
+    This is formerly "be_load".
+
+    Parameters:
+        participant_info (pd.DataFrame): A DataFrame containing participant information, including their IDs.
+        datapath (str, optional): The base directory where participant data is stored.
+        excludeID (list, optional): A list of participant IDs to exclude from loading.
+        cleaned (bool, optional): If True, load cleaned samples; if False, load raw samples. Default is True.
+
+    Returns:
+        A tuple containing three pandas DataFrames:
+            - etsamples (pd.DataFrame): DataFrame containing eye-tracking samples data.
+            - etmsgs (pd.DataFrame): DataFrame containing eye-tracking messages data.
+            - etevents (pd.DataFrame): DataFrame containing eye-tracking events data.
+
+    Example:
+        etsamples, etmsgs, etevents = load_et_data(participant_info, datapath, excludeID=['sub-010', 'sub-011'])
+    """
+    
+    logger = logging.getLogger(__name__)
+    etsamples = pd.DataFrame()
+    etmsgs= pd.DataFrame()
+    etevents = pd.DataFrame()
+
+    for subject in participant_info.ID.unique():
+        preprocessed_folder_path = os.path.join(datapath, subject, 'preprocessed')
+
+        # Exclude participants
+        if excludeID is not None and subject in excludeID:
+            logger.warning('Warning. Skipping subject ID: %s', subject)
             continue
-        tmp = etmsgs.query('block==@blockid')
-        t_before_start = tmp.query('condition=="DILATION"& exp_event=="stop"').msg_time.values
-        t_before_end   = tmp.query('condition=="SHAKE"   & exp_event=="stop"').msg_time.values
-        t_after_start  = tmp.query('condition=="SHAKE"   & exp_event=="stop"').msg_time.values
-        t_after_end    =tmp.iloc[-1].msg_time
+        # Check whether each participant in the reference file has corresponding eyetracking files.
+        if not os.path.exists(preprocessed_folder_path):
+            logger.warning('Warning. No folder found for subject ID %s in %s', subject, datapath)
+            continue
+        
+        logger.warning('Loading subject ID: %s ...', subject)
+        
+        for et in ['el', 'tpx']:
+            try:
+                if cleaned:
+                    filename_samples = f"{et}_cleaned_samples.csv"
+                else:
+                    filename_samples = f"{et}_samples.csv"
+                filename_msgs    = f"{et}_msgs.csv"
+                filename_events  = f"{et}_events.csv"
+                
+                etsamples = pd.concat([etsamples, pd.read_csv(os.path.join(preprocessed_folder_path, filename_samples)).assign(subject=subject, eyetracker=et)], ignore_index=True, sort=False)
+                etmsgs    = pd.concat([etmsgs, pd.read_csv(os.path.join(preprocessed_folder_path, filename_msgs)).assign(subject=subject, eyetracker=et)], ignore_index=True, sort=False)
+                etevents  = pd.concat([etevents, pd.read_csv(os.path.join(preprocessed_folder_path, filename_events)).assign(subject=subject, eyetracker=et)], ignore_index=True, sort=False)
 
-        ix = tmp.query('condition=="GRID"&msg_time>@t_before_start & msg_time<=@t_before_end').index
-        etmsgs.loc[ix,'condition'] = 'SMALLGRID_BEFORE'
-        
-        ix = tmp.query('condition=="GRID"&msg_time>@t_after_start  & msg_time<=@t_after_end').index
-        etmsgs.loc[ix,'condition'] = 'SMALLGRID_AFTER'
-        
-    return(etmsgs)
-    
-    
+                # FIXME do we still need this part? Does this not already happen elsewhere?
+                # t0 = elmsgs.query("condition=='Instruction'&exp_event=='BEGINNING_start'").msg_time.values
+                # if len(t0)!=1:
+                #     raise error
+                    
+                # elsamples.smpl_time = elsamples.smpl_time - t0
+                # elmsgs.msg_time= elmsgs.msg_time - t0
+                # elevents.start_time = elevents.start_time- t0
+                # elevents.end_time = elevents.end_time- t0
+
+            except FileNotFoundError as error:
+                logger.critical('Warning: data for %s eyetracker not found!\n %s', et, error)
+                continue
+    # FIXME at this point, the original function contained eyetracker regression functionality. 
+    # I'm not sure it really fits here and I don't think we have a function to do this at the moment.
+    # for subject in etmsgs.subject.unique():
+    #     logger.info("fixing subject %s"%(subject))
+    #     etsamples,etmsgs,etevents = regress_eyetracker(etsamples,etevents,etmsgs,subject)
+
+    return etsamples, etmsgs, etevents
+
+
+def load_files(directory, datatype):
+    """
+    Load and merge CSV files from multiple subdirectories into one pandas DataFrame.
+    This is currently only used for loading participant information.
+
+    Parameters:
+        directory (str): Path to the main directory containing subdirectories with CSV files.
+        eyetracker (str): Output of which eyetracker (el or tp)
+        datatype (str): Type of CSV file (samples, msgs, or events)
+    Returns:
+        all_data (pd.DataFrame): Merged DataFrame containing data from all CSV files.
+    """
+    all_data = pd.DataFrame()
+
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(datatype+'.csv'):
+                file_path = os.path.join(root, file)
+                if datatype == "participant_info": 
+                    data = pd.read_csv(file_path, sep=';')
+                else: 
+                    data = pd.read_csv(file_path, sep=',')
+                print("Processing",file_path)
+                all_data = pd.concat([all_data, data])
+
+    return all_data
