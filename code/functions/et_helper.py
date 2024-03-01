@@ -86,48 +86,6 @@ def append_eventtype_to_sample(etsamples, etevents, eventtype, timemargin=None):
     return etsamples
 
 
-
-# def append_eventtype_to_sample(etsamples, etevents, eventtype, timemargin=None):
-#     """
-#     Append the specified event type to samples in the etsamples DataFrame.
-#     based on the event timings provided in the etevents DataFrame.
-
-#     Parameters:
-#         etsamples (pd.DataFrame): DataFrame containing eye-tracking samples.
-#         etevents (pd.DataFrame): DataFrame containing eye-tracking events.
-#         eventtype (str): Type of event to append to samples.
-#         timemargin (list, optional): Time margin to consider around events (default None).
-
-#     Returns:
-#         etsamples (pd.DataFrame): Modified DataFrame with event type appended.
-#     """
-#     logger = logging.getLogger(__name__)
-
-#     logger.debug('Appending eventtype: %s to samples',eventtype)
-
-#     if timemargin is None:    
-#         if eventtype== 'blink':
-#             logger.info('Taking Default value for timemargin (blink = -0.1s/0.1s)')
-#             timemargin = [-.1,.1]
-#         else:
-#             logger.info('Taking Default value for timemargin (fix/saccade = 0s)')
-#             timemargin = [0,0]
-
-#     # get index of the rows that have that eventtype
-#     ix_event = etevents['type']==eventtype
-
-#     # get list of start and end indeces in the etsamples df
-#     eventstart = etevents.loc[ix_event,'start_time']+float(timemargin[0])
-#     eventend = etevents.loc[ix_event,'end_time']+float(timemargin[1])
-
-#     flat_ranges = eventtime_to_sampletime(etsamples,eventstart,eventend)
-#     # all etsamples with ix in ranges , will the eventype in the column type
-#     if len(flat_ranges) > 0:
-#         etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
-
-#     return etsamples
-
-
 def check_directory(directory):
     """
     Check whether a directory exists.
