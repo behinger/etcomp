@@ -103,7 +103,7 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
 
     # Saving the file if you want to keep the calculated results
     if save:
-        logger.info('Saving preprocessed et data ...')
+        logger.info('Saving preprocessed eyetracking data ...')
         save_file([etsamples, cleaned_etsamples, etmsgs, etevents], et, subject, datapath, outputprefix=outputprefix)
 
     return cleaned_etsamples, etmsgs, etevents
@@ -144,11 +144,12 @@ def load_and_process_all_et_data(participant_info, et, eventfunctions, datapath=
         if not os.path.exists(datapath):
             logger.warning('Warning. No folder found for subject ID %s in %s', subject, datapath)
             continue
-        logger.warning('Reading and preprocessing subject ID: %s', subject)
         raw_folder_path = os.path.join(datapath, subject, 'raw')
         
         try:
             check_directory(raw_folder_path)
+            logger.warning('#################### Reading and preprocessing subject ID %s ####################\nDatapath: %s ', subject, raw_folder_path)
+
             cleaned_etsamples, etmsgs, etevents = preprocess_et(et=et,
                                                                 subject=subject,
                                                                 participant_info=participant_info,
@@ -156,7 +157,7 @@ def load_and_process_all_et_data(participant_info, et, eventfunctions, datapath=
                                                                 load=False,
                                                                 save=True,
                                                                 eventfunctions=eventfunctions,
-                                                                outputprefix='preprocessed_')
+                                                                outputprefix='')
         except FileNotFoundError as error:
             logger.warning("Directory not found. Error: %s", error)
 
