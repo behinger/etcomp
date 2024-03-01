@@ -328,6 +328,20 @@ def save_file(data, et, subject, datapath, outputprefix=''):
     data[3].to_csv(os.path.join(datapath, filename_events), index=False)
 
 
+def winmean(x, perc = 0.2, axis=0):
+    """
+    Calculates the 20% Winsorized mean along the specified axis.
+
+    Parameters:
+        x (array): Input data.
+        perc (float, optional): The proportion of data to be Winsorized from each end of the distribution.
+        axis (int, optional): Axis along which to compute the Winsorized mean. Default is 0.
+
+    Returns:
+        numpy.ndarray: Winsorized mean of the input array along the specified axis.
+    """
+    return(np.mean(winsorize(x, perc, axis=axis), axis=axis))
+
 
 ######################################################################
 #                                                                    #
@@ -384,12 +398,22 @@ def convert_diam_to_pa(axes1, axes2):
 
 #%% adding information to dfs
 
-def add_msg_to_event(etevents,etmsgs,timefield = 'start_time', direction='backward'):
-    # combine the event df with the msg df          
+def add_msg_to_event(etevents, etmsgs, direction='backward'):
+    """
+    Combines event DataFrame with message DataFrame.
+
+    Parameters:
+        etevents (pd.DataFrame): DataFrame containing events.
+        etmsgs (pd.DataFrame): DataFrame containing messages.
+        timefield (str, optional): Field representing time in event DataFrame (default is 'start_time').
+        direction (str, optional): Direction of merging based on timefield (default is 'backward', other options: 'forward', or 'nearest').
+
+    Returns:
+        merged_etevents (pd.DataFrame): Merged DataFrame with events and messages.
+    """
     etevents = etevents.sort_values('start_time')
     etmsgs   = etmsgs.sort_values('msg_time')
-    # make a merge on the msg time and the start time of the events
-    merged_etevents = pd.merge_asof(etevents,etmsgs,left_on='start_time',right_on='msg_time',direction=direction)
+    merged_etevents = pd.merge_asof(etevents, etmsgs, left_on='start_time', right_on='msg_time', direction=direction)
     
     return merged_etevents
 
@@ -666,10 +690,7 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
  
 
 
-# define 20% winsorized means 
 
-def winmean(x,perc = 0.2,axis=0):
-    return(np.mean(winsorize(x,perc,axis=axis),axis=axis))
 
 def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95,
                  random_state=None):
