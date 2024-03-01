@@ -214,7 +214,7 @@ def raw_el_data(datapath='/data/'):
     except FileNotFoundError as error:
         logger.warning("Directory not found while reading raw EyeLink data. Error: %s", error)
 
-    elsamples, elevents, elnotes = edfread.read_edf(os.path.join(datapath,findFile(datapath,'.EDF')[0]))
+    elsamples, elevents, elnotes = edfread.read_edf(os.path.join(datapath, findFile(datapath,'.EDF')[0]))
     
     return (elsamples,elevents,elnotes)
     
