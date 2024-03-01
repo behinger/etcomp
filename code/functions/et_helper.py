@@ -276,15 +276,9 @@ def save_file(data, et, subject, datapath, outputprefix=''):
     
     Returns: None
     """
-    logger = logging.getLogger(__name__)
-
-    # filepath for preprocessed folder
+    # Define a filepath for the preprocessed folder. Create a new folder if there is none.
     preprocessed_directory = os.path.join(os.path.dirname(datapath), 'preprocessed')
-    logger.warning("Directory for preprocessing: %s", preprocessed_directory)
-    # 
-    # preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
 
-    # create new folder if there is none
     if not os.path.exists(preprocessed_directory):
         os.makedirs(preprocessed_directory)
 
