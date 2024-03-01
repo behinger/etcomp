@@ -257,6 +257,21 @@ def eventtime_to_sampletime(etsamples, eventstart, eventend):
     return(flat_ranges)
 
 
+def findFile(path, ftype):
+    """
+    Finds files of a specific type in a directory. Used primarily for finding Eyelink EDF files.
+
+    Parameters:
+        path (str): Directory path to search for files.
+        ftype (str): File type to search for.
+
+    Returns:
+        list: List of file names with the specified file type.
+    """ 
+    out = [edf for edf in os.listdir(path) if edf.endswith(ftype)]
+    return(out)
+
+
 def make_lines(df, column_name='top_left_y'):
     """
     This function adds line information for the reading task. 
@@ -322,10 +337,10 @@ def save_file(data, et, subject, datapath, outputprefix=''):
     filename_msgs = str(prefix)  + '_msgs.csv'
     filename_events = str(prefix)  + '_events.csv'
     ## make separate csv file for every df 
-    data[0].to_csv(os.path.join(datapath, filename_samples), index=False)
-    data[1].to_csv(os.path.join(datapath, filename_cleaned_samples), index=False)
-    data[2].to_csv(os.path.join(datapath, filename_msgs), index=False)
-    data[3].to_csv(os.path.join(datapath, filename_events), index=False)
+    data[0].to_csv(os.path.join(preprocessed_directory, filename_samples), index=False)
+    data[1].to_csv(os.path.join(preprocessed_directory, filename_cleaned_samples), index=False)
+    data[2].to_csv(os.path.join(preprocessed_directory, filename_msgs), index=False)
+    data[3].to_csv(os.path.join(preprocessed_directory, filename_events), index=False)
 
 
 def winmean(x, perc = 0.2, axis=0):
@@ -599,10 +614,7 @@ def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix
     return etsamples,etmsgs,etevents
 
 
-def findFile(path,ftype):
-    # finds file for el edf
-    out = [edf for edf in os.listdir(path) if edf.endswith(ftype)]
-    return(out)
+
     
     
     
@@ -634,8 +646,6 @@ def toc(tempBool=True):
 def tic():
     # Records a time in TicToc, marks the beginning of a time interval
     toc(False)
-    
-    
     
     
 def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True):
@@ -687,11 +697,6 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
     return(p)
     
  
- 
-
-
-
-
 def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95,
                  random_state=None):
     return bootstrap_statistics(series, winmean,
