@@ -11,6 +11,123 @@ import os
 import pandas as pd
 
 
+def add_events_to_samples(etsamples, etevents):
+    """
+    Adds event types from an events DataFrame to a samples DataFrame. For each unique event type
+    in 'etevents', this function calls the 'append_eventtype_to_sample' function.
+    Additionally, it adds a blink index to the samples DataFrame.
+
+    Parameters:
+        etsamples (pd.DataFrame): A DataFrame containing eyetracking samples.
+        etevents (pd.DataFrame): A DataFrame containing eyetracking events.
+
+    Returns:
+        etsamples (pd.DataFrame): A modified samples DataFrame with event types added to samples 
+        and a 'blink_id' column added.
+    """
+    logger = logging.getLogger(__name__)
+
+    logger.info(etevents.type.unique())
+    for evt in etevents.type.unique():
+        etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype=evt)
+
+        if evt == 'blink':
+            # counts up the blink_id
+            # Pure Magic
+            etsamples.loc[:,'blink_id'] = (1*(etsamples['type']=='blink')) * ((1*(etsamples['type']=='blink')).diff()==1).cumsum()
+
+    return(etsamples)
+
+
+def append_eventtype_to_sample(etsamples, etevents, eventtype, timemargin=None):
+    """
+    Append the specified event type to samples in the etsamples DataFrame.
+    based on the event timings provided in the etevents DataFrame.
+
+    Parameters:
+        etsamples (pd.DataFrame): DataFrame containing eye-tracking samples.
+        etevents (pd.DataFrame): DataFrame containing eye-tracking events.
+        eventtype (str): Type of event to append to samples.
+        timemargin (list, optional): Time margin to consider around events (default None).
+
+    Returns:
+        etsamples (pd.DataFrame): Modified DataFrame with event type appended.
+    """
+
+    # get a logger
+    logger = logging.getLogger(__name__)
+
+    logger.debug('Appending eventtype: %s to samples', eventtype)
+
+    if timemargin is None:
+        if eventtype == 'blink':
+            logger.info('Taking Default value for timemargin (blink = -0.1s/0.1s)')
+            timemargin = [-.1, .1]
+        else:
+            logger.info('Taking Default value for timemargin (fix/saccade = 0s)')
+            timemargin = [0, 0]
+
+    # get index of the rows that have that eventtype
+    ix_event = etevents['type'] == eventtype
+
+    # get list of start and end indeces in the etsamples df
+    eventstart = etevents.loc[ix_event, 'start_time'] + float(timemargin[0])
+    eventend = etevents.loc[ix_event, 'end_time'] + float(timemargin[1])
+
+    flat_ranges = eventtime_to_sampletime(etsamples, eventstart, eventend)
+
+    # all etsamples with ix in ranges, will have the eventtype in the column type
+    if len(flat_ranges) > 0:
+        # Convert 'type' column to object type (string) if not already
+        if etsamples['type'].dtype != 'object':
+            etsamples['type'] = etsamples['type'].astype('object')
+        etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
+
+    return etsamples
+
+
+
+# def append_eventtype_to_sample(etsamples, etevents, eventtype, timemargin=None):
+#     """
+#     Append the specified event type to samples in the etsamples DataFrame.
+#     based on the event timings provided in the etevents DataFrame.
+
+#     Parameters:
+#         etsamples (pd.DataFrame): DataFrame containing eye-tracking samples.
+#         etevents (pd.DataFrame): DataFrame containing eye-tracking events.
+#         eventtype (str): Type of event to append to samples.
+#         timemargin (list, optional): Time margin to consider around events (default None).
+
+#     Returns:
+#         etsamples (pd.DataFrame): Modified DataFrame with event type appended.
+#     """
+#     logger = logging.getLogger(__name__)
+
+#     logger.debug('Appending eventtype: %s to samples',eventtype)
+
+#     if timemargin is None:    
+#         if eventtype== 'blink':
+#             logger.info('Taking Default value for timemargin (blink = -0.1s/0.1s)')
+#             timemargin = [-.1,.1]
+#         else:
+#             logger.info('Taking Default value for timemargin (fix/saccade = 0s)')
+#             timemargin = [0,0]
+
+#     # get index of the rows that have that eventtype
+#     ix_event = etevents['type']==eventtype
+
+#     # get list of start and end indeces in the etsamples df
+#     eventstart = etevents.loc[ix_event,'start_time']+float(timemargin[0])
+#     eventend = etevents.loc[ix_event,'end_time']+float(timemargin[1])
+
+#     flat_ranges = eventtime_to_sampletime(etsamples,eventstart,eventend)
+#     # all etsamples with ix in ranges , will the eventype in the column type
+#     if len(flat_ranges) > 0:
+#         etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
+
+#     return etsamples
+
+
 def check_directory(directory):
     """
     Check whether a directory exists.
@@ -64,7 +181,7 @@ def drop_eye(subject, participant_info, samples, events=None):
                                   'ryvel_right': 'ryvel'}, 
                          inplace=True)
         if 'b_right' not in samples.columns:
-            logger.warning("DataFrame does not have the 'b_right' column (probably loading not TrackPixx data).")
+            logger.warning("DataFrame does not have the 'b_right' column. This is only a problem if you are processing TrackPixx data.")
         else:
             samples.rename(columns={'b_right': 'blink'}, inplace=True)
 
@@ -92,7 +209,7 @@ def drop_eye(subject, participant_info, samples, events=None):
                                   'ryvel_left': 'ryvel'}, 
                          inplace=True)
         if 'b_left' not in samples.columns:
-            logger.warning("DataFrame does not have the 'b_left' column (probably loading not TrackPixx data).")
+            logger.warning("DataFrame does not have the 'b_left' column.  This is only a problem if you are processing TrackPixx data.")
         else:
             samples.rename(columns={'b_left': 'blink'}, inplace=True)
 
@@ -104,6 +221,40 @@ def drop_eye(subject, participant_info, samples, events=None):
         logger.error("Unknown eye '%s' for subject ID: %s", eye, subject)
         
     return samples, events
+
+
+def eventtime_to_sampletime(etsamples, eventstart, eventend):
+    """
+    Converts event time indices to corresponding sample time indices in a samples DataFrame.
+
+    Parameters:
+        etsamples (pd.DataFrame): A samples DataFrame
+        eventstart (pd.Series): A series containing start times of events.
+        eventend (pd.Series): A series containing end times of events.
+
+    Returns:
+        flat_ranges(np.array): An array containing sample time indices corresponding to the event time indices.
+    """
+    # due to timemargin strange effects can occur and we need to clip
+    mintime = etsamples.smpl_time.iloc[0]
+    maxtime = etsamples.smpl_time.iloc[-1]
+    eventstart.loc[eventstart < mintime] = mintime
+    eventstart.loc[eventstart > maxtime] = maxtime
+    eventend.loc[eventend < mintime] = mintime
+    eventend.loc[eventend > maxtime] = maxtime
+    
+    if len(eventstart)!=len(eventend):
+        raise error
+        
+    startix = np.searchsorted(etsamples.smpl_time, eventstart)
+    endix = np.searchsorted(etsamples.smpl_time, eventend)
+
+    # make a list of ranges to have all indices in between the startix and endix
+    ranges = [list(range(s, e)) for s, e in zip(startix, endix)]
+    flat_ranges = [item for sublist in ranges for item in sublist]
+      
+    flat_ranges = np.intersect1d(flat_ranges, range(etsamples.shape[0]))
+    return(flat_ranges)
 
 
 def make_lines(df, column_name='top_left_y'):
@@ -135,6 +286,48 @@ def make_lines(df, column_name='top_left_y'):
     for group_num, value_range in lines.items():
         new_df.loc[new_df[column_name].between(value_range[0], value_range[1]), 'line'] = group_num
     return new_df
+
+
+def save_file(data, et, subject, datapath, outputprefix=''):
+    """
+    This function saves data from the a list of pandas DataFrames into separate CSV files with an optional output prefix. 
+    It constructs filenames based on the provided event timestamp (et) and subject identifier (subject). 
+    The CSV files are stored in the specified datapath directory. If the directory doesn't exist, it creates it.
+
+    Parameters:
+        data (list of pd.DataFrame): A list containing pandas DataFrames to be saved as CSV files.
+        et (str): Eyetracker identifier used as part of the filename.
+        subject (str): Subject identifier or category used as part of the filepath.
+        datapath (str): Path to the directory where files will be saved.
+        outputprefix (str, optional): Prefix to be added to the filenames (default is none).
+    
+    Returns: None
+    """
+    logger = logging.getLogger(__name__)
+
+    # filepath for preprocessed folder
+    preprocessed_directory = os.path.join(os.path.dirname(datapath), 'preprocessed')
+    logger.warning("Directory for preprocessing: %s", preprocessed_directory)
+    # 
+    # preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
+
+    # create new folder if there is none
+    if not os.path.exists(preprocessed_directory):
+        os.makedirs(preprocessed_directory)
+
+    # Save data as CSV
+    prefix = outputprefix+et
+    filename_samples = str(prefix) + '_samples.csv'
+    filename_cleaned_samples = str(prefix) + '_cleaned_samples.csv'
+    filename_msgs = str(prefix)  + '_msgs.csv'
+    filename_events = str(prefix)  + '_events.csv'
+    ## make separate csv file for every df 
+    data[0].to_csv(os.path.join(datapath, filename_samples), index=False)
+    data[1].to_csv(os.path.join(datapath, filename_cleaned_samples), index=False)
+    data[2].to_csv(os.path.join(datapath, filename_msgs), index=False)
+    data[3].to_csv(os.path.join(datapath, filename_events), index=False)
+
+
 
 ######################################################################
 #                                                                    #
@@ -199,82 +392,10 @@ def add_msg_to_event(etevents,etmsgs,timefield = 'start_time', direction='backwa
     merged_etevents = pd.merge_asof(etevents,etmsgs,left_on='start_time',right_on='msg_time',direction=direction)
     
     return merged_etevents
-    
 
-                
-def add_events_to_samples(etsamples, etevents):
-    # Calls append_eventtype_to_sample for each event
-    # Also adds blink_id
-    logger = logging.getLogger(__name__)
 
-    logger.info(etevents.type.unique())
-    for evt in etevents.type.unique():
-        etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype=evt)
-        
-        # add blink id
-        if evt == 'blink':
-            # counts up the blink_id
-            # Pure Magic
-            etsamples.loc[:,'blink_id'] = (1*(etsamples['type']=='blink')) * ((1*(etsamples['type']=='blink')).diff()==1).cumsum()
-    
-    return(etsamples)
-        
-        
-    
-def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
-    # get a logger
-    logger = logging.getLogger(__name__)
-     
-    logger.debug('Appending eventtype: %s to samples',eventtype)
-    if timemargin is None:
-        
-        if eventtype== 'blink':
-            logger.info('Taking Default value for timemargin (blink = -0.1s/0.1s)')
-            timemargin = [-.1,.1]
-        else:
-            logger.info('Taking Default value for timemargin (fix/saccade = 0s)')
-            timemargin = [0,0]
-        
-               
-    # get index of the rows that have that eventtype
-    ix_event = etevents['type']==eventtype
-    
-    # get list of start and end indeces in the etsamples df
-    eventstart = etevents.loc[ix_event,'start_time']+float(timemargin[0])
-    eventend = etevents.loc[ix_event,'end_time']+float(timemargin[1])
-    
-    flat_ranges = eventtime_to_sampletime(etsamples,eventstart,eventend)
-    # all etsamples with ix in ranges , will the eventype in the column type
-    if len(flat_ranges) > 0:
-        etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
-        
 
-    return etsamples
 
-def eventtime_to_sampletime(etsamples,eventstart,eventend):
-    # due to timemargin strange effects can occur and we need to clip
-    mintime = etsamples.smpl_time.iloc[0]
-    maxtime = etsamples.smpl_time.iloc[-1]
-    eventstart.loc[eventstart < mintime] = mintime
-    eventstart.loc[eventstart > maxtime] = maxtime
-    eventend.loc[eventend  < mintime] = mintime
-    eventend.loc[eventend  > maxtime] = maxtime
-    
-    if len(eventstart)!=len(eventend):
-        raise error
-        
-    startix = np.searchsorted(etsamples.smpl_time,eventstart)
-    endix = np.searchsorted(etsamples.smpl_time,eventend)
-    
-    
-    #print('%i events of %s found'%(len(startix),eventtype))
-    # make a list of ranges to have all indices in between the startix and endix
-    ranges = [list(range(s,e)) for s,e in zip(startix,endix)]
-    flat_ranges = [item for sublist in ranges for item in sublist]
-    
-    
-    flat_ranges = np.intersect1d(flat_ranges,range(etsamples.shape[0]))
-    return(flat_ranges)
 #%% last fixation (e.g. for large GRID)
 
 def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element']):
@@ -420,15 +541,12 @@ def px2deg(px, orientation, mm_per_px=0.276,distance=600):
     return deg
 
 
-
 def sph2cart(theta_sph,phi_sph,rho_sph=1):
     xyz_sph = np.asarray([rho_sph * np.sin(theta_sph) * np.cos(phi_sph), 
            rho_sph * np.sin(theta_sph) * np.sin(phi_sph), 
            rho_sph * np.cos(theta_sph)])
 
     return xyz_sph
-
-
 
 
 #%% LOAD & SAVE & FIND file
@@ -455,32 +573,6 @@ def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix
         raise e
 
     return etsamples,etmsgs,etevents
-
-
-
-def save_file(data,et,subject,datapath,outputprefix=''):
-    
-    # filepath for preprocessed folder
-    preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
-    
-    # create new folder if there is none
-    if not os.path.exists(preprocessed_path):
-        os.makedirs(preprocessed_path)
-    
-    et = outputprefix+et
-    # dump data in csv
-    filename_samples = str(et) + '_samples.csv'
-    filename_cleaned_samples = str(et) + '_cleaned_samples.csv'
-    filename_msgs = str(et)  + '_msgs.csv'
-    filename_events = str(et)  + '_events.csv'
-    
-    # make separate csv file for every df 
-    data[0].to_csv(os.path.join(preprocessed_path, filename_samples), index=False)
-    data[1].to_csv(os.path.join(preprocessed_path, filename_cleaned_samples), index=False)
-    data[2].to_csv(os.path.join(preprocessed_path, filename_msgs), index=False)
-    data[3].to_csv(os.path.join(preprocessed_path, filename_events), index=False)
-    
-
 
 
 def findFile(path,ftype):
