@@ -79,14 +79,15 @@ def detect_events_cateyes(etsamples,etevents):
     etsamples = et_helper.add_events_to_samples(etsamples, etevents)
     gx = etsamples.gx.copy()
     gy = etsamples.gy.copy()
-    gx[etsamples.type=="blink"] = np.NaN
-    gy[etsamples.type=="blink"] = np.NaN
+    gx[np.logical_or(etsamples.type=="blink",etsamples.outside)] = np.NaN
+    gy[np.logical_or(etsamples.type=="blink",etsamples.outside)] = np.NaN
+
     logger = logging.getLogger(__name__)
     _,sfreq_empirical = cateyes.classification._get_time(etsamples.gx.iloc[1:10000],etsamples.smpl_time.iloc[1:10000])
     logger.debug("Assuming a sr=2000 for cateyes remodnav. First 10k samples show {}".format(sfreq_empirical))
     cl_disp, classes = cateyes.classify_remodnav(gx, gy, 2000,1, simple_output=True,
                                             classifier_kwargs=dict(pursuit_velthresh=100000),
-                                             preproc_kwargs=dict(dilate_nan=0.05,min_blink_duration=0,savgol_length=0.00475,savgol_polyord=1),) # 2°, 100ms
+                                             preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=0.00475,savgol_polyord=1),) # 2°, 100ms
     events = []
     for idx in np.unique(cl_disp):
         if idx == 0:
