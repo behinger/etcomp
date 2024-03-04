@@ -273,7 +273,7 @@ def import_el(subject, participant_info, datapath='/data/'):
     logger.warning('Marking as NaN %.4f%% due to other errors (e.g. lost eye / target)'%(100*np.mean((elsamples.errors!=0))))
     
     #elsamples = elsamples.loc[elsamples.errors == 0]
-    elsamples.loc[elsamples.errors != 0,["gx_left","gy_left","gx_right","gx_right"]] = np.NaN
+    elsamples.loc[elsamples.errors != 0,["gx_left","gy_left","gx_right","gy_right"]] = np.NaN
     
     # We had issues with samples with negative time
     logger.warning('Deleting %.4f%% samples due to time<=0'%(100*np.mean(elsamples.time<=0)))
