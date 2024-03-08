@@ -104,7 +104,7 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
     # Saving the file if you want to keep the calculated results
     if save:
         logger.info('Saving preprocessed eyetracking data ...')
-        save_file([etsamples, cleaned_etsamples, etmsgs, etevents], et, subject, datapath, outputprefix=outputprefix)
+        save_file([etsamples, cleaned_etsamples, etmsgs, etevents], et, datapath, outputprefix=outputprefix)
 
     return cleaned_etsamples, etmsgs, etevents
 
