@@ -10,10 +10,9 @@ import pandas as pd
 import re
 from scipy import io as sio
 
-from functions.et_helper import findFile, check_directory, drop_eye
+from functions.et_helper import check_directory, drop_eye, findFile, regress_eyetracker
 import functions.et_parse as parse
 import functions.et_make_df as make_df
-import functions.et_helper as  helper
 
 #%% TRACKPIXX
 
@@ -245,13 +244,6 @@ def import_el(subject, participant_info, datapath='/data/'):
     except FileNotFoundError as error:
         logger.warning("Directory not found. Error: %s", error)     
     
-    # Load edf
-    
-    # load and preprocess data from raw data files      
-    # elsamples:  contains individual EL samples
-    # elevents:   contains fixation and saccade definitions
-    # elnotes:    contains notes (meta data) associated with each trial
-   
     elsamples,elevents,elnotes = raw_el_data(datapath)
     
     # TODO understand and fix this
@@ -269,7 +261,6 @@ def import_el(subject, participant_info, datapath='/data/'):
         elsamples.loc[::2, 'time'] = elsamples.loc[::2, 'time'] + 0.5
     
     # We also delete Samples with interpolated pupil responses. In one dataset these were ~800samples.
-    #logger.warning('Deleting %.4f%% due to interpolated pupil (online during eyelink recording)'%(100*np.mean(elsamples.errors ==8)))
     logger.warning('Marking as NaN %.4f%% due to other errors (e.g. lost eye / target)'%(100*np.mean((elsamples.errors!=0))))
     
     #elsamples = elsamples.loc[elsamples.errors == 0]
@@ -286,10 +277,8 @@ def import_el(subject, participant_info, datapath='/data/'):
     elsamples = elsamples.loc[elsamples.time > elsamples.time[0]]
     elsamples.reset_index(inplace=True)
     # Convert to same units
-    # change to seconds to be the same as pupil
     elsamples['smpl_time'] = elsamples['time'] / 1000 
     elnotes['msg_time']    = elnotes['time'] / 1000
-    #logger.warning(type(elnotes))
     elnotes = elnotes.drop('time',axis=1)  
     elevents['start']      = elevents['start'] / 1000     
     elevents['end']        = elevents['end'] / 1000             
@@ -334,10 +323,8 @@ def import_el(subject, participant_info, datapath='/data/'):
                 
     # Parse EL msg
     elmsgs = elnotes.apply(parse.parse_message,axis=1)
-    #logger.warning(elmsgs)
     
     elmsgs = elmsgs.drop(elmsgs.index[elmsgs.isnull().all(1)])
-    #elmsgs = fix_smallgrid_parser(elmsgs)
     
     return elsamples, elmsgs, elevents
     
