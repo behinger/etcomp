@@ -9,6 +9,7 @@ import math
 import numpy as np
 import os
 import pandas as pd
+import scipy
 
 
 def add_events_to_samples(etsamples, etevents):
@@ -29,7 +30,7 @@ def add_events_to_samples(etsamples, etevents):
 
     logger.info(etevents.type.unique())
     for evt in etevents.type.unique():
-        etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype=evt)
+        etsamples = append_eventtype_to_sample(etsamples, etevents, eventtype=evt)
 
         if evt == 'blink':
             # counts up the blink_id
@@ -167,7 +168,7 @@ def drop_eye(subject, participant_info, samples, events=None):
                                   'ryvel_left': 'ryvel'}, 
                          inplace=True)
         if 'b_left' not in samples.columns:
-            logger.warning("DataFrame does not have the 'b_left' column.  This is only a problem if you are processing TrackPixx data.")
+            logger.warning("DataFrame does not have the 'b_left' column. This is only a problem if you are processing TrackPixx data.")
         else:
             samples.rename(columns={'b_left': 'blink'}, inplace=True)
 
@@ -261,7 +262,50 @@ def make_lines(df, column_name='top_left_y'):
     return new_df
 
 
-def save_file(data, et, subject, datapath, outputprefix=''):
+def regress_eyetracker(etsamples, etevents, etmsgs, subject):
+    """
+    Regresses EyeLink (el) and TrackPixx (tpx) timestamps to align them based on subject and eye tracker type.
+
+    Parameters:
+        etsamples (pd.DataFrame): DataFrame containing eyetracker samples.
+        etevents (pd.DataFrame): DataFrame containing eyetracker events.
+        etmsgs (pd.DataFrame): DataFrame containing eyetracker messages.
+        subject (str): Subject identifier.
+
+    Returns:
+        tuple: A tuple containing updated versions of etsamples, etmsgs, and etevents DataFrames.
+    """
+    logger = logging.getLogger(__name__)
+    ix_m = (etmsgs.eyetracker=='tpx')    & (etmsgs.subject==subject)
+    ix_e = (etevents.eyetracker=='tpx')  & (etevents.subject==subject)
+    ix_s = (etsamples.eyetracker=='tpx') & (etsamples.subject==subject)
+
+    # Remove NaNs
+    etmsgs_regress = etmsgs[etmsgs.exp_event.notnull()]
+
+    # Select the right eyetracker and subject
+    etmsgs_regress_el = etmsgs_regress.query("subject==@subject&eyetracker=='el'&condition!='Connect'")
+    etmsgs_regress_tpx = etmsgs_regress.query("subject==@subject&eyetracker=='tpx'&condition!='Connect'")
+
+    y = etmsgs_regress_el.msg_time.values
+    x = etmsgs_regress_tpx.msg_time.values
+
+    assert len(x)==len(y),'Error: The number of messages in EyeLink does not match the number of messages in TrackPixx.'
+
+    slope, intercept, low, high = scipy.stats.theilslopes(y, x)
+    logger.warning('Regressing subject ID %s. Slope: %.10f, intercept: %.10f', subject, slope, intercept)
+
+    # Transform TrackPixx timestamps
+    etmsgs.loc[ix_m, 'msg_time']     = etmsgs.loc[ix_m, 'msg_time'].values     *slope + intercept
+    etsamples.loc[ix_s, 'smpl_time'] = etsamples.loc[ix_s, 'smpl_time'].values *slope + intercept
+    etevents.loc[ix_e, 'start_time'] = etevents.loc[ix_e, 'start_time'].values *slope + intercept
+    etevents.loc[ix_e, 'end_time']   = etevents.loc[ix_e, 'end_time'].values   *slope + intercept
+    # we do not recalculate durations & velocity because the local change is so small (~0.1ms / 1s)
+    # TODO do we keep this or do we change it?
+    return(etsamples, etevents, etmsgs)
+
+
+def save_file(data, et, datapath, outputprefix=''):
     """
     This function saves data from the a list of pandas DataFrames into separate CSV files with an optional output prefix. 
     It constructs filenames based on the provided event timestamp (et) and subject identifier (subject). 
@@ -270,7 +314,6 @@ def save_file(data, et, subject, datapath, outputprefix=''):
     Parameters:
         data (list of pd.DataFrame): A list containing pandas DataFrames to be saved as CSV files.
         et (str): Eyetracker identifier used as part of the filename.
-        subject (str): Subject identifier or category used as part of the filepath.
         datapath (str): Path to the directory where files will be saved.
         outputprefix (str, optional): Prefix to be added to the filenames (default is none).
     
