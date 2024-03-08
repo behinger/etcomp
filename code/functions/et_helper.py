@@ -305,6 +305,34 @@ def regress_eyetracker(etsamples, etevents, etmsgs, subject):
     return(etsamples, etevents, etmsgs)
 
 
+def regress_all_subjects(etsamples, etevents, etmsgs):
+    """
+    Process eyetracker data for multiple subjects.
+
+    Parameters:
+        etsamples (pd.DataFrame): DataFrame containing eyetracker samples.
+        etevents (pd.DataFrame): DataFrame containing eyetracker events.
+        etmsgs (pd.DataFrame): DataFrame containing eyetracker messages.
+
+    Returns: A tuple containing modified etsamples, etevents, and etmsgs for all subjects.
+    """
+    regressed_etsamples = pd.DataFrame()
+    regressed_etevents = pd.DataFrame()
+    regressed_etmsgs = pd.DataFrame()
+    subjects = etsamples['subject'].unique()
+    
+    for subject in subjects:
+        logger = logging.getLogger(__name__)
+        logger.info('Regressing timestamps for subject: %s', subject)
+        etsamples, etevents, etmsgs = regress_eyetracker(etsamples, etevents, etmsgs, subject)
+        
+        regressed_etsamples = pd.concat([regressed_etsamples, etsamples], ignore_index=True)
+        regressed_etevents = pd.concat([regressed_etevents, etevents], ignore_index=True)
+        regressed_etmsgs = pd.concat([regressed_etmsgs, etmsgs], ignore_index=True)
+    
+    return regressed_etsamples, regressed_etevents, regressed_etmsgs
+
+
 def save_file(data, et, datapath, outputprefix=''):
     """
     This function saves data from the a list of pandas DataFrames into separate CSV files with an optional output prefix. 
@@ -352,6 +380,33 @@ def winmean(x, perc = 0.2, axis=0):
     """
     return(np.mean(winsorize(x, perc, axis=axis), axis=axis))
 
+
+def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95, random_state=None):
+    """
+    Compute a bootstrapped confidence interval for the windowed mean of a time series. 
+    This function calculates a confidence interval for the windowed mean of a given time series
+    using the bootstrap resampling method.
+    This function internally calls the `bootstrap_statistics` function with the appropriate
+    parameters, where the `winmean` function computes the windowed mean.
+    The windowed mean is computed for overlapping windows across the time series.
+    Increasing the number of bootstrap samples (`n_samples`) generally leads to more accurate
+    confidence intervals, but it also increases computation time.
+
+    Args:
+    - series (pd.Series or array-like): The input time series data.
+    - n_samples (int, optional): The number of bootstrap samples to generate. 
+    - confidence_interval (float, optional): The desired confidence level for the interval,
+      between 0 and 1. Default is 0.95 (95% confidence interval).
+    - random_state (FIXME): What is this?
+
+    Returns: A tuple containing two elements:
+        1. The lower bound of the confidence interval for the windowed mean.
+        2. The upper bound of the confidence interval for the windowed mean.
+    """
+    return bootstrap_statistics(series, winmean,
+                                n_samples=n_samples,
+                                confidence_interval=confidence_interval,
+                                random_state=random_state)
 
 ######################################################################
 #                                                                    #
@@ -692,12 +747,7 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
     return(p)
     
  
-def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95,
-                 random_state=None):
-    return bootstrap_statistics(series, winmean,
-                                n_samples=n_samples,
-                                confidence_interval=confidence_interval,
-                                random_state=random_state)
+
 
 def mad(arr):
     """ Median Absolute Deviation: a "Robust" version of standard deviation.
