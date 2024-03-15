@@ -17,7 +17,7 @@ from plotnine.data import *
 
 
 
-default_theme = (theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro') + theme(text = element_text(),\
+default_theme = (theme_minimal(base_size=12,base_family='Arial') + theme(text = element_text(),\
                panel_background = element_rect(colour = 'None'),\
                plot_background = element_rect(colour = 'None'),\
                
@@ -59,7 +59,7 @@ default_theme = (theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro')
                legend_margin = 10,\
                legend_title = element_text(size=10),\
                #legend_title = element_blank(size=10),\
-               legend_title_align = 'top',\
+               legend_title_position = 'top',\
 
                strip_background=element_rect(colour="#ffffff",fill="#ffffff"),\
                strip_text = element_text(face="bold")))
@@ -75,7 +75,7 @@ theme_set(default_theme)
 
 
 # plotting for the comparison for the raw signal
-raw_signal_theme = (theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro') + theme(text = element_text(),\
+raw_signal_theme = (theme_minimal(base_size=12,base_family='Arial') + theme(text = element_text(),\
                panel_background = element_rect(colour = 'None'),\
                plot_background = element_rect(colour = 'None'),\
                
@@ -117,7 +117,7 @@ raw_signal_theme = (theme_minimal(base_size=12,base_family='Helvetica Neue LT Pr
                legend_margin = 15,\
                #legend_title = element_text(size=10),\
                legend_title = element_blank(),\
-               legend_title_align = 'left',\
+               legend_title_position = 'left',\
 
                strip_background=element_rect(colour="#ffffff",fill="#ffffff"),\
                strip_text = element_text(face="bold")))
@@ -125,7 +125,7 @@ raw_signal_theme = (theme_minimal(base_size=12,base_family='Helvetica Neue LT Pr
 
 
 # plotting for before after Grid
-before_after_grid_theme = ((theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro') + theme(text = element_text(),\
+before_after_grid_theme = ((theme_minimal(base_size=12,base_family='Arial') + theme(text = element_text(),\
                            panel_background = element_rect(colour = 'None'),\
                            plot_background = element_rect(colour = 'None'),\
                            
@@ -166,7 +166,7 @@ before_after_grid_theme = ((theme_minimal(base_size=12,base_family='Helvetica Ne
                            legend_box = 'horizontal',\
                            legend_margin = 10,\
                            legend_title = element_blank(),\
-                           legend_title_align = 'left',\
+                           legend_title_position = 'left',\
             
                            strip_background=element_rect(colour="#ffffff",fill="#ffffff"),\
                            strip_text = element_text(face="bold"))))
@@ -174,7 +174,7 @@ before_after_grid_theme = ((theme_minimal(base_size=12,base_family='Helvetica Ne
 
 
 # show large grid fixations (no grid in background)
-display_fixation_theme = ((theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro') + theme(text = element_text(),\
+display_fixation_theme = ((theme_minimal(base_size=12,base_family='Arial') + theme(text = element_text(),\
                panel_background = element_rect(colour = 'None'),\
                plot_background = element_rect(colour = 'None'),\
                
@@ -218,7 +218,7 @@ display_fixation_theme = ((theme_minimal(base_size=12,base_family='Helvetica Neu
                legend_box = 'horizontal',\
                legend_margin = 10,\
                legend_title = element_text(size=10),\
-               legend_title_align = 'left',\
+               legend_title_position = 'left',\
 
                strip_background=element_rect(colour="#ffffff",fill="#ffffff"),\
                strip_text = element_text(face="bold"))))
@@ -226,7 +226,7 @@ display_fixation_theme = ((theme_minimal(base_size=12,base_family='Helvetica Neu
         
 
 
-shake_rotate_theme = (theme_minimal(base_size=12,base_family='Helvetica Neue LT Pro') + theme(text = element_text(),\
+shake_rotate_theme = (theme_minimal(base_size=12,base_family='Arial') + theme(text = element_text(),\
                panel_background = element_rect(colour = 'None'),\
                plot_background = element_rect(colour = 'None'),\
                
@@ -267,7 +267,7 @@ shake_rotate_theme = (theme_minimal(base_size=12,base_family='Helvetica Neue LT 
                legend_margin = 20,\
                legend_title = element_blank(),\
                legend_box_margin = 25,\
-               legend_title_align = 'top',\
+               legend_title_position = 'top',\
 
                strip_background=element_rect(colour="#ffffff",fill="#ffffff"),\
                strip_text = element_blank()))
