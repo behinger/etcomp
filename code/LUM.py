@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def process_lum(etsamples,etmsgs):
     all_lum = pd.DataFrame()
     for subject in etsamples.subject.unique():
-        for et in ['pl','el']:
+        for et in ['tpx','el']:
             logger.info("subject:%s, et:%s"%(subject,et))
             all_lum = pd.concat([all_lum,process_lum_singlesub(etsamples,etmsgs,subject,et)])
             
@@ -24,10 +24,11 @@ def process_lum_singlesub(etsamples,etmsgs,subject,eyetracker,td=[-1,5]):
     query = 'subject==@subject& eyetracker==@eyetracker'
 
     lum_epoch = make_df.make_epochs(etsamples.query(query),etmsgs.query(query+'&'+condquery), td=td)
+    print(lum_epoch)
 
     #normalize by SD division. Could be made better e.g. by quantile division
    
-    lum_epoch = lum_epoch.groupby(["msg_time"],as_index=False).apply(lambda rows:standardize_lum(rows))
+    lum_epoch = lum_epoch.groupby(["msg_time"], as_index=False).apply(lambda rows:standardize_lum(rows))
     #remove duplicated "eyetracker" and "subject" columns
     #lum_epoch = lum_epoch.loc[:,~lum_epoch.columns.duplicated(keep="first")]
     return(lum_epoch)
