@@ -307,6 +307,7 @@ def regress_eyetracker(etsamples, etevents, etmsgs, subject):
 
 def regress_all_subjects(etsamples, etevents, etmsgs):
     """
+    FIXME this is now probably obsolete.
     Process eyetracker data for multiple subjects.
 
     Parameters:
@@ -408,6 +409,32 @@ def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95, random_st
                                 confidence_interval=confidence_interval,
                                 random_state=random_state)
 
+
+def tic():
+    # Records a time in TicToc, marks the beginning of a time interval
+    toc(False)
+
+
+def add_msg_to_event(etevents, etmsgs, direction='backward'):
+    """
+    Combines event DataFrame with message DataFrame.
+
+    Parameters:
+        etevents (pd.DataFrame): DataFrame containing events.
+        etmsgs (pd.DataFrame): DataFrame containing messages.
+        timefield (str, optional): Field representing time in event DataFrame (default is 'start_time').
+        direction (str, optional): Direction of merging based on timefield (default is 'backward', other options: 'forward', or 'nearest').
+
+    Returns:
+        merged_etevents (pd.DataFrame): Merged DataFrame with events and messages.
+    """
+    etevents = etevents.sort_values('start_time')
+    etmsgs   = etmsgs.sort_values('msg_time')
+    merged_etevents = pd.merge_asof(etevents, etmsgs, left_on='start_time', right_on='msg_time', direction=direction)
+    
+    return merged_etevents
+
+
 ######################################################################
 #                                                                    #
 #  FUNCTIONS THAT MAY BE REDUNDANT                                   #
@@ -459,30 +486,6 @@ def gaze_to_pandas(gaze):
         
 def convert_diam_to_pa(axes1, axes2):
     return math.pi * float(axes1) * float(axes2) * 0.25
-
-
-#%% adding information to dfs
-
-def add_msg_to_event(etevents, etmsgs, direction='backward'):
-    """
-    Combines event DataFrame with message DataFrame.
-
-    Parameters:
-        etevents (pd.DataFrame): DataFrame containing events.
-        etmsgs (pd.DataFrame): DataFrame containing messages.
-        timefield (str, optional): Field representing time in event DataFrame (default is 'start_time').
-        direction (str, optional): Direction of merging based on timefield (default is 'backward', other options: 'forward', or 'nearest').
-
-    Returns:
-        merged_etevents (pd.DataFrame): Merged DataFrame with events and messages.
-    """
-    etevents = etevents.sort_values('start_time')
-    etmsgs   = etmsgs.sort_values('msg_time')
-    merged_etevents = pd.merge_asof(etevents, etmsgs, left_on='start_time', right_on='msg_time', direction=direction)
-    
-    return merged_etevents
-
-
 
 
 #%% last fixation (e.g. for large GRID)
@@ -693,9 +696,7 @@ def toc(tempBool=True):
     if tempBool:
         print( "Elapsed time: %f seconds.\n" %tempTimeInterval )
 
-def tic():
-    # Records a time in TicToc, marks the beginning of a time interval
-    toc(False)
+
     
     
 def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True):
