@@ -99,7 +99,8 @@ def make_epochs(et,msgs,td=[-2,2],aggfunction=None):
         tmp = pd.concat([tmp,msg_tmp],axis=1)
         if aggfunction is not None:
             tmp = aggfunction(tmp)
-        epoched_data = epoched_data.append(tmp)
+        print(epoched_data)
+        epoched_data = pd.concat([epoched_data, tmp])
     epoched_data = epoched_data.loc[:,~epoched_data.columns.duplicated()]
     return(epoched_data)
  
@@ -134,7 +135,7 @@ def calc_3d_angle_points(x_0, y_0, x_1, y_1):
     return angle
 
 
-def make_large_grid_df(merged_events):
+def make_grid_df(merged_events):
     # Input:    merged_events have info from msgs df AND event df
     #           (see add_msg_to_event in et_helper)
     
