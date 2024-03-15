@@ -57,9 +57,9 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
                 # # adding the messages to the event df (backward merge)   
                 # if condition in ['TILT','SHAKE']:
                 #     etmsgs.loc[:,'element'] = etmsgs.groupby(['block','condition','exp_event']).cumcount()
-
+                logger.debug("grid started")
                 merged_events = helper.add_msg_to_event(etevents, etmsgs, timefield = 'start_time', direction='backward')
-                 
+
                 if condition == 'GRID':
                     # make df for the grid condition that only contains ONE fixation per element
                     # (the last fixation before the new element  (used a groupby.last() to achieve that))
@@ -78,13 +78,11 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
                 # FIXME does this still apply?
                 # due to experimental trigger bug: FORWARD merge to add msgs to the events
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='forward')
-                
                 # freeview df
                 condition_df, fix_count_df = make_df.make_freeview_df(merged_events)          
-                
                 # add a column for eyetracker and subject
-                fix_count_df.loc[:,'et'] = et
-                fix_count_df.loc[:,'subject'] = subject
+                fix_count_df['et'] = et
+                fix_count_df['subject'] = subject
 
                 # concatenate to the complete fix_count_df                
                 complete_fix_count_df = pd.concat([complete_fix_count_df,fix_count_df])     
@@ -98,9 +96,9 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
             if condition_df.empty:
                 logger.critical('empty subject:%s,et:%s'%(subject,et))
                 continue
-            condition_df.loc[:,'et'] = et
-            condition_df.loc[:,'eyetracker'] = et # behinger added this to keep same as etsamples/etmsgs/etevents. 'et' is later renamed
-            condition_df.loc[:,'subject'] = subject
+            condition_df['et'] = et
+            condition_df['eyetracker'] = et # behinger added this to keep same as etsamples/etmsgs/etevents. 'et' is later renamed
+            condition_df['subject'] = subject
             
             # concatenate the df of one specific conditin and one specific subject to the complete_condition_df
             complete_condition_df = pd.concat([complete_condition_df, condition_df])
@@ -111,6 +109,8 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
     complete_condition_df = helper.set_dtypes(complete_condition_df)
     
     # renaming for pretty plotting
+    logger.debug(complete_condition_df.columns)
+    
     complete_condition_df = helper.set_to_full_names(complete_condition_df)
 
     
