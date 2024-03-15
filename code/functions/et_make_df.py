@@ -141,9 +141,9 @@ def make_grid_df(merged_events):
     # only large grid condition
     large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     # use the last exp_event fixation as element 50
-    stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
-    large_grid_events.loc[stopevents.index] = stopevents
-    
+    #stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
+    #large_grid_events.loc[stopevents.index] = stopevents
+    large_grid_events = large_grid_events.query("element!=50")
     # only last fixation before new element
     large_grid_df = helper.only_last_fix(large_grid_events, next_stim = ['block', 'element'])
     
