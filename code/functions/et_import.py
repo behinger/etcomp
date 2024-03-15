@@ -435,6 +435,8 @@ def load_and_regress_preprocessed_data(participant_info, datapath='/data/', excl
     #     etsamples,etmsgs,etevents = regress_eyetracker(etsamples,etevents,etmsgs,subject)
             
         etsamples, etevents, etmsgs = regress_eyetracker(etsamples, etevents, etmsgs, subject)
+
+        etevents.type = etevents.type.str.lower()
     return etsamples, etmsgs, etevents
 
 
