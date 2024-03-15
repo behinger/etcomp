@@ -19,7 +19,7 @@ from plotnine.data import *
 import functions.plotnine_theme as mythemes
 
 import functions.et_helper as  helper
-from functions.et_helper import winmean,winmean_cl_boot
+from functions.et_helper import winmean,winmean_cl_boot,agg_catcont
 
 #%% different functions for analysing the Large Grid
 
@@ -54,7 +54,7 @@ def plot_accuracy(raw_large_grid_df, option=None, agg_level=None, depvar = 'accu
     if agg_level is None:
         # as default we use the mean over the elements (so that also elements in the periphery influence the performance)
         # and the median over the blocks (so that 'outlier blocks' do not influence the overall accuracy)
-        agg_level=[winmean,winmean]
+        agg_level=[agg_catcont(winmean),agg_catcont(winmean)]
     
     # aggregate data of the large grid df
     mean_over_elements                    = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
@@ -98,15 +98,16 @@ def make_table_accuracy_winmean(raw_large_grid_df, concise=False):
     
     # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
     def apply_agg_level(df,agg_level):
+
         block = df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
         subject = block.groupby(['subject','et'], as_index=False).agg(agg_level[1])
         group = subject.groupby('et',as_index=False).agg(agg_level[0])
         return(block,subject,group)
     
     
-    meanMedianMean_block       ,meanMedianMean_subject       ,meanMedianMean_group        =apply_agg_level(raw_large_grid_df,[np.mean, np.median, np.mean])
-    meanMeanMean_block         ,meanMeanMean_subject         ,meanMeanMean_group          =apply_agg_level(raw_large_grid_df,[np.mean, np.mean,   np.mean])
-    winmeanWinmeanWinmean_block,winmeanWinmeanWinmean_subject,winmeanWinmeanWinmean_group =apply_agg_level(raw_large_grid_df,[winmean, winmean,   winmean])
+    meanMedianMean_block       ,meanMedianMean_subject       ,meanMedianMean_group        =apply_agg_level(raw_large_grid_df,[agg_catcont(np.mean), agg_catcont(np.median), agg_catcont(np.mean)])
+    meanMeanMean_block         ,meanMeanMean_subject         ,meanMeanMean_group          =apply_agg_level(raw_large_grid_df,[agg_catcont(np.mean), agg_catcont(np.mean),   agg_catcont(np.mean)])
+    winmeanWinmeanWinmean_block,winmeanWinmeanWinmean_subject,winmeanWinmeanWinmean_group =apply_agg_level(raw_large_grid_df,[agg_catcont(winmean), agg_catcont(winmean),   agg_catcont(winmean)])
     
     
     acccuracy_table = pd.concat([meanMedianMean_group.assign(cumtype='meanMedianMean'),
@@ -116,11 +117,11 @@ def make_table_accuracy_winmean(raw_large_grid_df, concise=False):
                                ])
     
     # init df
-    #acccuracy_table = pd.DataFrame(columns=['mean-mean-mean','mean-median-mean', 'horizontal_accuracy', 'vertical_accuracy', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','Pupil Labs'])
+    #acccuracy_table = pd.DataFrame(columns=['mean-mean-mean','mean-median-mean', 'horizontal_accuracy', 'vertical_accuracy', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','TrackPixx'])
 
     
     #acccuracy_table.loc['EyeLink']    = pd.Series({'mean-mean-mean': mm_eyelink_data.accuracy.mean(), 'mean-median-mean': eyelink_data.accuracy.mean(),   'horizontal_accuracy': eyelink_data.hori_accuracy.mean(),  'vertical_accuracy': eyelink_data.vert_accuracy.mean(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
-    #acccuracy_table.loc['Pupil Labs'] = pd.Series({'mean-mean-mean': mm_pupillabs_data.accuracy.mean(), 'mean-median-mean': pupillabs_data.accuracy.mean(), 'horizontal_accuracy': pupillabs_data.hori_accuracy.mean(),'vertical_accuracy': pupillabs_data.vert_accuracy.mean(), 'subject_min_accuracy': pupillabs_data.accuracy.min(), 'subject_max_accuracy': pupillabs_data.accuracy.max(), 'mean_rms': pupillabs_data.rms.mean()})
+    #acccuracy_table.loc['TrackPixx'] = pd.Series({'mean-mean-mean': mm_trackpixx_data.accuracy.mean(), 'mean-median-mean': trackpixx_data.accuracy.mean(), 'horizontal_accuracy': trackpixx_data.hori_accuracy.mean(),'vertical_accuracy': trackpixx_data.vert_accuracy.mean(), 'subject_min_accuracy': trackpixx_data.accuracy.min(), 'subject_max_accuracy': trackpixx_data.accuracy.max(), 'mean_rms': trackpixx_data.rms.mean()})
     
     
     # convert dtypes to floats and round results
@@ -144,7 +145,7 @@ def make_table_accuracy(raw_large_grid_df, concise=False):
     #       mean               median                  mean
     
     # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
-    agg_level=[np.mean, np.median, np.mean]
+    agg_level=[agg_catcont(np.mean), agg_catcont(np.median), agg_catcont(np.mean)]
     
     # aggregate data of the large grid df  according to agg_level list  
     mean_over_elements = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_level[0])
@@ -153,21 +154,21 @@ def make_table_accuracy(raw_large_grid_df, concise=False):
     # separate the data for each Eyetracker
     # we get subjectwise median overblocks mean over lements df
     eyelink_data = mean_over_elements_median_over_blocks.query('et == "EyeLink"')
-    pupillabs_data = mean_over_elements_median_over_blocks.query('et == "Pupil Labs"')
+    trackpixx_data = mean_over_elements_median_over_blocks.query('et == "TrackPixx"')
        
     # get mean-mean aggregated data
-    mm_eyelink_data   = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(np.mean).groupby(['subject','et'], as_index=False).agg(np.mean).query('et == "EyeLink"')
-    mm_pupillabs_data = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(np.mean).groupby(['subject','et'], as_index=False).agg(np.mean).query('et == "Pupil Labs"')
+    mm_eyelink_data   = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_catcont(np.mean)).groupby(['subject','et'], as_index=False).agg(agg_catcont(np.mean)).query('et == "EyeLink"')
+    mm_trackpixx_data = raw_large_grid_df.groupby(['block','subject','et'], as_index=False).agg(agg_catcont(np.mean)).groupby(['subject','et'], as_index=False).agg(agg_catcont(np.mean)).query('et == "TrackPixx"')
 
     # init df
-    acccuracy_table = pd.DataFrame(columns=['mean-mean-mean','mean-median-mean', 'horizontal_accuracy', 'vertical_accuracy', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','Pupil Labs'])
+    acccuracy_table = pd.DataFrame(columns=['mean-mean-mean','mean-median-mean', 'horizontal_accuracy', 'vertical_accuracy', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','TrackPixx'])
 
     # just calculating the mean, median and range:
     # as there might be elements where we didn"t detect a fixation, 
     # we first calculate the mean accuracy over the elements for each subject and then take the mean over all subjects
     # TODO !! careful with the median : taking the mean for the blocks in the subject, but the median over the subjects!!
     acccuracy_table.loc['EyeLink']    = pd.Series({'mean-mean-mean': mm_eyelink_data.accuracy.mean(), 'mean-median-mean': eyelink_data.accuracy.mean(),   'horizontal_accuracy': eyelink_data.hori_accuracy.mean(),  'vertical_accuracy': eyelink_data.vert_accuracy.mean(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
-    acccuracy_table.loc['Pupil Labs'] = pd.Series({'mean-mean-mean': mm_pupillabs_data.accuracy.mean(), 'mean-median-mean': pupillabs_data.accuracy.mean(), 'horizontal_accuracy': pupillabs_data.hori_accuracy.mean(),'vertical_accuracy': pupillabs_data.vert_accuracy.mean(), 'subject_min_accuracy': pupillabs_data.accuracy.min(), 'subject_max_accuracy': pupillabs_data.accuracy.max(), 'mean_rms': pupillabs_data.rms.mean()})
+    acccuracy_table.loc['TrackPixx'] = pd.Series({'mean-mean-mean': mm_trackpixx_data.accuracy.mean(), 'mean-median-mean': trackpixx_data.accuracy.mean(), 'horizontal_accuracy': trackpixx_data.hori_accuracy.mean(),'vertical_accuracy': trackpixx_data.vert_accuracy.mean(), 'subject_min_accuracy': trackpixx_data.accuracy.min(), 'subject_max_accuracy': trackpixx_data.accuracy.max(), 'mean_rms': trackpixx_data.rms.mean()})
     
     
     # convert dtypes to floats and round results
@@ -241,7 +242,7 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
             
     
     # make separate figure for each eyetracker
-    for eyetracker in [["EyeLink"], ["Pupil Labs"]]:
+    for eyetracker in [["EyeLink"], ["TrackPixx"]]:
         et_grouped_elem_pos = raw_large_grid_df.query('et==@eyetracker')    
         
        
@@ -260,7 +261,7 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                     geom_point(size=1.3, alpha=0.6,  show_legend=False) + 
                     # caution: limiting the axis, could cut off fixations from plot
                     coord_fixed(ratio=1, xlim=(-40.0,40.0), ylim=(-20.0,20.0)) +
-                    facet_grid('block~subject', labeller=lambda x: (("subject " if x.startswith('VP') else "block ") + x))+
+                    facet_grid('block~subject', labeller=lambda x: (("subject " if x.startswith('sub') else "block ") + x))+
                     xlab("Mean horizontal fixation position [$^\circ$]") + 
                     ylab("Mean vertical fixation position [$^\circ$]") +
                     ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -'))
@@ -274,7 +275,7 @@ def display_fixations(raw_large_grid_df, option='fixations', greyscale=False, in
                     geom_point(show_legend=False) + 
                     # caution: limiting the axis, could cut off fixations from plot
                     coord_fixed(ratio=1, xlim=(-40.0,40.0), ylim=(-20.0,20.0)) +
-                    facet_grid('block~subject', labeller=lambda x: (("subject " if x.startswith('VP') else "block ") + x))+
+                    facet_grid('block~subject', labeller=lambda x: (("subject " if x.startswith('sub') else "block ") + x))+
                     xlab("Mean horizontal fixation position [$^\circ$]") + 
                     ylab("Mean vertical fixation position [$^\circ$]") +
                     ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -')).draw()
