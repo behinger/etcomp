@@ -415,7 +415,7 @@ def tic():
     toc(False)
 
 
-def add_msg_to_event(etevents, etmsgs, direction='backward'):
+def add_msg_to_event(etevents, etmsgs, timefield='start_time', direction='backward'):
     """
     Combines event DataFrame with message DataFrame.
 
@@ -428,9 +428,9 @@ def add_msg_to_event(etevents, etmsgs, direction='backward'):
     Returns:
         merged_etevents (pd.DataFrame): Merged DataFrame with events and messages.
     """
-    etevents = etevents.sort_values('start_time')
+    etevents = etevents.sort_values(timefield)
     etmsgs   = etmsgs.sort_values('msg_time')
-    merged_etevents = pd.merge_asof(etevents, etmsgs, left_on='start_time', right_on='msg_time', direction=direction)
+    merged_etevents = pd.merge_asof(etevents, etmsgs, left_on=timefield, right_on='msg_time', direction=direction)
     
     return merged_etevents
 
@@ -545,6 +545,7 @@ def group_to_level_and_take_mean(raw_condition_df, lowestlevel):
 
 
  
+agg_catcont = lambda aggfun: lambda x: x.iat[0] if ((x.dtype.name=="object") | (x.dtype.name=="category")) else aggfun(x) 
 
 
 #%% set dtypes of dataframe and make the labes ready to get plotted
@@ -554,6 +555,7 @@ def set_dtypes(df):
     Set the dtype of the categories, so that plotting is easier and more pretty.
     E.g. set column 'et' from object to categorical
     """        
+    logger = logging.getLogger(__name__)
 
     # make all object variables categorical
     df[df.select_dtypes(['object']).columns] = df.select_dtypes(['object']).apply(lambda x: x.astype('category'))
@@ -565,6 +567,9 @@ def set_dtypes(df):
     for column in categorial_var:
         
         if column in df:
+            logger.debug("processing column"+column)
+            if df[column].dtype.name == 'category':
+                continue
             # fill none values to not have problems with integers
             df[column] = df[column].fillna(-1)
             
@@ -596,7 +601,7 @@ def set_to_full_names(df):
     # df = df.rename(index=str, columns={"et": "Eye-Tracker", "pic_id": "picture id", "fix_count": "number of fixations"})
     
     #rename values
-    df.loc[:,'et'] = df['et'].map({'el': 'EyeLink', 'pl': 'Pupil Labs'})
+    df.loc[:,'et'] = df['et'].map({'el': 'EyeLink', 'tpx':'TrackPixx','pl': 'Pupil Labs'})
     
     return df
 
