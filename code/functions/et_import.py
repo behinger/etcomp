@@ -361,9 +361,10 @@ def import_el(subject, participant_info, datapath='/data/'):
 
 #%% GENERAL DATA LOADING AND IMPORT
 
-def load_preprocessed_data(participant_info, datapath='/data/', excludeID=None, cleaned=True):
+def load_and_regress_preprocessed_data(participant_info, datapath='/data/', excludeID=None, cleaned=True):
     """
-    Loads eye-tracking data for multiple participants from preprocessed CSV files. 
+    Loads eye-tracking data for multiple participants from preprocessed CSV files. This step also
+    regresses the eyetrackers so that the timestamps for TrackPixx match those of EyeLink.
     This is formerly "be_load".
 
     Parameters:
@@ -432,7 +433,8 @@ def load_preprocessed_data(participant_info, datapath='/data/', excludeID=None, 
     # for subject in etmsgs.subject.unique():
     #     logger.info("fixing subject %s"%(subject))
     #     etsamples,etmsgs,etevents = regress_eyetracker(etsamples,etevents,etmsgs,subject)
-
+            
+        etsamples, etevents, etmsgs = regress_eyetracker(etsamples, etevents, etmsgs, subject)
     return etsamples, etmsgs, etevents
 
 
