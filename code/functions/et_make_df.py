@@ -99,7 +99,6 @@ def make_epochs(et,msgs,td=[-2,2],aggfunction=None):
         tmp = pd.concat([tmp,msg_tmp],axis=1)
         if aggfunction is not None:
             tmp = aggfunction(tmp)
-        print(epoched_data)
         epoched_data = pd.concat([epoched_data, tmp])
     epoched_data = epoched_data.loc[:,~epoched_data.columns.duplicated()]
     return(epoched_data)
