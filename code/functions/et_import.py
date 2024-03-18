@@ -329,36 +329,6 @@ def import_el(subject, participant_info, datapath='/data/'):
     return elsamples, elmsgs, elevents
     
 
-
-# # FIXME do we still need this function? If so, it needs to be adjusted to TPX.
-# def fix_smallgrid_parser(etmsgs):
-#     # This fixes the missing separation between smallgrid before and small grid after. During experimental sending both were named identical.
-#     replaceGrid = pd.Series([k for l in [13*['SMALLGRID_BEFORE'],13*['SMALLGRID_AFTER']]*6 for k in l])
-#     ix = etmsgs.query('grid_size==13').index
-#     if len(ix) is not  156:
-#         raise RuntimeError('we need to have 156 small grid msgs')
-
-#     replaceGrid.index = ix
-#     etmsgs.loc[ix,'condition'] = replaceGrid
-    
-#     # this here fixes that all buttonpresses and stop messages etc. were send as GRID and not SMALLGG 
-#     for blockid in etmsgs.block.dropna().unique():
-#         if blockid == 0:
-#             continue
-#         tmp = etmsgs.query('block==@blockid')
-#         t_before_start = tmp.query('condition=="DILATION"& exp_event=="stop"').msg_time.values
-#         t_before_end   = tmp.query('condition=="SHAKE"   & exp_event=="stop"').msg_time.values
-#         t_after_start  = tmp.query('condition=="SHAKE"   & exp_event=="stop"').msg_time.values
-#         t_after_end    =tmp.iloc[-1].msg_time
-
-#         ix = tmp.query('condition=="GRID"&msg_time>@t_before_start & msg_time<=@t_before_end').index
-#         etmsgs.loc[ix,'condition'] = 'SMALLGRID_BEFORE'
-        
-#         ix = tmp.query('condition=="GRID"&msg_time>@t_after_start  & msg_time<=@t_after_end').index
-#         etmsgs.loc[ix,'condition'] = 'SMALLGRID_AFTER'
-        
-#     return(etmsgs)
-
 #%% GENERAL DATA LOADING AND IMPORT
 
 def load_and_regress_preprocessed_data(participant_info, datapath='/data/', excludeID=None, cleaned=True):
@@ -428,12 +398,7 @@ def load_and_regress_preprocessed_data(participant_info, datapath='/data/', excl
             except FileNotFoundError as error:
                 logger.critical('Warning: data for %s eyetracker not found!\n %s', et, error)
                 continue
-    # FIXME at this point, the original function contained eyetracker regression functionality. 
-    # I'm not sure it really fits here and I don't think we have a function to do this at the moment.
-    # for subject in etmsgs.subject.unique():
-    #     logger.info("fixing subject %s"%(subject))
-    #     etsamples,etmsgs,etevents = regress_eyetracker(etsamples,etevents,etmsgs,subject)
-            
+        # Regress            
         etsamples, etevents, etmsgs = regress_eyetracker(etsamples, etevents, etmsgs, subject)
 
         etevents.type = etevents.type.str.lower()
