@@ -1,6 +1,7 @@
-from functions.et_helper import winmean,winmean_cl_boot
+from functions.et_helper import winmean, winmean_cl_boot, agg_catcont
 import numpy as np
 import pandas as pd
+import scipy.stats
 
 def grid_duration(etmsgs):
     gridlist = ['LARGEGRID_stop','SMALLGG_before_stop','SMALLGG_after_stop']
@@ -28,10 +29,8 @@ def grid_duration(etmsgs):
     return(y)
 
 
-def print_results(df,fields = ['duration','accuracy','rms','sd'], round_to=2, agg_first_over_blocks=True):
-    
-    import scipy.stats
-    
+def print_results(df, fields = ['duration','accuracy','rms','sd'], round_to=2, agg_first_over_blocks=True):
+
     def percentile(n):
         def percentile_(x):
             return np.percentile(x, n)
@@ -41,30 +40,36 @@ def print_results(df,fields = ['duration','accuracy','rms','sd'], round_to=2, ag
     if 'eyetracker' in df.columns:
         et = 'eyetracker'
         el = 'el'
-        pl = 'pl'
+        tpx = 'tpx'
         
     else:
         et = 'et'
         el = 'EyeLink'
-        pl = 'Pupil Labs'
+        tpx = 'TrackPixx'
 
-    
+    # if agg_level is None:
+        # as default we use the mean over the elements (so that also elements in the periphery influence the performance)
+        # and the median over the blocks (so that 'outlier blocks' do not influence the overall accuracy)
+    agg_level=[agg_catcont(winmean),agg_catcont(winmean)]
+
     if agg_first_over_blocks:
-        df_agg = df.groupby([et,'subject','block'],as_index=False).agg(winmean).groupby([et,'subject'],as_index=False).agg(winmean)[[et,'subject']+fields]
+        df_agg = df.groupby([et,'subject','block'], as_index=False, observed=False).agg(agg_level[0])
+                            # ,as_index=False).agg(winmean).groupby([et,'subject'],as_index=False, observed=False).agg(agg_level[0])
     else:
-        df_agg = df.groupby([et,'subject'],as_index=False).agg(winmean)[[et,'subject']+fields]
+        df_agg = df.groupby([et,'subject'], as_index=False, observed=False).agg(agg_level[1])
+                            # ,as_index=False).agg(winmean)[[et,'subject']+fields]
     
     
     tmp_main = df_agg.groupby([et]).agg([winmean,percentile(25),percentile(75)])
     
     
-    tmp_el = df_agg.loc[df_agg[et]==el,fields]
-    tmp_pl = df_agg.loc[df_agg[et]==pl,fields]
+    tmp_el = df_agg.loc[df_agg[et]==el, fields]
+    tmp_tpx = df_agg.loc[df_agg[et]==tpx, fields]
     
     
     
     
-    tmp_diff = tmp_el.reset_index(drop=True) - tmp_pl.reset_index(drop=True)
+    tmp_diff = tmp_el.reset_index(drop=True) - tmp_tpx.reset_index(drop=True)
        
     tmp_diff_agg = tmp_diff.agg([winmean_cl_boot])
 
