@@ -9,6 +9,7 @@ import math
 import numpy as np
 import os
 import pandas as pd
+import re
 import scipy
 
 
@@ -435,6 +436,87 @@ def add_msg_to_event(etevents, etmsgs, timefield='start_time', direction='backwa
     return merged_etevents
 
 
+def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True):
+    """
+    Plots the eye-tracking samples, messages, and events around a single event or message.
+
+    Parameters:
+        etsamples (pd.DataFrame): A DataFrame containing the eye-tracking samples.
+        etmsgs (pd.DataFrame): A DataFrame containing the eye-tracking messages.
+        etevents (pd.DataFrame): A DataFrame containing the eye-tracking events.
+        single_eventormsg (pd.Series): A Series representing a single event or message.
+        plusminus (tuple, optional): A tuple of two integers representing the time range (in seconds) around the event or message to plot. Default is (-1, 1).
+        bothET (bool, optional): If True, plots data from both eye-trackers. If False, plots data only from the eye-tracker specified in the `single_eventormsg` Series. Default is True.
+        plotevents (bool, optional): If True, plots the eye-tracking events. If False, does not plot the events. Default is True.
+
+    Returns:
+        ggplot: A ggplot object representing the plot.
+
+    Raises:
+    AssertionError: If `single_eventormsg` is not a pandas.Series.
+
+    Notes:
+    - The function first determines whether the `single_eventormsg` is an event or a message based on the available attributes.
+    - It then constructs a query to filter the eye-tracking samples, messages, and events based on the time range and (optionally) the subject and eye-tracker.
+    - For the eye-tracking messages, it creates a "label" column by formatting the "exp_event" column as a string.
+    - The function then creates a ggplot object with the following layers:
+        - Scatter plot of the eye-tracking samples, colored and shaped by type and eye-tracker.
+        - Text labels for the eye-tracking messages, positioned using `position_jitter()`.
+        - Vertical lines for the eye-tracking messages.
+        - (Optional) Segments for the eye-tracking events.
+        - (Conditional) Annotations for the event or message, depending on its type.
+    """
+        
+    assert(type(single_eventormsg)==pd.Series)
+
+    try:
+        t0 = single_eventormsg.start_time
+        eventtype = 'event'
+    except:
+        t0 = single_eventormsg.msg_time
+        eventtype = 'msg'
+    
+    tstart = t0 + plusminus[0]
+    tend = t0 + plusminus[1]
+    query = '1==1'
+    if ("subject" in etsamples.columns) & ("subject" in single_eventormsg.index):
+        query = query+"& subject == @single_eventormsg.subject"
+    if not bothET:
+        query = query+"& eyetracker==@single_eventormsg.eyetracker"
+    samples_query   = "smpl_time>=@tstart & smpl_time   <=@tend & "+query
+    msg_query       = "msg_time >=@tstart & msg_time    <=@tend & "+query
+    event_query     = "end_time >=@tstart & start_time  <=@tend & "+query
+    etmsgs = etmsgs.query(msg_query)
+    longstring = etmsgs.to_string(columns=['exp_event'],na_rep='',float_format='%.1f',index=False,header=False,col_space=0)
+    longstring = re.sub(' +',' ',longstring)
+    splitstring = longstring.split(sep="\n")
+    if len(splitstring) == etmsgs.shape[0]-1:
+        # last element was a Nan blank and got removed
+        splitstring.append(' ')   
+    etmsgs.loc[:,'label'] = splitstring
+
+    p = (ggplot()
+     + geom_point(aes(x='smpl_time',y='gx',color='type',shape='eyetracker'),data=etsamples.query(samples_query)) # samples
+     + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
+     + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
+    )
+         
+    if etevents.query(event_query).shape[0]>0:
+        pass
+    if plotevents:
+        p = p + geom_segment(aes(x="start_time",y=0,xend="end_time",yend=0,color='type'),alpha=0.5,size=2,data=etevents.query(event_query))
+    if eventtype == 'event':
+        p = (p   + annotate("line",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black')
+                 + annotate("point",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black'))
+    if eventtype=='msg':
+        if single_eventormsg.condition == 'GRID':
+            p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)
+                   + geom_hline(yintercept=single_eventormsg.posx))
+    return(p)
+
+agg_catcont = lambda aggfun: lambda x: x.iat[0] if ((x.dtype.name=="object") | (x.dtype.name=="category")) else aggfun(x) 
+
+
 ######################################################################
 #                                                                    #
 #  FUNCTIONS THAT MAY BE REDUNDANT                                   #
@@ -504,8 +586,6 @@ def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element'])
     return large_grid_df
 
 
-
-
 #%% function to make groupby easier
     
 
@@ -542,10 +622,6 @@ def group_to_level_and_take_mean(raw_condition_df, lowestlevel):
         raise ValueError('This level is unknown / not implemented')
     
     return grouped_df
-
-
- 
-agg_catcont = lambda aggfun: lambda x: x.iat[0] if ((x.dtype.name=="object") | (x.dtype.name=="category")) else aggfun(x) 
 
 
 #%% set dtypes of dataframe and make the labes ready to get plotted
@@ -672,10 +748,6 @@ def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix
     return etsamples,etmsgs,etevents
 
 
-
-    
-    
-    
 def get_subjectnames(datapath='/net/store/nbp/projects/etcomp/'):
     return os.listdir(datapath)
    
@@ -700,59 +772,6 @@ def toc(tempBool=True):
     tempTimeInterval = next(TicToc)
     if tempBool:
         print( "Elapsed time: %f seconds.\n" %tempTimeInterval )
-
-
-    
-    
-def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True):
-    import re
-    assert(type(single_eventormsg)==pd.Series)
-    try:
-        t0 = single_eventormsg.start_time
-        eventtype = 'event'
-    except:
-        t0 = single_eventormsg.msg_time
-        eventtype = 'msg'
-    
-    tstart = t0 + plusminus[0]
-    tend = t0 + plusminus[1]
-    query = '1==1'
-    if ("subject" in etsamples.columns) & ("subject" in single_eventormsg.index):
-        query = query+"& subject == @single_eventormsg.subject"
-    if not bothET:
-        query = query+"& eyetracker==@single_eventormsg.eyetracker"
-    samples_query   = "smpl_time>=@tstart & smpl_time   <=@tend & "+query
-    msg_query       = "msg_time >=@tstart & msg_time    <=@tend & "+query
-    event_query     = "end_time >=@tstart & start_time  <=@tend & "+query
-    etmsgs = etmsgs.query(msg_query)
-    longstring = etmsgs.to_string(columns=['exp_event'],na_rep='',float_format='%.1f',index=False,header=False,col_space=0)
-    longstring = re.sub(' +',' ',longstring)
-    splitstring = longstring.split(sep="\n")
-    if len(splitstring) == etmsgs.shape[0]-1:
-        # last element was a Nan blank and got removed
-        splitstring.append(' ')   
-    etmsgs.loc[:,'label'] = splitstring
-
-    p = (ggplot()
-     + geom_point(aes(x='smpl_time',y='gx',color='type',shape='eyetracker'),data=etsamples.query(samples_query)) # samples
-     + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
-     + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
-    )
-         
-    if etevents.query(event_query).shape[0]>0:
-        pass
-    if plotevents:
-        p = p + geom_segment(aes(x="start_time",y=0,xend="end_time",yend=0,color='type'),alpha=0.5,size=2,data=etevents.query(event_query))
-    if eventtype == 'event':
-        p = (p   + annotate("line",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black')
-                 + annotate("point",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black'))
-    if eventtype=='msg':
-        if single_eventormsg.condition == 'GRID':
-            p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)
-                   + geom_hline(yintercept=single_eventormsg.posx))
-    return(p)
-    
- 
 
 
 def mad(arr):
