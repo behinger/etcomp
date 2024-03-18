@@ -517,6 +517,14 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
 agg_catcont = lambda aggfun: lambda x: x.iat[0] if ((x.dtype.name=="object") | (x.dtype.name=="category")) else aggfun(x) 
 
 
+def difference_function(x):
+    """
+    Calculates the difference between the last two elements of a 1D NumPy array.
+    """
+    if x.shape[0] == 1:
+        return np.nan
+    else:
+        return np.diff(x)[-1]
 ######################################################################
 #                                                                    #
 #  FUNCTIONS THAT MAY BE REDUNDANT                                   #
