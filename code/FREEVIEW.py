@@ -25,7 +25,7 @@ from plotnine import *
 import functions.plotnine_theme as mythemes
 
 import functions.et_helper as  helper
-from functions.et_helper import winmean,winmean_cl_boot
+from functions.et_helper import winmean,winmean_cl_boot, agg_catcont
 
 import logging
 import os
@@ -46,14 +46,14 @@ def plot_heatmap(raw_freeview_df,raw_fix_count_df, only_horizontal_heatmap=True)
     
     
     # mean fixation location data
-    pl_x_coords = list(raw_freeview_df.query('et == "Pupil Labs"').mean_gx)
-    pl_y_coords = list(raw_freeview_df.query('et == "Pupil Labs"').mean_gy)
+    tpx_x_coords = list(raw_freeview_df.query('et == "TrackPixx"').mean_gx)
+    tpx_y_coords = list(raw_freeview_df.query('et == "TrackPixx"').mean_gy)
     
     el_x_coords = list(raw_freeview_df.query('et == "EyeLink"').mean_gx)
     el_y_coords = list(raw_freeview_df.query('et == "EyeLink"').mean_gy)
     
     # there must be the same number of x and y gaze fixation positions
-    assert(len(pl_x_coords) == len(pl_y_coords))
+    assert(len(tpx_x_coords) == len(tpx_y_coords))
     assert(len(el_x_coords) == len(el_y_coords))
 
 
@@ -67,10 +67,10 @@ def plot_heatmap(raw_freeview_df,raw_fix_count_df, only_horizontal_heatmap=True)
         fig, axs = plt.subplots(1, 2)
         
         # Pupil Labs heatmap
-        img, extent = make_heatmap(pl_x_coords,pl_y_coords, sigmas[1], pic_size_horizontal, pic_size_vertical)
+        img, extent = make_heatmap(tpx_x_coords, tpx_y_coords, sigmas[1], pic_size_horizontal, pic_size_vertical)
         axs[0].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
         axs[0].set_aspect('equal')
-        axs[0].set_title("Pupil Labs Smoothing with 3 $^\circ$")
+        axs[0].set_title("TrackPixx Smoothing with 3 $^\circ$")
 
         # EyeLink heatmap    
         img, extent = make_heatmap(el_x_coords, el_y_coords, sigmas[3], pic_size_horizontal, pic_size_vertical)
@@ -86,18 +86,18 @@ def plot_heatmap(raw_freeview_df,raw_fix_count_df, only_horizontal_heatmap=True)
         fig, axs = plt.subplots(2, 2)
 
 
-        # Pupil Labs heatmap
-        img, extent = make_heatmap(pl_x_coords,pl_y_coords, sigmas[1], pic_size_horizontal, pic_size_vertical)
+        # TrackPixx heatmap
+        img, extent = make_heatmap(tpx_x_coords, tpx_y_coords, sigmas[1], pic_size_horizontal, pic_size_vertical)
         axs[0,1].imshow(img, extent=extent, origin='lower', cmap=cm.viridis)
         axs[0,1].set_aspect('equal')
-        axs[0,1].set_title("Pupil Labs Smoothing with 3 $^\circ$")
+        axs[0,1].set_title("TrackPixx Smoothing with 3 $^\circ$")
 
-        # Pupil Labs scatterplot
-        axs[0,0].plot(pl_x_coords, pl_y_coords, 'k.', markersize=5)
+        # TrackPixx scatterplot
+        axs[0,0].plot(tpx_x_coords, tpx_y_coords, 'k.', markersize=5)
         axs[0,0].set_aspect('equal')  
         axs[0, 0].set_xlim(extent[0], extent[1])
         axs[0, 0].set_ylim(extent[2], extent[3])
-        axs[0,0].set_title("Pupil Labs Scatter plot")
+        axs[0,0].set_title("TrackPixx Scatter plot")
 
 
         # EyeLink heatmap    
@@ -117,10 +117,10 @@ def plot_heatmap(raw_freeview_df,raw_fix_count_df, only_horizontal_heatmap=True)
         # put info into generated files
         try:
             with open('../generated_files/heatmap_info.md', 'w')  as gf:
-                print('Pupil Labs :  total number of fixations: {}'.format(len(pl_x_coords)), file=gf)
-                print('EyeLink    :  total number of fixations: {}'.format(len(el_x_coords)), file=gf)
-                print('Pupil Labs :  all picture_ids that were shown: {}'.format(np.sort(raw_fix_count_df.query("et == 'Pupil Labs'").pic_id.unique())), file=gf)
-                print('EyeLink    :  all picture_ids that were shown: {}'.format(np.sort(raw_fix_count_df.query("et == 'EyeLink'").pic_id.unique())), file=gf)
+                print('TrackPixx :  total number of fixations: {}'.format(len(tpx_x_coords)), file=gf)
+                print('EyeLink   :  total number of fixations: {}'.format(len(el_x_coords)), file=gf)
+                print('TrackPixx :  all picture_ids that were shown: {}'.format(np.sort(raw_fix_count_df.query("et == 'TrackPixx'").pic_id.unique())), file=gf)
+                print('EyeLink   :  all picture_ids that were shown: {}'.format(np.sort(raw_fix_count_df.query("et == 'EyeLink'").pic_id.unique())), file=gf)
         except FileNotFoundError:
             print('file not found to save numbers...')
             import os
@@ -254,7 +254,7 @@ def plot_scanpath(etsamples, etmsgs, subject,pic_id):
     all_msgs = all_msgs.query("condition=='FREEVIEW'").filter(items=['block', 'pic_id', 'exp_event', 'eyetracker', 'msg_time', 'trial'])
 
 
-    for eyetracker in ['el','pl']:
+    for eyetracker in ['el','tpx']:
 
         # we presented the pictures for 6 seconds
         # the msgs are parsed in a way that the picture_id is sent after viewing
@@ -289,9 +289,9 @@ def plot_scanpath(etsamples, etmsgs, subject,pic_id):
         from scipy.misc import imresize
         img_resize = imresize(img,size=0.6)
 
-        if eyetracker == 'pl':
+        if eyetracker == 'tpx':
             colorlist = ['blue','cyan']
-        if eyetracker == 'el':
+        if eyetracker == 'tpx':
             colorlist = ['red','magenta']
 
         plt.scatter(x_sac, y_sac, alpha=0.5, s=10, c=colorlist[0])
