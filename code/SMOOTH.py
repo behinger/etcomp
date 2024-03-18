@@ -5,6 +5,7 @@ import sys
 import functions.et_make_df as make_df
 import traceback
 import logging
+import stan
 
 from plotnine import *
 from matplotlib import pyplot as plt
@@ -116,9 +117,8 @@ def get_smooth_data(etsamples,etmsgs,select=''):
     return(epochs)
            
 def fit_bayesian_model(etsamples,etmsgs,etevents):
-    import pystan
     # compile the model
-    sm = pystan.StanModel(file="/net/store/nbp/users/behinger/projects/etcomp/code/changepoint.stan")  
+    sm = stan.StanModel(file="/net/store/nbp/users/behinger/projects/etcomp/code/changepoint.stan")  
     
     smoothresult = pd.DataFrame()
     for subject in etsamples.subject.unique():
