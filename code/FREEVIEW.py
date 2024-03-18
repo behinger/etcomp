@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from scipy.ndimage.filters import gaussian_filter
-from scipy.misc import imread
+# from scipy.misc import imread
 
 from plotnine import *
 # specify costumed minimal theme
