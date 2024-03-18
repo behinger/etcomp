@@ -82,6 +82,12 @@ def plot_accuracy(grid_df, option=None, agg_level=None, depvar = 'accuracy'):
         raise ValueError('You must set options to a valid option. See documentation.')
 
 
+def apply_agg_level(df,agg_level):
+    block = df.groupby(['block','subject','et'], as_index=False, observed=False).agg(agg_level[0])
+    subject = block.groupby(['subject','et'], as_index=False, observed=False).agg(agg_level[1])
+    group = subject.groupby('et',as_index=False, observed=False).agg(agg_level[0])
+    return(block,subject,group)
+
 def make_table_accuracy_winmean(grid_df, concise=False):
     """
     returns a df with the mean, median and range of all calculated accuracy values
@@ -93,13 +99,6 @@ def make_table_accuracy_winmean(grid_df, concise=False):
     #       mean               median                  mean
     
     # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
-    def apply_agg_level(df,agg_level):
-
-        block = df.groupby(['block','subject','et'], as_index=False, observed=False).agg(agg_level[0])
-        subject = block.groupby(['subject','et'], as_index=False, observed=False).agg(agg_level[1])
-        group = subject.groupby('et',as_index=False, observed=False).agg(agg_level[0])
-        return(block,subject,group)
-    
     
     meanMedianMean_block       ,meanMedianMean_subject       ,meanMedianMean_group        =apply_agg_level(grid_df,[agg_catcont(np.mean), agg_catcont(np.median), agg_catcont(np.mean)])
     meanMeanMean_block         ,meanMeanMean_subject         ,meanMeanMean_group          =apply_agg_level(grid_df,[agg_catcont(np.mean), agg_catcont(np.mean),   agg_catcont(np.mean)])
