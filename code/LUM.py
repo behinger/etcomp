@@ -26,12 +26,13 @@ def process_lum(etsamples, etmsgs):
     for subject in etsamples.subject.unique():
         for et in ['tpx','el']:
             logger.info("subject:%s, et:%s"%(subject,et))
-            all_lum = pd.concat([all_lum, process_lum_singlesub(etsamples,etmsgs)])
+            # lum_single = process_lum_singlesub(etsamples, etmsgs, subject, et)
+            all_lum = pd.concat([all_lum, process_lum_singlesub(etsamples, etmsgs, subject, et)])
             
     return(all_lum)
 
 
-def process_lum_singlesub(etsamples, etmsgs, td=[-1,5]):
+def process_lum_singlesub(etsamples, etmsgs, subject, eyetracker, td=[-1,5]):
     """
     Process the luminance information for a single subject and eyetracker. It filters the `etsamples` and 
     `etmsgs` DataFrames for the specified subject and eyetracker. Then it calles the `make_epochs()` function

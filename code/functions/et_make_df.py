@@ -145,7 +145,7 @@ def make_grid_df(merged_events):
     #large_grid_events.loc[stopevents.index] = stopevents
     large_grid_events = large_grid_events.query("element!=50")
     # only last fixation before new element
-    large_grid_df = et_.only_last_fix(large_grid_events, next_stim = ['block', 'element'])
+    large_grid_df = et_helper.only_last_fix(large_grid_events, next_stim = ['block', 'element'])
     
     # Accuracy
     # use absolute value of difference in angle (horizontal)
