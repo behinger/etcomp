@@ -7,7 +7,7 @@ Created on Tue May 22 12:21:32 2018
 """
 
 
-import functions.add_path
+
 import numpy as np
 import time
 

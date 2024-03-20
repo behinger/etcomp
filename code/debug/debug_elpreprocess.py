@@ -6,7 +6,7 @@ Created on Mon Jun 11 13:38:13 2018
 @author: kgross
 """
 
-import functions.add_path
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

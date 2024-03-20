@@ -1,11 +1,11 @@
-from plotnine import *
-import numpy as np
-import pandas as pd
 import functions.et_make_df as make_df
 from functions.et_helper import winmean, winmean_cl_boot, agg_catcont
-import MISC
 import logging
+import numpy as np
+import pandas as pd
+from plotnine import *
 from scipy.stats import binned_statistic
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,6 @@ def process_lum(etsamples, etmsgs):
 
     Returns:
         all_lum (pd.DataFrame): A consolidated DataFrame containing the processed luminance information.
-
     """
     all_lum = pd.DataFrame()
     for subject in etsamples.subject.unique():

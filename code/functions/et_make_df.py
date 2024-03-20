@@ -9,16 +9,11 @@ GET nice DATAFRAMES
 
 
 """
- 
-import pandas as pd
+import functions.et_helper as  et_helper
+import logging
 import numpy as np
 from numpy import pi
-from scipy.spatial import distance
-
-import functions.et_helper as  et_helper
-
-import logging
-
+import pandas as pd
 
 #%% MAKE SAMPLES
 

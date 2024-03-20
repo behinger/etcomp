@@ -6,7 +6,7 @@ Created on Fri Jun 22 13:23:55 2018
 @author: behinger
 """
 
-import functions.add_path
+
 
 import sys,os
 wd = os.getcwd()

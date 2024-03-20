@@ -9,7 +9,7 @@ specify layout/themes of plots made with plotnine
 
 """
 
-import functions.add_path
+
 
 from plotnine import *
 from plotnine.data import *

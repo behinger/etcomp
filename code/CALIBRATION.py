@@ -5,7 +5,7 @@ Created on Wed Jun 13 13:11:40 2018
 
 @author: behinger
 """
-import functions.add_path
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
