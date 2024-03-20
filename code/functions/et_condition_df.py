@@ -6,7 +6,7 @@ Created on Tue Jun 19 16:46:11 2018
 @author: kgross
 """
 
-import functions.add_path
+
 import os
 
 import pandas as pd
@@ -96,9 +96,10 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
             if condition_df.empty:
                 logger.critical('empty subject:%s,et:%s'%(subject,et))
                 continue
-            condition_df['et'] = et
-            condition_df['eyetracker'] = et # behinger added this to keep same as etsamples/etmsgs/etevents. 'et' is later renamed
-            condition_df['subject'] = subject
+            # Update columns with subject and eye-tracker information directly on the original DataFrame
+            condition_df.loc[:, 'et'] = et
+            condition_df.loc[:, 'eyetracker'] = et  # Behringer added this to keep it consistent
+            condition_df.loc[:, 'subject'] = subject
             
             # concatenate the df of one specific conditin and one specific subject to the complete_condition_df
             complete_condition_df = pd.concat([complete_condition_df, condition_df])
