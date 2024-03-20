@@ -417,6 +417,7 @@ def load_files(directory, datatype):
     Returns:
         all_data (pd.DataFrame): Merged DataFrame containing data from all CSV files.
     """
+    logger = logging.getLogger(__name__)
     all_data = pd.DataFrame()
 
     for root, dirs, files in os.walk(directory):
@@ -427,7 +428,23 @@ def load_files(directory, datatype):
                     data = pd.read_csv(file_path, sep=';')
                 else: 
                     data = pd.read_csv(file_path, sep=',')
-                print("Processing",file_path)
+                logger.info("Processing %s", file_path)
                 all_data = pd.concat([all_data, data])
 
     return all_data
+
+
+def load_participants(datapath, filename="participant_info"):
+    """
+    Read and process participant information from a CSV file.
+        
+    Parameters:
+        datapath (str): Path to where the participant info is stored.
+        filename (str): Name of the file
+    Returns:
+        participant_info (pd.DataFrame): A dataframe with participant information.
+    """
+    participant_info = load_files(datapath, filename)
+    participant_info['ID'] = participant_info['ID'].astype(str).str.zfill(3)
+    participant_info['ID'] = 'sub-' + participant_info['ID']
+    return participant_info
