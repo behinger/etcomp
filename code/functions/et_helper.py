@@ -675,18 +675,23 @@ def set_dtypes(df):
 
 def set_to_full_names(df):
     """
-    rename columns and values to their full name
-    e.g. et --> Eye-Tracker
+    This function renames columns and values in a DataFrame to their full names.
+
+    Parameters:
+        df (pd.DataFrame): Input DataFrame with columns to be renamed.
+    Returns:
+        df (pd.DataFrame): DataFrame with columns and values updated to their full names.
     """
-    # TODO maybe more renaming?
-    
-    # maybe dont do this but rather use xaxis relabeling
-    # rename columnnames
-    # df = df.rename(index=str, columns={"et": "Eye-Tracker", "pic_id": "picture id", "fix_count": "number of fixations"})
-    
-    #rename values
-    df.loc[:,'et'] = df['et'].map({'el': 'EyeLink', 'tpx':'TrackPixx','pl': 'Pupil Labs'})
-    
+
+    mapping = {'el': 'EyeLink', 'tpx': 'TrackPixx', 'pl': 'Pupil Labs'}
+
+    # Check if 'et' column is categorical and update categories directly
+    if pd.api.types.is_categorical_dtype(df['et']):
+        df['et'] = df['et'].cat.rename_categories(mapping)
+    else:
+        # Replace abbreviations with full names for the 'et' column
+        df['et'] = df['et'].replace(mapping)
+
     return df
 
 
