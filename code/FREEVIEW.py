@@ -126,21 +126,40 @@ def plot_heatmap(raw_freeview_df, raw_fix_count_df, only_horizontal_heatmap=True
 
 
 def make_heatmap(x_coords, y_coords, sigma, pic_size_horizontal, pic_size_vertical):
-    '''
-    returns an array to plot a heatmap of the data
-    '''
-    
-    # make bins from - picturesize in degrees to picturesize in degrees with a stepsize of 0.01
-    bins=[np.arange(-pic_size_horizontal,pic_size_horizontal,step=0.01),np.arange(-pic_size_vertical,pic_size_vertical,step=0.01)]
-    
-    # first make a 2d histogram
+    """
+    Generate a heatmap from the given x and y coordinates with specified smoothing.
+    This function creates a 2D histogram from the provided x and y coordinates.
+    The histogram is then smoothed using a Gaussian filter with the specified sigma value.
+    The extent of the heatmap is calculated based on the picture size in degrees.
+    The heatmap is transposed before returning to ensure correct orientation.
+
+    Parameters:
+        x_coords (list or array): List or array of x-coordinates.
+        y_coords (list or array): List or array of y-coordinates.
+        sigma (float): Standard deviation for Gaussian smoothing.
+        pic_size_horizontal (float): Horizontal size of the picture in degrees.
+        pic_size_vertical (float): Vertical size of the picture in degrees.
+
+    Returns:
+        heatmap (np.ndarray): 2D array representing the heatmap.
+        extent (list): List containing the extent of the heatmap [xmin, xmax, ymin, ymax].
+    """
+
+    # Create bins for the 2D histogram
+    # picturesize in degrees to picturesize in degrees with a stepsize of 0.01
+    bins = [np.arange(-pic_size_horizontal, pic_size_horizontal, step=0.01),
+            np.arange(-pic_size_vertical, pic_size_vertical, step=0.01)]
+
+    # Generate the 2D histogram
     heatmap, xedges, yedges = np.histogram2d(x_coords, y_coords, bins=bins)
-    # then use a gaussian filter for smoothing
+
+    # Apply Gaussian smoothing to the heatmap
     heatmap = gaussian_filter(heatmap, sigma=sigma)
-    
-    # return the edges of the heatmap in a list
+
+    # Calculate the extent of the heatmap
     extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
-    
+
+    # Transpose the heatmap to ensure correct orientation
     return heatmap.T, extent
 
 
