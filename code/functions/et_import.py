@@ -406,31 +406,55 @@ def load_and_regress_preprocessed_data(participant_info, datapath='/data/', excl
     return etsamples, etmsgs, etevents
 
 
-def load_files(directory, datatype):
+def load_data(datapath, datatype, subject=None, eyetracker=None, outputprefix='', sep=";", cleaned=True):
     """
-    Load and merge CSV files from multiple subdirectories into one pandas DataFrame.
-    This is currently only used for loading participant information.
+    Load and merge CSV files from multiple subdirectories or a specific subject directory.
 
     Parameters:
-        directory (str): Path to the main directory containing subdirectories with CSV files.
-        eyetracker (str): Output of which eyetracker (el or tp)
-        datatype (str): Type of CSV file (samples, msgs, or events)
+        datapath (str): Path to the main directory containing subdirectories with CSV files.
+        datatype (str): Type of CSV file (`etdata` or name of participant info file, e.g. `participant_info`).
+        subject (str, optional): Subject identifier for loading data from a specific subject directory.
+        eyetracker (str, optional): Output of which eyetracker (el or tp) for loading subject data.
+        outputprefix (str, optional): Prefix for the output file names.
+        cleaned (bool, optional): Flag to load cleaned or uncleaned data for subject data.
+
     Returns:
         all_data (pd.DataFrame): Merged DataFrame containing data from all CSV files.
     """
     logger = logging.getLogger(__name__)
     all_data = pd.DataFrame()
 
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(datatype+'.csv'):
-                file_path = os.path.join(root, file)
-                if datatype == "participant_info": 
-                    data = pd.read_csv(file_path, sep=';')
-                else: 
-                    data = pd.read_csv(file_path, sep=',')
-                logger.info("Processing %s", file_path)
-                all_data = pd.concat([all_data, data])
+    if datatype == 'participant_info':
+        # Load participant information
+        for root, dirs, files in os.walk(datapath):
+            for file in files:
+                if file.endswith(datatype + '.csv'):
+                    file_path = os.path.join(root, file)
+                    data = pd.read_csv(file_path, sep=sep)
+                    logger.info("Processing %s", file_path)
+                    all_data = pd.concat([all_data, data])
+    else:
+        # Load subject data
+        preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
+        et = outputprefix + eyetracker
+
+        try:
+            if cleaned:
+                filename_samples = str(et) + '_cleaned_samples.csv'
+            else:
+                filename_samples = str(et) + '_samples.csv'
+            filename_msgs = str(et) + '_msgs.csv'
+            filename_events = str(et) + '_events.csv'
+
+            etsamples = pd.read_csv(os.path.join(preprocessed_path, filename_samples))
+            etmsgs = pd.read_csv(os.path.join(preprocessed_path, filename_msgs))
+            etevents = pd.read_csv(os.path.join(preprocessed_path, filename_events))
+
+            all_data = {'samples': etsamples, 'msgs': etmsgs, 'events': etevents}
+
+        except FileNotFoundError as e:
+            print(e)
+            raise e
 
     return all_data
 
@@ -445,7 +469,7 @@ def load_participants(datapath, filename="participant_info"):
     Returns:
         participant_info (pd.DataFrame): A dataframe with participant information.
     """
-    participant_info = load_files(datapath, filename)
+    participant_info = load_data(datapath, filename)
     participant_info['ID'] = participant_info['ID'].astype(str).str.zfill(3)
     participant_info['ID'] = 'sub-' + participant_info['ID']
     return participant_info
