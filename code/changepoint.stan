@@ -1,48 +1,39 @@
-data{
+data {
   int ntime; // timepoints
   real etdata[ntime]; // data
   vector[ntime] time; // time in s
   real tauprior; // where is the expected CP?
+}
 
+transformed data {
 }
-transformed data{
-}
+
 parameters {
   real<lower=0> sigma;
   real<lower=0> slope; // enforce positivity
-  real offset;
+  real intercept; // Renamed from 'offset'
   real<lower=0, upper=time[ntime]> tau; 
-
-
 }
-transformed parameters{
- 
+
+transformed parameters {
 }
 
 model {
     // prior
-    offset ~ normal(0,1);
+    intercept ~ normal(0, 1); // Renamed from 'offset'
     
-    slope ~ normal(0,20);
-    sigma ~ cauchy(0,5);
-    tau ~ normal(tauprior,0.3);
+    slope ~ normal(0, 20);
+    sigma ~ cauchy(0, 5);
+    tau ~ normal(tauprior, 0.3);
    
-   { 
-    vector[ntime] predict;  
-    vector[ntime] w;
-    w = inv_logit(150*(time - tau));  
-  
- 
-    predict = offset +  w .* (slope * (time-tau)); // tau is the new offset
-     
-  
-    etdata ~ normal(predict,sigma);
-   }
-  
-  
-  
+    {
+        vector[ntime] predict;  
+        vector[ntime] w;
+        w = inv_logit(150 * (time - tau));  
+        predict = intercept + w .* (slope * (time - tau)); // tau is the new offset
+        etdata ~ normal(predict, sigma);
+    }
 }
 
-generated quantities{
-  
+generated quantities {
 }
