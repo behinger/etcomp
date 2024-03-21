@@ -525,6 +525,31 @@ def difference_function(x):
         return np.nan
     else:
         return np.diff(x)[-1]
+    
+
+def debug_mode(debugging = False):
+    """
+    A function for setting the logger to a debugging mode or regular warning level.
+    """
+    logger = logging.getLogger()
+    if debugging is True:
+        [h.close() for h in logger.handlers]
+        [logger.removeHandler(h) for h in logger.handlers]
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        logging_cons = logging.StreamHandler(sys.stdout)
+        logging_cons.setLevel(logging.DEBUG)
+        formatter = logging.Formatter("%(asctime)s - %(name)-65s - %(levelname)-8s - %(message)s", "%Y-%m-%d %H:%M:%S")
+        logging_cons.setFormatter(formatter)
+        logger.addHandler(logging_cons)
+        logger.warning("Debugging is on. You will see more messages. To turn it off, set `debug_mode(False)`.")
+    else:
+        [h.close() for h in logger.handlers]
+        [logger.removeHandler(h) for h in logger.handlers]
+        logger = logging.getLogger()
+        logger.setLevel(logging.WARNING)
+        logger.warning("Debugging is off. You will see fewer messages. To turn it on, set `debug_mode(True)`.")
+
 ######################################################################
 #                                                                    #
 #  FUNCTIONS THAT MAY BE REDUNDANT                                   #
