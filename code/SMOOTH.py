@@ -5,7 +5,10 @@ import sys
 import functions.et_make_df as make_df
 import traceback
 import logging
-import stan
+import cmdstanpy
+
+# import pystan
+
 
 from plotnine import *
 from matplotlib import pyplot as plt
@@ -38,8 +41,8 @@ def rotateRow(row):
 
 def compileModel(modelname ="/net/store/nbp/users/behinger/projects/etcomp/code/changepoint.stan"):
     # compile the bayesian model to c++  (extra function to speed things up by reusing the model)
-    import pystan
-    return(pystan.StanModel(file=modelname))
+    # return(stan.StanModel(file=modelname))
+    print("Needs to be fixed")
 
 def fitTrial(d,sm=None,etevents=None):
     # Estimate the point of onset by a (2-pieces) piecewise regression were the first part has slope 0.
@@ -117,8 +120,11 @@ def get_smooth_data(etsamples,etmsgs,select=''):
     return(epochs)
            
 def fit_bayesian_model(etsamples,etmsgs,etevents):
+    # FIXME we need a good directory to keep this in and not hard path this
+    stan_file = "/home/anna/Documents/ETComparison/analysis/git_behinger_etcomp/code/changepoint.stan"
+    sm = cmdstanpy.CmdStanModel(stan_file=stan_file)
     # compile the model
-    sm = stan.StanModel(file="/net/store/nbp/users/behinger/projects/etcomp/code/changepoint.stan")  
+    # sm = pystan.StanModel(file="/net/store/nbp/users/behinger/projects/etcomp/code/changepoint.stan")  
     
     smoothresult = pd.DataFrame()
     for subject in etsamples.subject.unique():
