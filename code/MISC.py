@@ -78,6 +78,7 @@ def print_results(df, fields=['duration', 'accuracy', 'rms', 'sd'], round_to=2, 
 
     # Aggregate data
     if agg_first_over_blocks:
+        # FIXME why does df have NaN values? Are blocks missing?
         df_agg = df.groupby([et, 'subject', 'block'], as_index=False, observed=False).agg(agg_catcont(winmean)).groupby([et, 'subject'], as_index=False, observed=False).agg(agg_catcont(winmean))
     else:
         df_agg = df.groupby([et, 'subject'], as_index=False, observed=False).agg(agg_catcont(winmean))[[et, 'subject'] + fields]
