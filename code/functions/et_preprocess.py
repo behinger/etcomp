@@ -10,6 +10,7 @@ from functions.detect_bad_samples import detect_bad_samples, remove_bad_samples
 from functions.et_helper import add_events_to_samples, load_file, save_file, check_directory
 from functions.et_import import import_el, import_tpx
 from functions.et_make_df import make_events_df
+import functions.et_condition_df
 
 
 def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, save=False, eventfunctions=(make_blinks,make_saccades,make_fixations), outputprefix='', **kwargs):
@@ -99,7 +100,6 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
     ## because of they're outside monitor bounds, pupilarea is Nan, negative sample time
     logger.info('Removing bad samples ...')
     cleaned_etsamples = remove_bad_samples(etsamples)
-
 
     # Saving the file if you want to keep the calculated results
     if save:
