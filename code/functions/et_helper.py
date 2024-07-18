@@ -11,6 +11,7 @@ import os
 import pandas as pd
 import re
 import scipy
+import sys
 
 
 def add_events_to_samples(etsamples, etevents):
