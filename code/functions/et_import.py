@@ -252,9 +252,8 @@ def import_el(subject, participant_info, datapath='/data/'):
         from edfread import edf # parses SR research EDF data files into pandas df
         imp.reload(edf)
         count = count + 1
-        # logger.error(elsamples.time[elsamples.time>1e10])
         logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')
-        elsamples, elevents, elnotes = raw_el_data(subject,datapath)
+        elsamples, elevents, elnotes = raw_el_data(subject, datapath)
     
     if elsamples.iloc[0].time == elsamples.iloc[1].time:
         logger.warning('detected 2000Hz recording, adding 0.5 to every second sample (following SR-Support)')
