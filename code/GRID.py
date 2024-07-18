@@ -67,6 +67,17 @@ def plot_accuracy(grid_df, option=None, agg_level=None, depvar = 'accuracy'):
                   xlab("Eye Trackers") + 
                   ylab(depvar.capitalize()+" [$^\circ$]") +
                   ggtitle('Winsorized Mean Accuracies'))
+
+    elif option == 'rms':
+        # plot eyetracker vs  mean accuracy over all blocks
+        return (ggplot(mean_over_elements_median_over_blocks, aes(x='et', y=depvar)) +\
+                  geom_line(aes(group='subject'), color='lightblue') +
+                  geom_point(color='lightblue') +
+                  stat_summary(fun_data=winmean_cl_boot,color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
+                  #guides(color=guide_legend(ncol=8)) +
+                  xlab("Eye Trackers") + 
+                  ylab(depvar.capitalize()+" [$^\circ$]") +
+                  ggtitle('Precision (RMS)'))
         
         
     elif option == 'variance_within_block':
@@ -86,7 +97,7 @@ def apply_agg_level(df,agg_level):
     block = df.groupby(['block','subject','et'], as_index=False, observed=False).agg(agg_level[0])
     subject = block.groupby(['subject','et'], as_index=False, observed=False).agg(agg_level[1])
     group = subject.groupby('et',as_index=False, observed=False).agg(agg_level[0])
-    return(block,subject,group)
+    return group
 
 def make_table_accuracy_winmean(grid_df, concise=False):
     """
@@ -100,33 +111,23 @@ def make_table_accuracy_winmean(grid_df, concise=False):
     
     # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
     
-    meanMedianMean_block       ,meanMedianMean_subject       ,meanMedianMean_group        =apply_agg_level(grid_df,[agg_catcont(np.mean), agg_catcont(np.median), agg_catcont(np.mean)])
-    meanMeanMean_block         ,meanMeanMean_subject         ,meanMeanMean_group          =apply_agg_level(grid_df,[agg_catcont(np.mean), agg_catcont(np.mean),   agg_catcont(np.mean)])
-    winmeanWinmeanWinmean_block,winmeanWinmeanWinmean_subject,winmeanWinmeanWinmean_group =apply_agg_level(grid_df,[agg_catcont(winmean), agg_catcont(winmean),   agg_catcont(winmean)])
-    
+    meanMedianMean_group        =apply_agg_level(grid_df,[agg_catcont(np.mean), agg_catcont(np.median), agg_catcont(np.mean)])
+    meanMeanMean_group          =apply_agg_level(grid_df,[agg_catcont(np.mean), agg_catcont(np.mean),   agg_catcont(np.mean)])
+    winmeanWinmeanWinmean_group =apply_agg_level(grid_df,[agg_catcont(winmean), agg_catcont(winmean),   agg_catcont(winmean)])
+    # print(meanMedianMean_group)
     
     acccuracy_table = pd.concat([meanMedianMean_group.assign(cumtype='meanMedianMean'),
                                 meanMeanMean_group.assign(cumtype='meanMeanMean'),
                                 winmeanWinmeanWinmean_group.assign(cumtype='winmeanWinmeanWinmean')
-                                
                                ])
-    
-    # init df
-    #acccuracy_table = pd.DataFrame(columns=['mean-mean-mean','mean-median-mean', 'horizontal_accuracy', 'vertical_accuracy', 'subject_min_accuracy','subject_max_accuracy', 'mean_rms'], index=['EyeLink','TrackPixx'])
-
-    
-    #acccuracy_table.loc['EyeLink']    = pd.Series({'mean-mean-mean': mm_eyelink_data.accuracy.mean(), 'mean-median-mean': eyelink_data.accuracy.mean(),   'horizontal_accuracy': eyelink_data.hori_accuracy.mean(),  'vertical_accuracy': eyelink_data.vert_accuracy.mean(),   'subject_min_accuracy': eyelink_data.accuracy.min(),   'subject_max_accuracy': eyelink_data.accuracy.max(),   'mean_rms': eyelink_data.rms.mean()})
-    #acccuracy_table.loc['TrackPixx'] = pd.Series({'mean-mean-mean': mm_trackpixx_data.accuracy.mean(), 'mean-median-mean': trackpixx_data.accuracy.mean(), 'horizontal_accuracy': trackpixx_data.hori_accuracy.mean(),'vertical_accuracy': trackpixx_data.vert_accuracy.mean(), 'subject_min_accuracy': trackpixx_data.accuracy.min(), 'subject_max_accuracy': trackpixx_data.accuracy.max(), 'mean_rms': trackpixx_data.rms.mean()})
-    
-    
     # convert dtypes to floats and round results
     acccuracy_table = acccuracy_table.round(2)
-    
+
     # only report most important columns
     if concise:
-        print('to be done bene was lazy')
-    #    return acccuracy_table[['mean-median-mean']].round(1) 
-    
+        cols = ['hori_accuracy' ,'vert_accuracy' ,'accuracy', 'rms' ,'duration', 'et', 'cumtype']   
+        acccuracy_table = acccuracy_table[cols]
+ 
     return acccuracy_table
 
 def make_table_accuracy(grid_df, concise=False):
@@ -176,8 +177,6 @@ def make_table_accuracy(grid_df, concise=False):
     return acccuracy_table
 
 
-
-
 def compare_accuracy_components(grid_df, display_precision=False):
     """
     comparing horizontal, vertical and combined spherical agnle accuracy and optionally precision [rms]
@@ -204,9 +203,6 @@ def compare_accuracy_components(grid_df, display_precision=False):
               guides(color=guide_legend(ncol=40)) +
               facet_grid('.~subject')+
               ggtitle('Investigating on performance measures (mean for each subject over all blocks)')).draw()
-
-
-
 
 
 def display_fixations(grid_df, option='fixations', greyscale=False, input_subject=None, input_block=None):
