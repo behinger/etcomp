@@ -95,7 +95,7 @@ def print_results(df, fields=['duration', 'accuracy', 'rms', 'sd'], round_to=2, 
     
     roundto = str(round_to)
 
-    logger.warning('Showing data for the following fields: %s', fields)
+    logger.warning('Showing data for the following fields (as individual rows): %s', fields)
 
     # Print results for each field
     for c in tmp_diff_agg.columns.levels[0]:
