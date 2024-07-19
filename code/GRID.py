@@ -66,7 +66,7 @@ def plot_accuracy(grid_df, option=None, agg_level=None, depvar = 'accuracy'):
                   #guides(color=guide_legend(ncol=8)) +
                   xlab("Eye Trackers") + 
                   ylab(depvar.capitalize()+" [$^\circ$]") +
-                  ggtitle('Winsorized Mean Accuracies'))
+                  ggtitle(f'Winsorized Mean {depvar}'))
         
         
     elif option == 'variance_within_block':
@@ -76,7 +76,7 @@ def plot_accuracy(grid_df, option=None, agg_level=None, depvar = 'accuracy'):
                     geom_line(aes(group='block'), position= position_dodge(width=0.7)) +
                     facet_wrap('~subject',scales="free_y") + 
                     guides(color=guide_legend(ncol=8)) +
-                    ggtitle('Investigating on the spread of accuracies within a block'))
+                    ggtitle(f'Investigating on the spread of {depvar} within a block'))
 
     else:
         raise ValueError('You must set options to a valid option. See documentation.')
@@ -246,6 +246,7 @@ def display_fixations(grid_df, option='fixations', greyscale=False, input_subjec
             input_block = [input("Please select a block: ")]           
     
     # make separate figure for each eyetracker
+    plist = []
     for eyetracker in [["EyeLink"], ["TrackPixx"]]:
         et_grouped_elem_pos = grid_df.query('et==@eyetracker')    
         
@@ -268,10 +269,10 @@ def display_fixations(grid_df, option='fixations', greyscale=False, input_subjec
                     xlab("Mean horizontal fixation position [$^\circ$]") + 
                     ylab("Mean vertical fixation position [$^\circ$]") +
                     ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -'))
-                p.draw()
+                
             else:
                 # color of element depends on the position of the true target element
-                (ggplot(aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)'), data= et_grouped_elem_pos) +
+                p = (ggplot(aes(x='mean_gx', y='mean_gy', color='factor(posx * posy)'), data= et_grouped_elem_pos) +
                     geom_point(show_legend=False) + 
                     # caution: limiting the axis, could cut off fixations from plot
                     coord_fixed(ratio=1, xlim=(-40.0,40.0), ylim=(-20.0,20.0)) +
@@ -281,7 +282,9 @@ def display_fixations(grid_df, option='fixations', greyscale=False, input_subjec
                     ggtitle(str(eyetracker)[2:-2] + ':  Large Grid - subjects vs block -')).draw()
             
             # restore old theme
+
             theme_set(old_theme)
+            
         
         elif option == 'accuracy_for_each_element':        
             # look which grid points have higher/lower accuracy
@@ -289,7 +292,7 @@ def display_fixations(grid_df, option='fixations', greyscale=False, input_subjec
             # visualize this by scaling  the size of the grid point
             
             # use a groupby to take the mean over all blocks
-            (ggplot(aes(x='posx', y='posy', size='accuracy'), data=et_grouped_elem_pos.groupby(['subject','posx', 'posy']).mean().reset_index(level=['subject','posx', 'posy'])) +
+            p = (ggplot(aes(x='posx', y='posy', size='accuracy'), data=et_grouped_elem_pos.groupby(['subject','posx', 'posy']).mean().reset_index(level=['subject','posx', 'posy'])) +
                     geom_point() +
                     facet_wrap('~subject')+
                     ggtitle(str(eyetracker)[2:-2]+': Accuracy visiualized by size of grid points')).draw()
@@ -300,7 +303,7 @@ def display_fixations(grid_df, option='fixations', greyscale=False, input_subjec
             # visualize this by scaling the size of the grid point
             
             # use a groupby to take the mean over all blocks
-            (ggplot(aes(x='posx', y='posy', size='rms'), data=et_grouped_elem_pos.groupby(['subject','posx', 'posy']).mean().reset_index(level=['subject','posx', 'posy'])) +
+            p = (ggplot(aes(x='posx', y='posy', size='rms'), data=et_grouped_elem_pos.groupby(['subject','posx', 'posy']).mean().reset_index(level=['subject','posx', 'posy'])) +
                     geom_point() +
                     facet_wrap('~subject')+
                     ggtitle(str(eyetracker)[2:-2] +': Precision visiualized by size of grid points')).draw()
@@ -321,10 +324,10 @@ def display_fixations(grid_df, option='fixations', greyscale=False, input_subjec
                         + xlab("Mean horizontal fixation position [$^\circ$]") 
                         + ylab("Mean vertical fixation position [$^\circ$]") 
                         + ggtitle(str(eyetracker)[2:-2] + ': Mean fixation position vs displayed element position'))
-                p.draw()
+                
             else:
                 # color of element depends on the position of the true target element
-                (ggplot(specific_subject_df, aes(x='mean_gx', y='mean_gy', color='factor(posx*posy)'))
+                p =(ggplot(specific_subject_df, aes(x='mean_gx', y='mean_gy', color='factor(posx*posy)'))
                         + geom_point(show_legend=False)
                         # displayed elements
                         + geom_point(specific_subject_df, aes(x='posx', y='posy', color='factor(posx*posy)'), shape = 'x', show_legend=False)
@@ -335,7 +338,8 @@ def display_fixations(grid_df, option='fixations', greyscale=False, input_subjec
                         + ggtitle(str(eyetracker)[2:-2] + ': Mean fixation position vs displayed element position')).draw()
         else:
             raise ValueError('You must set option to a valid string. See documentation.')
-        
+        plist.append(p)
+    return plist
 
 def display_fixation_centered(grid_df,input_subject=None,input_block=None):   
     # plots for only one specific subject and specific block

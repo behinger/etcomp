@@ -512,6 +512,7 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
         if single_eventormsg.condition == 'GRID':
             p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)
                    + geom_hline(yintercept=single_eventormsg.posx))
+ 
     return(p)
 
 agg_catcont = lambda aggfun: lambda x: x.iat[0] if ((x.dtype.name=="object") | (x.dtype.name=="category")) else aggfun(x) 
@@ -759,6 +760,11 @@ def sph2cart(theta_sph,phi_sph,rho_sph=1):
 
     return xyz_sph
 
+def load_processed_subject(datapath,sub):
+    etsamples = pd.read_parquet(datapath+'/results/sub-{:03d}_etsamples.parquet'.format(sub))
+    etmsgs = pd.read_csv(datapath+'/results/sub-{:03d}_etmsgs.csv'.format(sub))
+    etevents = pd.read_csv(datapath+'/results/sub-{:03d}_etevents.csv'.format(sub))
+    return etsamples,etmsgs,etevents
 
 #%% LOAD & SAVE & FIND file
     
