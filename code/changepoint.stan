@@ -1,6 +1,7 @@
 data {
   int ntime; // timepoints
-  real etdata[ntime]; // data
+  //real etdata[ntime]; // data
+  array[ntime] real etdata;
   vector[ntime] time; // time in s
   real tauprior; // where is the expected CP?
 }

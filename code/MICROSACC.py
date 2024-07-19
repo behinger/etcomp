@@ -57,6 +57,7 @@ def detect_microsaccades(etsamples,etevents,etmsgs,engbert_lambda=5):
                 # Run the microsaccade detection
                 #try:
                 sel_etsamples,sel_etevents = detect_events.make_remodnav_events(sel_etsamples,sel_etevents,eyetracker)
+                
                 #except AttributeError:
                 #    logger.warning('no microsaccades found')
                 #    continue
