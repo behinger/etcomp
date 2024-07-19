@@ -255,5 +255,5 @@ def make_freeview_df(merged_freeview_events):
     fix_count_df = freeview_df.query("type == 'fixation'").groupby(['pic_id']).size().reset_index(name='fix_counts')
     
     
-    return freeviewdf, fix_count_df
+    return freeview_df, fix_count_df
 
