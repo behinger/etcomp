@@ -40,9 +40,10 @@ def make_blinks(etsamples, etevents, et):
 
     if et == "el":
         logger.debug('Eyelink blink events are already in "etevents". Deleting all other eyelink events')
-        etevents = etevents.query('blink == True')
+        #etevents = etevents.query('blink == True')
+        #etevents['type'] = "blink"
+        etevents = etevents.query("type=='blink'")
         etevents = etevents.rename(columns={'start':'start_time','end':'end_time'})
-        etevents['type'] = "blink"
     if et == "tpx":
         
         # generate a blink-index array, e.g. [0,0,1,1,0,11,0,1,0] to [0,0,1,1,0,2,2,0,3,0]

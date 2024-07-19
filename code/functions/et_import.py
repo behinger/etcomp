@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import edfread # parses SR research EDF data files into pandas df
+#import edfread # parses SR research EDF data files into pandas df
+import pyedfread
 import imp # for edfread reload
 import logging
 import os
@@ -213,7 +214,7 @@ def raw_el_data(datapath='/data/'):
     except FileNotFoundError as error:
         logger.warning("Directory not found while reading raw EyeLink data. Error: %s", error)
 
-    elsamples, elevents, elnotes = edfread.read_edf(os.path.join(datapath, findFile(datapath,'.EDF')[0]))
+    elsamples, elevents, elnotes = pyedfread.read_edf(os.path.join(datapath, findFile(datapath,'.EDF')[0]))
     
     return (elsamples,elevents,elnotes)
     
@@ -248,13 +249,12 @@ def import_el(subject, participant_info, datapath='/data/'):
     
     # TODO understand and fix this
     count = 0
-    while np.any(elsamples.time>1e10) and count < 40:
-        from edfread import edf # parses SR research EDF data files into pandas df
-        imp.reload(edf)
+    while np.any(elsamples.time>1e10) and count < 10:
+        imp.reload(pyedfread)
         count = count + 1
         # logger.error(elsamples.time[elsamples.time>1e10])
         logger.error('Attention: Found sampling time above 1*e100. Clearly wrong! Trying again (check again later)')
-        elsamples, elevents, elnotes = raw_el_data(subject,datapath)
+        elsamples, elevents, elnotes = raw_el_data(datapath)
     
     if elsamples.iloc[0].time == elsamples.iloc[1].time:
         logger.warning('detected 2000Hz recording, adding 0.5 to every second sample (following SR-Support)')
