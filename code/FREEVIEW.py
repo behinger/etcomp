@@ -283,10 +283,11 @@ def plot_scanpath(etsamples, etmsgs, subject, pic_id, pic_path):
     all_samples = etsamples.query('subject == @subject')
     # select only relevant columns in all_msgs
     all_msgs = all_msgs.query("condition == 'FREEVIEW'").filter(items=['block', 'pic_id', 'exp_event', 'eyetracker', 'msg_time', 'trial'])
-
+    pic_size_horizontal = helper.size_px2deg(1500 * 0.6) / 2
+    pic_size_vertical = helper.size_px2deg(1200 * 0.6) / 2
     for eyetracker in ['el', 'tpx']:
-        et_start_time = float(all_msgs.query('(pic_id == @pic_id) & (eyetracker == @eyetracker)').msg_time.values - 6)
-        et_end_time = float(all_msgs.query('(pic_id == @pic_id) & (eyetracker == @eyetracker)').msg_time.values)
+        et_start_time = float(all_msgs.query('(pic_id == @pic_id) & (eyetracker == @eyetracker)').msg_time.values)
+        et_end_time = float(all_msgs.query('(pic_id == @pic_id) & (eyetracker == @eyetracker)').msg_time.values+6)
         x_fix = all_samples.query('(smpl_time >= @et_start_time) & (smpl_time <= @et_end_time) & (type == "fixation") & (eyetracker == @eyetracker)').gx.values
         y_fix = all_samples.query('(smpl_time >= @et_start_time) & (smpl_time <= @et_end_time) & (type == "fixation") & (eyetracker == @eyetracker)').gy.values
         x_sac = all_samples.query('(smpl_time >= @et_start_time) & (smpl_time <= @et_end_time) & (type == "saccade") & (eyetracker == @eyetracker)').gx.values
@@ -298,11 +299,14 @@ def plot_scanpath(etsamples, etmsgs, subject, pic_id, pic_path):
         # path = '/net/store/nbp/users/kgross/etcomp/experiment/stimuli/Muster'
         # os.chdir(path)
         file_list = os.listdir(pic_path)
-        pic_ids_keys = [float(id) for id in range(1, 30)]
-        file_names_values = file_list[0:29]
+        pic_ids_keys = [float(id) for id in range(1, 19)]
+        file_names_values = file_list[0:18]
+        print(pic_ids_keys)
+        print(file_names_values)
         map_id2file = dict(zip(pic_ids_keys, file_names_values))
         # foo = map_id2file.get(pic_id)
         # bar = os.path.join(pic_path, foo)
+        print(pic_id,map_id2file.get(pic_id))
         img = imread(os.path.join(pic_path, map_id2file.get(pic_id)))
         # img_resize = resize(img, size=0.6)
 
@@ -314,8 +318,7 @@ def plot_scanpath(etsamples, etmsgs, subject, pic_id, pic_path):
         plt.scatter(x_sac, y_sac, alpha=0.5, s=10, c=colorlist[0])
         plt.scatter(x_fix, y_fix, alpha=0.5, s=10, c=colorlist[1])
 
-    pic_size_horizontal = helper.size_px2deg(1500 * 0.6) / 2
-    pic_size_vertical = helper.size_px2deg(1200 * 0.6) / 2
+   
 
     plt.imshow(img, alpha=0.3, extent=[-(pic_size_horizontal), pic_size_horizontal, -(pic_size_vertical), pic_size_vertical])
 

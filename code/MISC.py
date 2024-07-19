@@ -98,14 +98,16 @@ def print_results(df, fields=['duration', 'accuracy', 'rms', 'sd'], round_to=2, 
     logger.warning('Showing data for the following fields: %s', fields)
 
     # Print results for each field
-    for c in tmp_diff_agg.columns.levels[0]:
-        diff_tuple = tuple(tmp_diff_agg[c].values[0])
+    for c,label in zip(tmp_diff_agg.columns.levels[0],fields):
+        diff_tuple = tuple(tmp_diff_agg[c].values[0][[2,0,1]])
+        
         main_tuple = tuple(tmp_main[c].values[0],) + tuple(tmp_main[c].values[1])
+
         all_tuple = (c,) + main_tuple + diff_tuple
 
         if tex is True:
             results = 'For EyeLink the winsorized mean %s was \SI{%.' + roundto + 'f}{} (IQR: \SI{%.' + roundto + 'f}{} to \SI{%.2f}{}), for TrackPixx \SI{%.' + roundto + 'f}{} (IQR: \SI{%.' + roundto + 'f}{} to \SI{%.' + roundto + 'f}{}), with a paired difference of \SI{%.' + roundto + 'f}{} ($CI_{95}$: \SI{%.' + roundto + 'f}{} to \SI{%.' + roundto + 'f}{})'
             print(results % (all_tuple))
         else:
-            results = f'For EyeLink, the winsorized mean {all_tuple[1]:.{roundto}f} (IQR: {all_tuple[2]:.{roundto}f} to {all_tuple[3]:.2f}), for TrackPixx {all_tuple[4]:.{roundto}f} (IQR: {all_tuple[5]:.{roundto}f} to {all_tuple[6]:.{roundto}f}), with a paired difference of {all_tuple[7]:.{roundto}f} (95% CI : {all_tuple[8]:.{roundto}f} to {all_tuple[9]:.{roundto}f})'
+            results = f'For EyeLink, the winsorized mean {label} is {all_tuple[1]:.{roundto}f} (IQR: {all_tuple[2]:.{roundto}f} to {all_tuple[3]:.2f}), for TrackPixx {all_tuple[4]:.{roundto}f} (IQR: {all_tuple[5]:.{roundto}f} to {all_tuple[6]:.{roundto}f}), with a paired difference of {all_tuple[7]:.{roundto}f} (95% CI : {all_tuple[8]:.{roundto}f} to {all_tuple[9]:.{roundto}f})'
             print(results)

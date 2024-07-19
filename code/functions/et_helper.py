@@ -436,6 +436,42 @@ def add_msg_to_event(etevents, etmsgs, timefield='start_time', direction='backwa
     return merged_etevents
 
 
+def select_data_by_task(task,et_msgs_tmp,et_raw_data_tmp,et_events_tmp):
+    
+    # Create copies such that the original data frames are not changed by the function
+    et_msgs = et_msgs_tmp.copy()
+    et_raw_data = et_raw_data_tmp.copy()
+    et_events = et_events_tmp.copy()
+
+    # Select start and end points for the GRID condition for all blocks
+    et_grid = et_msgs.query("condition == '{}' & (exp_event=='start' | exp_event=='stop')".format(task))
+    
+    # Introduce a block column in the raw data and event data frames
+    # Note that 0 will be replaced with the actual block number later
+    et_raw_data['block'] = 0
+    et_events['block'] = 0
+
+    # Iterate over all experimental blocks
+    for block in et_grid.block.unique():
+        for sub in et_grid.subject.unique():
+            # Extract the respective start and end point of the GRID condition for this particular block
+            et_start = et_grid.query("block == @block & subject == @sub").msg_time.iloc[0]
+            et_end  = et_grid.query("block == @block& subject == @sub").msg_time.iloc[1]
+
+            # Find the indices of the rows of the raw data df which are within the time window defined above
+            # i.e. which are part of the GRID condition
+            ix = np.logical_and(et_raw_data.smpl_time>=et_start, et_raw_data.smpl_time<=et_end)
+            # For those rows, replace 0 with the actual block number
+            et_raw_data.loc[ix,"block"] = block
+            
+            # Repeat the same steps for the events df
+            ix = np.logical_and(et_events.start_time>=et_start,et_events.end_time<=et_end)
+            et_events.loc[ix,"block"] = block
+
+    # return a subset of the data frames for which we added a block number i.e. which are part of the GRID condition
+    return et_raw_data.query("block != 0"), et_events.query("block !=0")
+
+
 def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True):
     """
     Plots the eye-tracking samples, messages, and events around a single event or message.
