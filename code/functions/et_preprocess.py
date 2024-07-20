@@ -101,6 +101,7 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
     logger.info('Removing bad samples ...')
     cleaned_etsamples = remove_bad_samples(etsamples)
 
+
     # Saving the file if you want to keep the calculated results
     if save:
         logger.info('Saving preprocessed eyetracking data ...')
@@ -161,4 +162,4 @@ def load_and_process_all_et_data(participant_info, et, eventfunctions, datapath=
         except FileNotFoundError as error:
             logger.warning("Directory not found. Error: %s", error)
 
-    return cleaned_etsamples, etmsgs, etevents # FIXME do I want to have this as a result? We only ever need the saved data?
+    return cleaned_etsamples, etmsgs, etevents
