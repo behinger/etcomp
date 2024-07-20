@@ -369,6 +369,24 @@ def save_file(data, et, datapath, outputprefix=''):
     data[3].to_csv(os.path.join(preprocessed_directory, filename_events), index=False)
 
 
+def diameter_to_area(data, x_col='LeftPupilDiameter', y_col='RightPupilDiameter'):
+    """
+    Calculates the area of the pupil based on the pupil diameter. The latter is the output from TrackPixx.
+    If the dataframe does not have x_col and y_col, then nothing happens.
+    """
+    logger = logging.getLogger(__name__)
+
+    if x_col not in data.columns or y_col not in data.columns:
+        logger.warning(f"Columns '{x_col}' and/or '{y_col}' do not exist in the DataFrame.")
+        return data
+
+    calculate_area = lambda d: np.pi * (d / 2) ** 2
+    data['pa_left'] = data[x_col].apply(calculate_area)
+    data['pa_right'] = data[y_col].apply(calculate_area)
+
+    return data
+
+
 def winmean(x, perc = 0.2, axis=0):
     """
     Calculates the 20% Winsorized mean along the specified axis.
