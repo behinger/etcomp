@@ -248,12 +248,12 @@ def make_freeview_df(merged_freeview_events):
     # select only relevant columns
     all_freeview_events = merged_freeview_events.loc[:,['msg_time', 'condition', 'exp_event', 'block', 'trial', 'pic_id', 'type', 'start_time', 'end_time','duration', 'mean_gx','sd', 'mean_gy', 'rms']]
     
-    # select only fixations while picture was presented
-    freeview_fixations_df = all_freeview_events.query("type == 'fixation' & exp_event == 'trial'")
+    # select only events while picture was presented
+    freeview_df = all_freeview_events.query("exp_event == 'trial'")
     
     # count how many fixations per trail   in seperate dataframe
-    fix_count_df = freeview_fixations_df.groupby(['pic_id']).size().reset_index(name='fix_counts')
+    fix_count_df = freeview_df.query("type == 'fixation'").groupby(['pic_id']).size().reset_index(name='fix_counts')
     
     
-    return freeview_fixations_df, fix_count_df
+    return freeview_df, fix_count_df
 

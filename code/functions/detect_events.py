@@ -40,9 +40,10 @@ def make_blinks(etsamples, etevents, et):
 
     if et == "el":
         logger.debug('Eyelink blink events are already in "etevents". Deleting all other eyelink events')
-        etevents = etevents.query('blink == True')
+        #etevents = etevents.query('blink == True')
+        #etevents['type'] = "blink"
+        etevents = etevents.query("type=='blink'")
         etevents = etevents.rename(columns={'start':'start_time','end':'end_time'})
-        etevents['type'] = "blink"
     if et == "tpx":
         
         # generate a blink-index array, e.g. [0,0,1,1,0,11,0,1,0] to [0,0,1,1,0,2,2,0,3,0]
@@ -87,7 +88,7 @@ def detect_events_cateyes(etsamples,etevents):
     logger.debug("Assuming a sr=2000 for cateyes remodnav. First 10k samples show {}".format(sfreq_empirical))
     cl_disp, classes = cateyes.classify_remodnav(gx, gy, 2000,1, simple_output=True,
                                             classifier_kwargs=dict(pursuit_velthresh=100000),
-                                             preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=0.00475,savgol_polyord=1),) # 2°, 100ms
+                                             preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=1*0.00476,savgol_polyord=1),)#13*0.00475,savgol_polyord=3),) # 2°, 100ms
     events = []
     for idx in np.unique(cl_disp):
         if idx == 0:

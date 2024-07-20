@@ -39,10 +39,10 @@ def rotateRow(row):
     row.loc[:,'rotated'] = rot[0]
     return(row)
 
-def compileModel(modelname ="/net/store/nbp/users/behinger/projects/etcomp/code/changepoint.stan"):
+def compileModel(modelname ="./changepoint.stan"):
     # compile the bayesian model to c++  (extra function to speed things up by reusing the model)
-    # return(stan.StanModel(file=modelname))
-    print("Needs to be fixed")
+    return(cmdstanpy.CmdStanModel(stan_file=modelname))
+    #print("Needs to be fixed")
 
 def fitTrial(d,sm=None,etevents=None):
     # Estimate the point of onset by a (2-pieces) piecewise regression were the first part has slope 0.
@@ -115,8 +115,10 @@ def fitTrial_pandas(d,sm,etevents):
 
 def get_smooth_data(etsamples,etmsgs,select=''):
     
+    print(etsamples.query(select).shape)
+    print(etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'").shape)
     epochs = make_df.make_epochs(etsamples.query(select),etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'"),td=[-0,0.6])
-    epochs=  epochs.groupby("angle",group_keys=False).apply(rotateRow)
+    epochs=  epochs.groupby(by="angle",group_keys=False).apply(rotateRow)
     return(epochs)
            
 def fit_bayesian_model(etsamples,etmsgs,etevents):

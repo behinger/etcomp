@@ -72,12 +72,10 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query("condition=='BLINK'&(exp_event=='stop'|exp_event=='start')"), timefield = 'start_time', direction='backward')
                 condition_df =  merged_events.query("type=='blink'&condition=='BLINK'&exp_event=='start'")
             
-            # FIXME I don't see 'DILATION', 'READING'
+            # FIXME I don't see 'READING'
 
             elif condition == 'FREEVIEW':
-                # FIXME does this still apply?
-                # due to experimental trigger bug: FORWARD merge to add msgs to the events
-                merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='forward')
+                merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='backward')
                 # freeview df
                 condition_df, fix_count_df = make_df.make_freeview_df(merged_events)          
                 # add a column for eyetracker and subject
