@@ -10,7 +10,7 @@ import pandas as pd
 import re
 from scipy import io as sio
 
-from functions.et_helper import check_directory, drop_eye, findFile, regress_eyetracker
+from functions.et_helper import check_directory, drop_eye, findFile, regress_eyetracker, diameter_to_area
 import functions.et_parse as parse
 import functions.et_make_df as make_df
 
@@ -142,15 +142,16 @@ def import_tpx(subject, participant_info, datapath='/data/'):
         logger.warning("Directory not found. Error: %s", error)
 
     tpxsamples = read_mat(datapath)
+    # Change pupil diameter to pupil area for TPX
+    logger.info('Calculating pupil area ...')
+    tpxsamples = diameter_to_area(tpxsamples)
     tpxsamples.rename(columns={'TimeTag': 'smpl_time', 
                                'RightEyeX': 'gx_right', 
                                'LeftEyeX': 'gx_left',
                                'RightEyeY': 'gy_right', 
                                'LeftEyeY': 'gy_left', 
                                'RightBlink' : 'b_right', 
-                               'LeftBlink' : 'b_left', 
-                               'RightPupilDiameter': 'pa_right', 
-                               'LeftPupilDiameter' : 'pa_left'}, inplace=True)
+                               'LeftBlink' : 'b_left'}, inplace=True)
     # We had issues with samples with negative time
     logger.warning('Deleting %.4f%% samples due to time<=0'%(100*np.mean(tpxsamples.smpl_time<=0)))
     tpxsamples = tpxsamples.loc[tpxsamples.smpl_time > 0]
@@ -177,11 +178,9 @@ def import_tpx(subject, participant_info, datapath='/data/'):
     # for horizontal gaze component    
     ix = tpxsamples.gx   != -32768 
     tpxsamples.loc[ix,'gx']      = tpxsamples.gx[ix]
-    # FIXME there is no velocity information for TrackPixx
     # for vertical gaze component
     ix = tpxsamples.gy   != -32768 
     tpxsamples.loc[ix,'gy']    = tpxsamples.gy[ix]
-    # FIXME there is no velocity information for TrackPixx
     # Make (0,0) the point bottom left
     tpxsamples['gy'] = 1080 - tpxsamples['gy']
     # "select" relevant columns
