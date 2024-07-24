@@ -111,7 +111,7 @@ def preprocess_et(et, subject, participant_info, datapath='/data/', load=False, 
 
 
 
-def load_and_process_all_et_data(participant_info, et, eventfunctions, datapath='/data/', excludeID=None):
+def load_and_process_all_et_data(participant_info, et, eventfunctions, datapath='/data/', excludeID=None,outputprefix=''):
     """
     Preprocesses eye-tracking data for multiple participants and combines the results into a DataFrames.
 
@@ -158,7 +158,7 @@ def load_and_process_all_et_data(participant_info, et, eventfunctions, datapath=
                                                                 load=False,
                                                                 save=True,
                                                                 eventfunctions=eventfunctions,
-                                                                outputprefix='')
+                                                                outputprefix=outputprefix)
         except FileNotFoundError as error:
             logger.warning("Directory not found. Error: %s", error)
 
