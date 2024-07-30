@@ -177,10 +177,11 @@ def plot_number_of_fixations(raw_fix_count_df, option=None):
                  geom_line(aes(group='subject'), color='lightblue') +
                  geom_point(color='lightblue') +
                  stat_summary(fun_data=winmean_cl_boot,color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
-                 xlab("Eye Tracker") + 
+                 xlab("Eye Trackers") + 
                  ylab("Mean number of fixations per picture") +
-                 ggtitle('Subjectwise mean number of fixations'))
-                  
+                #  ggtitle('Subjectwise mean number of fixations') +
+                 ggtitle('Mean number of fixations') +
+                 theme(plot_margin_top=0.05))
     
     elif option == 'violin':       
         # using violin to compare eye tracker overall
