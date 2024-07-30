@@ -66,7 +66,9 @@ def plot_accuracy(grid_df, option=None, agg_level=None, depvar = 'accuracy'):
                   #guides(color=guide_legend(ncol=8)) +
                   xlab("Eye Trackers") + 
                   ylab(depvar.capitalize()+" [$^\circ$]") +
-                  ggtitle('Winsorized Mean Accuracies'))
+                  ggtitle('Winsorized Mean Accuracies') +
+                  theme(plot_margin_top=0.05)
+                  )
 
     elif option == 'rms':
         # plot eyetracker vs  mean accuracy over all blocks
@@ -77,7 +79,8 @@ def plot_accuracy(grid_df, option=None, agg_level=None, depvar = 'accuracy'):
                   #guides(color=guide_legend(ncol=8)) +
                   xlab("Eye Trackers") + 
                   ylab(depvar.capitalize()+" [$^\circ$]") +
-                  ggtitle('Precision (RMS)'))        
+                  ggtitle('Mean Precision (Root Mean Square)') +
+                  theme(plot_margin_top=0.05))        
         
     elif option == 'variance_within_block':
         return (ggplot(aes(x='et', y=depvar,color='factor(block)'), data=mean_over_elements) +
