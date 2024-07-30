@@ -125,8 +125,6 @@ def fit_bayesian_model(etsamples,etmsgs,etevents):
     # FIXME we need a good directory to keep this in and not hard path this
     stan_file = "/home/anna/Documents/ETComparison/analysis/git_behinger_etcomp/code/changepoint.stan"
     sm = cmdstanpy.CmdStanModel(stan_file=stan_file)
-    # compile the model
-    # sm = pystan.StanModel(file="/net/store/nbp/users/behinger/projects/etcomp/code/changepoint.stan")  
     
     smoothresult = pd.DataFrame()
     for subject in etsamples.subject.unique():
