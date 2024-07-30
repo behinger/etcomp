@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 import MISC
 
-def detect_microsaccades(etsamples,etevents,etmsgs,engbert_lambda=5):
+def detect_microsaccades(etsamples,etevents,etmsgs,preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=13*0.00476,savgol_polyord=3)):
     all_microsaccades = pd.DataFrame()
     
     for subject in etmsgs.subject.unique():
@@ -50,13 +50,17 @@ def detect_microsaccades(etsamples,etevents,etmsgs,engbert_lambda=5):
                 #sel_etsamples = sel_etsamples.query("microsaccade==1")
                 sel_etsamples = sel_etsamples.query("smpl_time>@starttime&smpl_time<@endtime")
                 sel_etevents = etevents.query(query+"&start_time>@starttime&end_time<@endtime&type=='blink'")
-                engbert_lambda  = engbert_lambda
+                
                 if sel_etsamples.shape[0]<1:
                     logger.warning('No samples found')
                     continue
                 # Run the microsaccade detection
                 #try:
-                sel_etsamples,sel_etevents = detect_events.make_remodnav_events(sel_etsamples,sel_etevents,eyetracker)
+                if eyetracker == "filtered_el":
+                    preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=13*0.00476,savgol_polyord=3)
+                else:
+                    preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=1*0.00476,savgol_polyord=1)
+                sel_etsamples,sel_etevents = detect_events.make_remodnav_events(sel_etsamples,sel_etevents,eyetracker,preproc_kwargs=preproc_kwargs)
                 
                 #except AttributeError:
                 #    logger.warning('no microsaccades found')

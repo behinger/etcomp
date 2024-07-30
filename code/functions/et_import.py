@@ -12,6 +12,7 @@ import re
 from scipy import io as sio
 
 from functions.et_helper import check_directory, drop_eye, findFile, regress_eyetracker, diameter_to_area
+import glob
 import functions.et_parse as parse
 import functions.et_make_df as make_df
 
@@ -368,8 +369,9 @@ def load_and_regress_preprocessed_data(participant_info, datapath='/data/', excl
             continue
         
         logger.warning('Loading subject ID: %s ...', subject)
-        
-        for et in ['el', 'tpx']:
+        file_list = glob.glob(os.path.join(preprocessed_folder_path, f"*_cleaned_samples.csv"))
+        prefix_list = [os.path.basename(file).split("_cleaned_samples.csv")[0] for file in file_list]
+        for et in prefix_list:#['el', 'tpx']:
             try:
                 if cleaned:
                     filename_samples = f"{et}_cleaned_samples.csv"

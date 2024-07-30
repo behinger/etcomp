@@ -278,30 +278,37 @@ def regress_eyetracker(etsamples, etevents, etmsgs, subject):
         tuple: A tuple containing updated versions of etsamples, etmsgs, and etevents DataFrames.
     """
     logger = logging.getLogger(__name__)
-    ix_m = (etmsgs.eyetracker=='tpx')    & (etmsgs.subject==subject)
-    ix_e = (etevents.eyetracker=='tpx')  & (etevents.subject==subject)
-    ix_s = (etsamples.eyetracker=='tpx') & (etsamples.subject==subject)
-
+    
     # Remove NaNs
     etmsgs_regress = etmsgs[etmsgs.exp_event.notnull()]
 
     # Select the right eyetracker and subject
     etmsgs_regress_el = etmsgs_regress.query("subject==@subject&eyetracker=='el'&condition!='Connect'")
-    etmsgs_regress_tpx = etmsgs_regress.query("subject==@subject&eyetracker=='tpx'&condition!='Connect'")
-
     y = etmsgs_regress_el.msg_time.values
-    x = etmsgs_regress_tpx.msg_time.values
 
-    assert len(x)==len(y),'Error: The number of messages in EyeLink does not match the number of messages in TrackPixx.'
+    ix_m = (etmsgs.eyetracker=='tpx')    & (etmsgs.subject==subject)
+    ix_e = (etevents.eyetracker=='tpx')  & (etevents.subject==subject)
+    ix_s = (etsamples.eyetracker=='tpx') & (etsamples.subject==subject)
 
-    slope, intercept, low, high = scipy.stats.theilslopes(y, x)
-    logger.warning('Regressing subject ID %s. Slope: %.10f, intercept: %.10f', subject, slope, intercept)
+    for et in etmsgs_regress.eyetracker.unique():
+        if et =="el":
+            # already regressed against itself
+            continue
+        etmsgs_regress_target = etmsgs_regress.query("subject==@subject&eyetracker==@et&condition!='Connect'")
 
-    # Transform TrackPixx timestamps
-    etmsgs.loc[ix_m, 'msg_time']     = etmsgs.loc[ix_m, 'msg_time'].values     *slope + intercept
-    etsamples.loc[ix_s, 'smpl_time'] = etsamples.loc[ix_s, 'smpl_time'].values *slope + intercept
-    etevents.loc[ix_e, 'start_time'] = etevents.loc[ix_e, 'start_time'].values *slope + intercept
-    etevents.loc[ix_e, 'end_time']   = etevents.loc[ix_e, 'end_time'].values   *slope + intercept
+        
+        x = etmsgs_regress_target.msg_time.values
+
+        assert len(x)==len(y),f'Error: The number of messages in EyeLink does not match the number of messages in {et}.'
+
+        slope, intercept, low, high = scipy.stats.theilslopes(y, x)
+        logger.warning('Regressing subject ID %s. Slope: %.10f, intercept: %.10f', subject, slope, intercept)
+
+        # Transform TrackPixx timestamps
+        etmsgs.loc[ix_m, 'msg_time']     = etmsgs.loc[ix_m, 'msg_time'].values     *slope + intercept
+        etsamples.loc[ix_s, 'smpl_time'] = etsamples.loc[ix_s, 'smpl_time'].values *slope + intercept
+        etevents.loc[ix_e, 'start_time'] = etevents.loc[ix_e, 'start_time'].values *slope + intercept
+        etevents.loc[ix_e, 'end_time']   = etevents.loc[ix_e, 'end_time'].values   *slope + intercept
     # we do not recalculate durations & velocity because the local change is so small (~0.1ms / 1s)
     # TODO do we keep this or do we change it?
     return(etsamples, etevents, etmsgs)
