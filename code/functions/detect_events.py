@@ -74,7 +74,7 @@ def make_blinks(etsamples, etevents, et):
     return etsamples, etevents
 
 
-def detect_events_cateyes(etsamples,etevents):
+def detect_events_cateyes(etsamples,etevents,preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=1*0.00476,savgol_polyord=1)):
     #
     # add the blinks to the etsamples.type column
     etsamples = et_helper.add_events_to_samples(etsamples, etevents)
@@ -88,7 +88,7 @@ def detect_events_cateyes(etsamples,etevents):
     logger.debug("Assuming a sr=2000 for cateyes remodnav. First 10k samples show {}".format(sfreq_empirical))
     cl_disp, classes = cateyes.classify_remodnav(gx, gy, 2000,1, simple_output=True,
                                             classifier_kwargs=dict(pursuit_velthresh=100000),
-                                             preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=1*0.00476,savgol_polyord=1),)#13*0.00475,savgol_polyord=3),) # 2°, 100ms
+                                             preproc_kwargs=preproc_kwargs)#13*0.00475,savgol_polyord=3),) # 2°, 100ms
     events = []
     for idx in np.unique(cl_disp):
         if idx == 0:
@@ -122,8 +122,10 @@ def detect_events_cateyes(etsamples,etevents):
     return event_df
 
 
-def make_remodnav_events(etsamples, etevents, et,engbert_lambda=5):
-    newevents = detect_events_cateyes(etsamples,etevents)
+
+
+def make_remodnav_events(etsamples, etevents, et,**kwargs):
+    newevents = detect_events_cateyes(etsamples,etevents,**kwargs)
         
     etevents= pd.concat([newevents,etevents], axis=0,sort=False)
     
