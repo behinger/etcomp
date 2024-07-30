@@ -79,6 +79,9 @@ def plot_heatmap(raw_freeview_df, raw_fix_count_df, only_horizontal_heatmap=True
         axs[1].set_aspect('equal')
         axs[1].set_title("EyeLink Smoothing with 3 $^\circ$")
 
+        fig.tight_layout(pad=3.0)  # Adjust padding between subplots and around the figure
+        plt.subplots_adjust(wspace=0.4)  # Adjust the width space between subplots
+        plt.savefig("freeview-heatmap.png", dpi=300)
         plt.show()
         
     else:
@@ -96,7 +99,7 @@ def plot_heatmap(raw_freeview_df, raw_fix_count_df, only_horizontal_heatmap=True
         axs[0, 0].set_aspect('equal')  
         axs[0, 0].set_xlim(extent[0], extent[1])
         axs[0, 0].set_ylim(extent[2], extent[3])
-        axs[0, 0].set_title("TrackPixx Scatter plot")
+        axs[0, 0].set_title("TrackPixx Scatter Plot")
 
         # EyeLink heatmap    
         img, extent = make_heatmap(el_x_coords, el_y_coords, sigmas[3], pic_size_horizontal, pic_size_vertical)
@@ -109,7 +112,11 @@ def plot_heatmap(raw_freeview_df, raw_fix_count_df, only_horizontal_heatmap=True
         axs[1 ,0].set_aspect('equal')
         axs[1 ,0].set_xlim(extent[0], extent[1])
         axs[1 ,0].set_ylim(extent[2], extent[3])
-        axs[1 ,0].set_title("EyeLink Scatter plot")
+        axs[1 ,0].set_title("EyeLink Scatter Plot")
+
+        fig.tight_layout(pad=3.0)  # Adjust padding between subplots and around the figure
+        plt.subplots_adjust(wspace=0.4)  # Adjust the width space between subplots
+
 
          # Save information about fixations and picture IDs in a markdown file
         try:
@@ -121,7 +128,7 @@ def plot_heatmap(raw_freeview_df, raw_fix_count_df, only_horizontal_heatmap=True
         except FileNotFoundError:
             print('File not found to save numbers...')
             print(os.getcwd())
-
+        plt.savefig("freeview-heatmap.png", dpi=300)
         plt.show()
 
 
