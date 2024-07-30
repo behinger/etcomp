@@ -19,7 +19,7 @@ import pandas as pd
 
 def make_samples_df(etsamples, px2deg=True):
    
-    fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel', 'blink'])
+    fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel', 'vel','accel','blink'])
     
     fields_to_fillin = fields_to_keep - set(etsamples.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin
@@ -134,7 +134,7 @@ def make_grid_df(merged_events):
     #           (see add_msg_to_event in et_helper)
     
     # only large grid condition
-    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration', 'peak_velocity','start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     # use the last exp_event fixation as element 50
     #stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
     #large_grid_events.loc[stopevents.index] = stopevents
@@ -157,7 +157,7 @@ def make_grid_df(merged_events):
 
 def make_condition(merged_events,condition=None):
     
-    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration','peak_velocity', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     # use the last exp_event fixation as element 50
     stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
     large_grid_events.loc[stopevents.index] = stopevents
@@ -246,7 +246,7 @@ def make_freeview_df(merged_freeview_events):
     
     
     # select only relevant columns
-    all_freeview_events = merged_freeview_events.loc[:,['msg_time', 'condition', 'exp_event', 'block', 'trial', 'pic_id', 'type', 'start_time', 'end_time','duration', 'mean_gx','sd', 'mean_gy', 'rms']]
+    all_freeview_events = merged_freeview_events.loc[:,['msg_time', 'condition', 'exp_event', 'block', 'trial', 'pic_id', 'type', 'start_time', 'end_time','duration', 'peak_velocity','mean_gx','sd', 'mean_gy', 'rms']]
     
     # select only events while picture was presented
     freeview_df = all_freeview_events.query("exp_event == 'trial'")

@@ -9,6 +9,8 @@ import cateyes
 import functions.detect_saccades as saccades
 import functions.et_helper as et_helper
 import functions.et_make_df as make_df
+from remodnav.clf import EyegazeClassifier
+
 
 import logging
 import os
@@ -89,6 +91,19 @@ def detect_events_cateyes(etsamples,etevents,preproc_kwargs=dict(max_vel=1500,di
     cl_disp, classes = cateyes.classify_remodnav(gx, gy, 2000,1, simple_output=True,
                                             classifier_kwargs=dict(pursuit_velthresh=100000),
                                              preproc_kwargs=preproc_kwargs)#13*0.00475,savgol_polyord=3),) # 2°, 100ms
+    
+    times, sfreq = cateyes.classification._get_time(gx, 2000, warn_sfreq=True)
+
+    # format and preprocess the data
+    data = np.core.records.fromarrays([gx, gy], names=["x", "y"])
+    
+    # define the classifier, preprocess data and run the classification
+    clf = EyegazeClassifier(1, sfreq)
+    data_preproc = clf.preproc(data, **preproc_kwargs)
+    etsamples.gx = data_preproc["x"]
+    etsamples.gy = data_preproc["y"]
+    etsamples["vel"] = data_preproc["vel"]
+    etsamples["accel"] = data_preproc["accel"]
     events = []
     for idx in np.unique(cl_disp):
         if idx == 0:
@@ -110,6 +125,7 @@ def detect_events_cateyes(etsamples,etevents,preproc_kwargs=dict(max_vel=1500,di
         'start_gy': etsamples.gy.iloc[ix[0][0]],
         'end_gx': etsamples.gx.iloc[ix[-1][0]],
         'end_gy': etsamples.gy.iloc[ix[-1][0]],
+        'peak_velocity': np.max(etsamples.vel[ix[0][0]:ix[-1][0]]), 
         }
         events.append(this_event)
         # no need to calculate the raw_amplitude here as we will calculate the SPHERICAL amplitude later
