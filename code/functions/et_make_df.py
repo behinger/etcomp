@@ -63,7 +63,6 @@ def make_epochs(et,msgs,td=[-2,2],aggfunction=None):
     # Output:   df for each notification,
     #           find all samples that are in the range of +-td (default timediff 2 s)
     
-    # get a logger
     logger = logging.getLogger(__name__)
     
     epoched_data = pd.DataFrame()
@@ -80,16 +79,12 @@ def make_epochs(et,msgs,td=[-2,2],aggfunction=None):
         msg = msgs.iloc[idx]
         if np.sum(ix) == 0:
             logger.warning('warning, no sample found for msg %i'%(idx))
-            #logger.warning(msg)
             continue
         
         tmp= et.iloc[ix]
         tmp = tmp.assign(td=tmp.smpl_time-msg['msg_time'])
         
-        #msg_tmp = pd.concat([msg.to_frame()]*tmp.shape[0],axis=1).T # <-- this step is slow
-        #print(msg)
         msg_tmp = pd.DataFrame([msg],index=range(tmp.shape[0]),columns=msg.index)
-        #print(msg_tmp)
         msg_tmp.index = tmp.index
         tmp = pd.concat([tmp,msg_tmp],axis=1)
         if aggfunction is not None:
