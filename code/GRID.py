@@ -113,10 +113,10 @@ def make_table_accuracy_winmean(grid_df, concise=False):
     
     # we use the median over the blocks so that 'outlier blocks' do not influence the overall accuracy
     
-    meanMedianMean_group        =apply_agg_level(grid_df,[agg_catcont(np.mean), agg_catcont(np.median), agg_catcont(np.mean)])
-    meanMeanMean_group          =apply_agg_level(grid_df,[agg_catcont(np.mean), agg_catcont(np.mean),   agg_catcont(np.mean)])
-    winmeanWinmeanWinmean_group =apply_agg_level(grid_df,[agg_catcont(winmean), agg_catcont(winmean),   agg_catcont(winmean)])
-    # print(meanMedianMean_group)
+    meanMedianMean_group        =apply_agg_level(grid_df,[agg_catcont(np.mean), agg_catcont(np.median), agg_catcont(np.mean)])[2]
+    meanMeanMean_group          =apply_agg_level(grid_df,[agg_catcont(np.mean), agg_catcont(np.mean),   agg_catcont(np.mean)])[2]
+    winmeanWinmeanWinmean_group =apply_agg_level(grid_df,[agg_catcont(winmean), agg_catcont(winmean),   agg_catcont(winmean)])[2]
+    
     
     acccuracy_table = pd.concat([meanMedianMean_group.assign(cumtype='meanMedianMean'),
                                 meanMeanMean_group.assign(cumtype='meanMeanMean'),
@@ -127,7 +127,7 @@ def make_table_accuracy_winmean(grid_df, concise=False):
 
     # only report most important columns
     if concise:
-        cols = ['hori_accuracy' ,'vert_accuracy' ,'accuracy', 'rms' ,'duration', 'et', 'cumtype']   
+        cols = ['hori_accuracy' ,'vert_accuracy' ,'accuracy', 'rms' ,'duration', 'eyetracker','et', 'cumtype']   
         acccuracy_table = acccuracy_table[cols]
  
     return acccuracy_table

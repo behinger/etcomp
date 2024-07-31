@@ -17,11 +17,11 @@ import cmdstanpy
 
 
 
-def get_smooth_data(smooth,select=''):
-    print(smooth.query(select).shape)
-    print(smooth.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'").shape)
-    # epochs = make_df.make_epochs(smooth.query(select),td=[-0,0.6])
-    epochs=  smooth.groupby(by="angle",group_keys=False).apply(rotateRow)
+def get_smooth_data(etsamples,etmsgs,select=''):
+    #print(smooth.query(select).shape)
+    #print(smooth.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'").shape)
+    epochs = make_df.make_epochs(etsamples,etmsgs.query("exp_event=='trialstart'&condition=='SMOOTH'"),td=[-0,0.6])
+    epochs=  epochs.groupby(by="angle",group_keys=False).apply(rotateRow)
     return(epochs)
                 
 

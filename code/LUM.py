@@ -145,9 +145,9 @@ def plot_time_all(df):
     all_lum_binned_noblock = df.groupby(grouping_cols, as_index=False).agg(agg_catcont(winmean))
     all_lum_binned_noblock.loc[:,'plot_grouping'] = all_lum_binned_noblock.eyetracker + all_lum_binned_noblock.lum.map(str)
     plot = (ggplot(all_lum_binned_noblock.query('lum>0'), aes(x='td',y='pa_norm', group="plot_grouping", color="lum", shape="eyetracker"))
-                +stat_summary(fun_data=winmean_cl_boot, position=position_dodge(width=0.06), size=0.2) 
+                +stat_summary(position=position_dodge(width=0.06), size=0.2) 
                 +geom_vline(xintercept=[0,3,10] )
-                +scale_color_gradient(low='black',high='lightgray')+xlim((-1,6))
+                +scale_color_gradient(low='black',high='gray')+xlim((-1,6))
                 +scale_shape_manual(values=[">","<"])
     )
     return plot
@@ -214,7 +214,7 @@ def plot_mean(df):
     Returns:
         plot (ggplot): A ggplot object for further customization.
     """
-    mean_lum = calc_mean(df)
+    mean_lum = df#mean_lum = calc_mean(df)
     grouping_cols = ["lum","subject","eyetracker"]
     plot_df = mean_lum.query("lum>0").groupby(grouping_cols, as_index=False).pa_norm.agg(winmean)
     plot = (ggplot(plot_df, aes(x="lum", y="pa_norm", shape="eyetracker", color="lum"))
