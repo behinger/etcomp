@@ -100,15 +100,21 @@ def detect_events_cateyes(etsamples,etevents,preproc_kwargs=dict(max_vel=1500,di
     # define the classifier, preprocess data and run the classification
     clf = EyegazeClassifier(1, sfreq)
     data_preproc = clf.preproc(data, **preproc_kwargs)
-    etsamples.gx = data_preproc["x"]
-    etsamples.gy = data_preproc["y"]
+
+    # add filtered data + vel + accel
+    etsamples["gx_filt"] = data_preproc["x"]
+    etsamples["gy_filt"] = data_preproc["y"]
     etsamples["vel"] = data_preproc["vel"]
     etsamples["accel"] = data_preproc["accel"]
+
+    
+    # remove some unused columns
+    etsamples = etsamples.drop(['blink',"gy_vel","gx_vel","confidence","blink_id"], axis=1)
     events = []
     for idx in np.unique(cl_disp):
         if idx == 0:
             continue
-        ix = np.argwhere(cl_disp == idx)
+        ix = np.nonzero(cl_disp == idx)[0]
         #etsamples.smpl_time[ix[0]])
         #print(classes[ix[0][0]],ix[0])
         
@@ -117,15 +123,15 @@ def detect_events_cateyes(etsamples,etevents,preproc_kwargs=dict(max_vel=1500,di
                 # only velocity based
         
         this_event = {
-        'type': classes[ix[0][0]],
-        'start_time': etsamples.smpl_time.iloc[ix[0][0]],
-        'end_time': etsamples.smpl_time.iloc[ix[-1][0]],
+        'type': classes[ix[0]],
+        'start_time': etsamples.smpl_time.iloc[ix[0]],
+        'end_time': etsamples.smpl_time.iloc[ix[-1]],
         'duration': len(ix)/1000,
-        'start_gx': etsamples.gx.iloc[ix[0][0]],
-        'start_gy': etsamples.gy.iloc[ix[0][0]],
-        'end_gx': etsamples.gx.iloc[ix[-1][0]],
-        'end_gy': etsamples.gy.iloc[ix[-1][0]],
-        'peak_velocity': np.max(etsamples.vel[ix[0][0]:ix[-1][0]]), 
+        'start_gx': etsamples.gx.iloc[ix[0]],
+        'start_gy': etsamples.gy.iloc[ix[0]],
+        'end_gx': etsamples.gx.iloc[ix[-1]],
+        'end_gy': etsamples.gy.iloc[ix[-1]],
+        'peak_velocity': np.max(etsamples.vel.iloc[ix]), 
         }
         events.append(this_event)
         # no need to calculate the raw_amplitude here as we will calculate the SPHERICAL amplitude later

@@ -56,7 +56,7 @@ def detect_microsaccades(etsamples,etevents,etmsgs,preproc_kwargs=dict(max_vel=1
                     continue
                 # Run the microsaccade detection
                 #try:
-                if eyetracker == "filtered_el":
+                if eyetracker == "filtered_el" or eyetracker == "filtered_tpx":
                     preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=13*0.00476,savgol_polyord=3)
                 else:
                     preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=1*0.00476,savgol_polyord=1)

@@ -256,7 +256,7 @@ def import_el(subject, participant_info, datapath='/data/'):
         elsamples, elevents, elnotes = raw_el_data(datapath)
     if elsamples.iloc[0].time == elsamples.iloc[1].time:
         logger.warning('detected 2000Hz recording, adding 0.5 to every second sample (following SR-Support)')
-        elsamples.loc[::2, 'time'] = elsamples.loc[::2, 'time'] + 0.5
+        elsamples.loc[1::2, 'time'] = elsamples.loc[1::2, 'time'] + 0.5
     
     # We also delete Samples with interpolated pupil responses. In one dataset these were ~800samples.
     logger.warning('Marking as NaN %.4f%% due to other errors (e.g. lost eye / target)'%(100*np.mean((elsamples.errors!=0))))

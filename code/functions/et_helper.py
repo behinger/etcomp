@@ -286,17 +286,18 @@ def regress_eyetracker(etsamples, etevents, etmsgs, subject):
     etmsgs_regress_el = etmsgs_regress.query("subject==@subject&eyetracker=='el'&condition!='Connect'")
     y = etmsgs_regress_el.msg_time.values
 
-    ix_m = (etmsgs.eyetracker=='tpx')    & (etmsgs.subject==subject)
-    ix_e = (etevents.eyetracker=='tpx')  & (etevents.subject==subject)
-    ix_s = (etsamples.eyetracker=='tpx') & (etsamples.subject==subject)
-
+  
     for et in etmsgs_regress.eyetracker.unique():
         if et =="el":
             # already regressed against itself
             continue
         etmsgs_regress_target = etmsgs_regress.query("subject==@subject&eyetracker==@et&condition!='Connect'")
 
-        
+        ix_m = (etmsgs.eyetracker==et)    & (etmsgs.subject==subject)
+        ix_e = (etevents.eyetracker==et)  & (etevents.subject==subject)
+        ix_s = (etsamples.eyetracker==et) & (etsamples.subject==subject)
+
+
         x = etmsgs_regress_target.msg_time.values
 
         assert len(x)==len(y),f'Error: The number of messages in EyeLink does not match the number of messages in {et}.'
@@ -498,7 +499,7 @@ def select_data_by_task(task,et_msgs_tmp,et_raw_data_tmp,et_events_tmp):
     return et_raw_data.query("block != 0"), et_events.query("block !=0")
 
 
-def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True):
+def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True,y = 'gx'):
     """
     Plots the eye-tracking samples, messages, and events around a single event or message.
 
@@ -557,8 +558,9 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
         splitstring.append(' ')   
     etmsgs.loc[:,'label'] = splitstring
 
+
     p = (ggplot()
-     + geom_point(aes(x='smpl_time',y='gx',color='type',shape='eyetracker'),data=etsamples.query(samples_query)) # samples
+     + geom_point(aes(x='smpl_time',y=y,color='type',shape='eyetracker'),data=etsamples.query(samples_query)) # samples
      + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
      + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
     )
