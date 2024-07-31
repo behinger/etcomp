@@ -7,107 +7,20 @@ import traceback
 import logging
 import cmdstanpy
 
-# import pystan
 
 
+def rotateStartRow(row):
+    theta = row.angle
+    rot = rotate(row.start_gx,row.start_gy,theta)
+    row.loc['start_rotated'] = rot[0]
+    return(row)
 
-
-
-
-
-
-
-def get_smooth_data(smooth,select=''):
-    print(smooth.query(select).shape)
-    print(smooth.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'").shape)
-    # epochs = make_df.make_epochs(smooth.query(select),td=[-0,0.6])
-    epochs=  smooth.groupby(by="angle",group_keys=False).apply(rotateRow)
-    return(epochs)
-                
-
-def save_smooth(smoothresult, datapath):
-    logger = logging.getLogger(__name__)
-    logger.info('saving...')
-    smoothresult.to_csv(datapath+'/results/stan_smooth_results.csv')
-    logger.info('... saving done')
-
-def load_smooth(datapath):
-    smoothresult = pd.read_csv(datapath+'/results/stan_smooth_results.csv')
-    return(smoothresult)
-
-
-
-# def make_epochs(mydata, aggfunction=None):
-#     # Input:    et(DataFrame)      input data of the eyetracker (has column smpl_time)
-#     #           mydata(DataFrame)  dataframe that has start_time and end_time columns defining the epochs
-    
-#     logger = logging.getLogger(__name__)
-    
-#     epoched_data = pd.DataFrame()
-#     mydata = mydata.sort_values(by="start_time")
-    
-#     for idx, row in mydata.iterrows():
-#         start_time = row['start_time']
-#         end_time = row['end_time']
-        
-#         # Find the sample indices corresponding to start_time and end_time
-#         start_idx = np.searchsorted(mydata['smpl_time'], start_time)
-#         end_idx = np.searchsorted(mydata['smpl_time'], end_time)
-        
-#         if idx % 50 == 0:
-#             logger.info("Processing epoch %i from %i" % (idx, mydata.shape[0]))
-        
-#         ix = range(start_idx, end_idx)
-        
-#         if len(ix) == 0:
-#             logger.warning('Warning, no sample found for epoch %i' % (idx))
-#             continue
-        
-#         tmp = et.iloc[ix]
-#         tmp = tmp.assign(td=tmp.smpl_time - row['msg_time'])
-        
-#         row_tmp = pd.DataFrame([row], index=range(tmp.shape[0]), columns=row.index)
-#         row_tmp.index = tmp.index
-#         tmp = pd.concat([tmp, row_tmp], axis=1)
-        
-#         if aggfunction is not None:
-#             tmp = aggfunction(tmp)
-        
-#         epoched_data = pd.concat([epoched_data, tmp])
-    
-#     epoched_data = epoched_data.loc[:, ~epoched_data.columns.duplicated()]
-#     return epoched_data
-
-def fit_bayesian_model(smooth, datapath):
-    logger = logging.getLogger(__name__)
-    stan_file = datapath + "/results/changepoint.stan"
-    print(stan_file)
-    sm = cmdstanpy.CmdStanModel(stan_file=stan_file)
-    smoothresult = pd.DataFrame()
-    
-    for subject in smooth.subject.unique():
-        for et in smooth.et.unique():
-            helper.tic()
-            try:
-                select = "eyetracker=='%s'&subject=='%s'"%(et,subject)
-                tmp = smooth.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,smooth))
-                smoothresult = pd.concat([smoothresult,tmp.reset_index().assign(eyetracker=et,subject=subject)],ignore_index=True,sort=False)
-            except Exception as err:
-                logger.critical("error smooth model fit in %s, %s"%(subject,et))
-            helper.toc()
-
-    return(smoothresult)
-
-
-
-
-
-
-
-
-
-
-
+def rotateEndRow(row):
+    theta = row.iloc[0].angle
+    assert(len(row.angle.unique())==1)
+    rot = rotate(row.end_gx.values,row.end_gy.values,theta)
+    row.loc[:,'end_rotated'] = rot[0]
+    return(row)
 
 
 
@@ -215,48 +128,49 @@ def fitTrial_pandas(d,sm,smooth):
     return(pd.Series({'taumean':winmean(fit.extract()['tau']),'taustd':np.std(fit.extract()['tau']),'summary':fit.summary(),'velomean':winmean(fit.extract()['slope'])}))
 
 
-# def get_smooth_data(etsamples,etmsgs,select=''):
+def get_smooth_data(etsamples,etmsgs,select=''):
     
-#     print(etsamples.query(select).shape)
-#     print(etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'").shape)
-#     epochs = make_df.make_epochs(etsamples.query(select),etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'"),td=[-0,0.6])
-#     epochs=  epochs.groupby(by="angle",group_keys=False).apply(rotateRow)
-#     return(epochs)
+    print(etsamples.query(select).shape)
+    print(etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'").shape)
+    epochs = make_df.make_epochs(etsamples.query(select),etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'"),td=[-0,0.6])
+    epochs=  epochs.groupby(by="angle",group_keys=False).apply(rotateRow)
+    return(epochs)
            
-# def fit_bayesian_model(etsamples,etmsgs,etevents):
-#     # FIXME we need a good directory to keep this in and not hard path this
-#     stan_file = "/home/anna/Documents/ETComparison/analysis/git_behinger_etcomp/code/changepoint.stan"
-#     sm = cmdstanpy.CmdStanModel(stan_file=stan_file)
+def fit_bayesian_model(smooth):
+    # FIXME we need a good directory to keep this in and not hard path this
+    stan_file = "/home/anna/Documents/ETComparison/analysis/git_behinger_etcomp/code/changepoint.stan"
+    sm = cmdstanpy.CmdStanModel(stan_file=stan_file)
     
-#     smoothresult = pd.DataFrame()
-#     for subject in etsamples.subject.unique():
-#         for et in etsamples.eyetracker.unique():
-#             helper.tic()
-#             try:
-#                 select = "eyetracker=='%s'&subject=='%s'"%(et,subject)
-#                 epochs = get_smooth_data(etsamples,etmsgs,select)
+    smoothresult = pd.DataFrame()
+    for subject in smooth.subject.unique():
+        for et in smooth.eyetracker.unique():
+            helper.tic()
+            try:
+                select = "eyetracker=='%s'&subject=='%s'"%(et,subject)
+
+                # epochs = get_smooth_data(etsamples,etmsgs,select)
                 
-#                 tmp = epochs.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,etevents))
-#                 smoothresult = pd.concat([smoothresult,tmp.reset_index().assign(eyetracker=et,subject=subject)],ignore_index=True,sort=False)
-#             except Exception as err:
-#                 logger.critical("error smooth model fit in %s, %s"%(subject,et))
-#             helper.toc()
-#     return(smoothresult)
+                tmp = smooth.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,smooth))
+                smoothresult = pd.concat([smoothresult,tmp.reset_index().assign(eyetracker=et,subject=subject)],ignore_index=True,sort=False)
+            except Exception as err:
+                logger.critical("error smooth model fit in %s, %s"%(subject,et))
+            helper.toc()
+    return(smoothresult)
         
-# def estimate_init_latency(etsamples,etmsgs,etevents):
-#     smoothresult = fit_bayesian_model(etsamples,etmsgs)
+def estimate_init_latency(etsamples,etmsgs,etevents):
+    smoothresult = fit_bayesian_model(etsamples,etmsgs)
     
     
     
     
-# def save_smooth(smoothresult,datapath):
-#     logger.info('saving...')
-#     smoothresult.to_csv(datapath+'results/stan_smooth_results.csv')
-#     logger.info('... saving done')
+def save_smooth(smoothresult,datapath):
+    logger.info('saving...')
+    smoothresult.to_csv(datapath+'results/stan_smooth_results.csv')
+    logger.info('... saving done')
     
-# def load_smooth(datapath):
-#     smoothresult = pd.read_csv(datapath+'results/stan_smooth_results.csv')
-#     return(smoothresult)
+def load_smooth(datapath):
+    smoothresult = pd.read_csv(datapath+'results/stan_smooth_results.csv')
+    return(smoothresult)
     
     
     
