@@ -303,32 +303,31 @@ def plot_scanpath(etsamples, etmsgs, subject, pic_id, pic_path):
 
         assert (len(x_fix) == len(y_fix))
 
-        # FIXME this datapath needs to go
-        # path = '/net/store/nbp/users/kgross/etcomp/experiment/stimuli/Muster'
-        # os.chdir(path)
         file_list = os.listdir(pic_path)
         pic_ids_keys = [float(id) for id in range(1, 19)]
         file_names_values = file_list[0:18]
         print(pic_ids_keys)
         print(file_names_values)
         map_id2file = dict(zip(pic_ids_keys, file_names_values))
-        # foo = map_id2file.get(pic_id)
-        # bar = os.path.join(pic_path, foo)
         print(pic_id,map_id2file.get(pic_id))
         img = imread(os.path.join(pic_path, map_id2file.get(pic_id)))
-        # img_resize = resize(img, size=0.6)
-
+ 
         if eyetracker == 'el':
-            colorlist = ['blue', 'cyan']
+            colorlist = ['#3faf72', '#2498cb']
         if eyetracker == 'tpx':
-            colorlist = ['red', 'magenta']
+            colorlist = ['#ffba31', '#ff8831']
 
-        plt.scatter(x_sac, y_sac, alpha=0.5, s=10, c=colorlist[0])
-        plt.scatter(x_fix, y_fix, alpha=0.5, s=10, c=colorlist[1])
+        plt.scatter(x_sac, y_sac, alpha=0.5, s=10, c=colorlist[0], label=f'{eyetracker} saccade')
+        plt.scatter(x_fix, y_fix, alpha=0.5, s=10, c=colorlist[1], label=f'{eyetracker} fixation')
 
    
 
     plt.imshow(img, alpha=0.3, extent=[-(pic_size_horizontal), pic_size_horizontal, -(pic_size_vertical), pic_size_vertical])
 
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys(), loc='lower right')
+
+    plt.savefig("freeview-scanpath", format='svg')
     # plt.imshow(img_resize, alpha=0.3, extent=[-(pic_size_horizontal), pic_size_horizontal, -(pic_size_vertical), pic_size_vertical])
     plt.show()
