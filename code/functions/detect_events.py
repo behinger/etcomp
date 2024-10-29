@@ -102,8 +102,10 @@ def detect_events_cateyes(etsamples,etevents,preproc_kwargs=dict(max_vel=1500,di
     data_preproc = clf.preproc(data, **preproc_kwargs)
 
     # add filtered data + vel + accel
-    etsamples["gx_filt"] = data_preproc["x"]
-    etsamples["gy_filt"] = data_preproc["y"]
+    etsamples["gx_raw"] = etsamples["gx"]
+    etsamples["gy_raw"] = etsamples["gy"]
+    etsamples["gx"] = data_preproc["x"]
+    etsamples["gy"] = data_preproc["y"]
     etsamples["vel"] = data_preproc["vel"]
     etsamples["accel"] = data_preproc["accel"]
 
@@ -129,8 +131,12 @@ def detect_events_cateyes(etsamples,etevents,preproc_kwargs=dict(max_vel=1500,di
         'duration': len(ix)/1000,
         'start_gx': etsamples.gx.iloc[ix[0]],
         'start_gy': etsamples.gy.iloc[ix[0]],
+        'start_raw_gx': etsamples.gx_raw.iloc[ix[0]],
+        'start_raw_gy': etsamples.gy_raw.iloc[ix[0]],
         'end_gx': etsamples.gx.iloc[ix[-1]],
         'end_gy': etsamples.gy.iloc[ix[-1]],
+        'end_raw_gx_': etsamples.gx_raw.iloc[ix[-1]],
+        'end_raw_gy': etsamples.gy_raw.iloc[ix[-1]],
         'peak_velocity': np.max(etsamples.vel.iloc[ix]), 
         }
         events.append(this_event)
@@ -147,6 +153,7 @@ def detect_events_cateyes(etsamples,etevents,preproc_kwargs=dict(max_vel=1500,di
 
 
 def make_remodnav_events(etsamples, etevents, et,**kwargs):
+    # Note: This modifies etsamples in-place and replaces the gx,gy,vel,accel columns with the filtered data. gx_raw and gy_raw are the unfiltered data
     newevents = detect_events_cateyes(etsamples,etevents,**kwargs)
         
     etevents= pd.concat([newevents,etevents], axis=0,sort=False)
