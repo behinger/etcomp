@@ -253,6 +253,9 @@ def make_fixations(etsamples, etevents, et):
 
     
 def add_additional_features(etsamples,etevents,el=''):    
+    # add winmean_gx/gy RMS and SD to the fixation events
+    # Note: This function is very slow because for-loop over all fixation
+
     from functions.et_helper import winmean
     logger = logging.getLogger(__name__)
     etevents = etevents.reset_index(drop=True)
@@ -261,8 +264,8 @@ def add_additional_features(etsamples,etevents,el=''):
         # removed bad samples explicitly
         ix_fix = (etsamples.smpl_time >= row.start_time) & (etsamples.smpl_time <= row.end_time) & (etsamples.zero_pa==False)  & (etsamples.neg_time==False)
         #print(ix)
-        fix_samples = etsamples.loc[ix_fix,['gx', 'gy']]
-
+        fix_samples = etsamples.loc[ix_fix,['gx', 'gy','gx_raw','gy_raw']]
+        
 
         # calculate rms error (inter-sample distances)
        
@@ -273,20 +276,29 @@ def add_additional_features(etsamples,etevents,el=''):
             etevents.loc[ix, 'mean_gx'] =  winmean(fix_samples.gx)    
             etevents.loc[ix, 'mean_gy'] =  winmean(fix_samples.gy)
 
-
+            etevents.loc[ix, 'mean_gx_raw'] =  winmean(fix_samples.gx_raw)    
+            etevents.loc[ix, 'mean_gy_raw'] =  winmean(fix_samples.gy_raw)
+            ## Calculate RMS
             # the thetas are the difference in spherical angle
+
+            # filtered
             fixdf = pd.DataFrame({'x0':fix_samples.iloc[:-1].gx.values,'y0':fix_samples.iloc[:-1].gy.values,'x1':fix_samples.iloc[1:].gx.values,'y1':fix_samples.iloc[1:].gy.values})
             thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
-       
-            # calculate the rms
-            #print('ix : %s', ix)
-            #print('fixdf : %s', len(fixdf))
-            #print('np.sqrt((np.square(thetas)).mean()) : %s', np.sqrt((np.square(thetas)).mean()))
             etevents.loc[ix, 'rms'] = np.sqrt((np.square(thetas)).mean())
+            # raw
+            fixdf = pd.DataFrame({'x0':fix_samples.iloc[:-1].gx_raw.values,'y0':fix_samples.iloc[:-1].gy_raw.values,'x1':fix_samples.iloc[1:].gx_raw.values,'y1':fix_samples.iloc[1:].gy_raw.values})
+            thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
+            etevents.loc[ix, 'rms_raw'] = np.sqrt((np.square(thetas)).mean())
             
+            ## Calculate SD
+            # filtered
             fixdf = pd.DataFrame({'x0':fix_samples.gx.mean(),'y0':fix_samples.gy.mean(),'x1':fix_samples.gx.values,'y1':fix_samples.gy.values})
             thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
-            
             etevents.loc[ix, 'sd'] = np.sqrt(np.mean(np.square(thetas)))
+            # raw
+            fixdf = pd.DataFrame({'x0':fix_samples.gx_raw.mean(),'y0':fix_samples.gy_raw.mean(),'x1':fix_samples.gx_raw.values,'y1':fix_samples.gy_raw.values})
+            thetas = fixdf.apply(lambda row:make_df.calc_3d_angle_points(row.x0,row.y0,row.x1,row.y1),axis=1)
+            etevents.loc[ix, 'sd_raw'] = np.sqrt(np.mean(np.square(thetas)))
+            
 
     return etsamples, etevents
