@@ -796,7 +796,7 @@ def set_to_full_names(df):
 
 #%% everything related to VISUAL DEGREES
 
-def size_px2deg(px, mm_per_px=0.276,distance=600):
+def size_px2deg(px, mm_per_px=0.275,distance=610):
     """
     function to get the picture size of the freeviewing task
     from pixels into visual angle
@@ -807,7 +807,7 @@ def size_px2deg(px, mm_per_px=0.276,distance=600):
     return deg
 
 
-def px2deg(px, orientation, mm_per_px=0.276,distance=600):
+def px2deg(px, orientation, mm_per_px=0.275,distance=610):
     # VD
     # "gx_px - gx_px-midpoint"
     # subtract center of our BENQ
