@@ -14,10 +14,7 @@ import matplotlib.pyplot as plt
 import functions.et_preprocess as preprocess
 
 
-import functions.pl_surface as pl_surface
 from functions import et_import
-from lib.pupil.pupil_src.shared_modules import accuracy_visualizer
-from functions.pl_recalib import pl_recalibV2
 
 import logging
 
@@ -25,32 +22,47 @@ def find_closest_gridstart(elcaliberror,gridstart):
     # because we often recalibrate multiple times, we have to look for the most recent one. The most recent one of each block is the one, that is closest to the grid start trigger
     out = pd.DataFrame()
     for t in gridstart:
-        minix = np.argmin(np.abs(t-elcaliberror.msg_time))
+        minix = np.argmin(np.abs(t-elcaliberror.time))
         out = pd.concat([out,elcaliberror.iloc[minix]],axis=1)
         
     return(out.T)
 
-def el_accuracy(subject):
-    samp,evt,elnotes = et_import.raw_el_data(subject, datapath='/net/store/nbp/projects/etcomp/')
+def el_accuracy(subject,datapath='/net/store/nbp/projects/etcomp/'):
+    samp,evt,elnotes = et_import.raw_el_data(datapath=datapath,ignore_samples=True)
 
-    ix = elnotes["trialid "].str.find("!CAL VALIDATION HV13 ")
+    ix = elnotes["message"].str.find("!CAL VALIDATION HV13 ")
     elcaliberror = elnotes[ix==0]
 
 
-    elcaliberror = elcaliberror.join(elcaliberror["trialid "].str.extract("ERROR ([\d.]*) avg. ([\d.]*)"))
-    elcaliberror = elcaliberror.rename(columns={0:"avg",1:"max","trialid_time":"msg_time"})
+    elcaliberror = elcaliberror.join(elcaliberror["message"].str.extract("(LEFT|RIGHT).*ERROR ([\d.]*) avg. ([\d.]*)"))
+    elcaliberror = elcaliberror.rename(columns={0:"eye",1:"avg",2:"max","trialid_time":"time"})
     elcaliberror = elcaliberror.assign(subject=subject,eyetracker='el')
-    elcaliberror.loc[:,'msg_time'] = elcaliberror.loc[:,'msg_time']/1000
-    elcaliberror = elcaliberror.drop(axis=1,labels=["py_trial_marker","trialid "])
+    elcaliberror.loc[:,'time'] = elcaliberror.loc[:,'time']/1000
     elcaliberror = elcaliberror.reset_index()
     
+    elcaliberror.drop(['index','trial'],axis=1,inplace=True)
+    if len(elcaliberror.eye.unique())>1:
+        
+        el_left = elcaliberror.query('eye=="LEFT"')
+        el_right = elcaliberror.query('eye=="RIGHT"')
+        el_left.drop('eye',axis=1,inplace=True)
+        el_right.drop('eye',axis=1,inplace=True)
+        el_left = el_left.rename(columns={"message":"message_left","avg":"avg_left","max":"max_left"})
+        el_right = el_right.rename(columns={"message":"message_right","avg":"avg_right","max":"max_right"})
+        elcaliberror = pd.merge(el_left,el_right,on=['eyetracker','time','subject'])
+
+
     # get trialstart times
-    gridstart = elnotes.loc[elnotes["trialid "].str.find("Instruction for LARGEGG start")==0,'trialid_time']/1000
+    gridstart = elnotes.loc[elnotes["message"].str.find("Instruction for LARGEGG start")==0,'time']/1000
     elcaliberror = find_closest_gridstart(elcaliberror,gridstart)
     
     return(elcaliberror)
 
 def pl_accuracy(subject):
+    import functions.pl_surface as pl_surface
+    from lib.pupil.pupil_src.shared_modules import accuracy_visualizer
+    from functions.pl_recalib import pl_recalibV2
+
     logger = logging.getLogger(__name__)
 
     logger.info('loading subject %s'%(subject))

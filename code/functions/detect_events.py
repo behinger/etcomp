@@ -273,8 +273,8 @@ def add_additional_features(etsamples,etevents,el=''):
             logger.error('Empty fixation sample df encountered for fix_event at index %s', ix)
 
         else:                
-            etevents.loc[ix, 'mean_gx'] =  winmean(fix_samples.gx)    
-            etevents.loc[ix, 'mean_gy'] =  winmean(fix_samples.gy)
+            etevents.loc[ix, 'mean_gx'] =  winmean(fix_samples.gx,drop_nan=True)    
+            etevents.loc[ix, 'mean_gy'] =  winmean(fix_samples.gy,drop_nan=True)
 
             etevents.loc[ix, 'mean_gx_raw'] =  winmean(fix_samples.gx_raw)    
             etevents.loc[ix, 'mean_gy_raw'] =  winmean(fix_samples.gy_raw)

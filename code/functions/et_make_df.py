@@ -129,7 +129,7 @@ def make_grid_df(merged_events):
     #           (see add_msg_to_event in et_helper)
     
     # only large grid condition
-    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration', 'peak_velocity','start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','sd_raw','type', 'end_time', 'mean_gx','mean_gx_raw','duration', 'peak_velocity','start_time', 'rms', 'rms_raw','mean_gy', 'mean_gy_raw','block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
     # use the last exp_event fixation as element 50
     #stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
     #large_grid_events.loc[stopevents.index] = stopevents

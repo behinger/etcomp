@@ -395,9 +395,11 @@ def diameter_to_area(data, x_col='LeftPupilDiameter', y_col='RightPupilDiameter'
     return data
 
 
-def winmean(x, perc = 0.2, axis=0):
+def winmean(x, perc = 0.2, axis=0,drop_nan=False):
     """
     Calculates the 20% Winsorized mean along the specified axis.
+
+    Note: drop_nan is only compatible with one dimension arrays!!
 
     Parameters:
         x (array): Input data.
@@ -407,7 +409,13 @@ def winmean(x, perc = 0.2, axis=0):
     Returns:
         numpy.ndarray: Winsorized mean of the input array along the specified axis.
     """
-    return(np.mean(winsorize(x, perc, axis=axis), axis=axis))
+    if drop_nan == True:
+        x_na = x[~np.isnan(x)]
+        if len(x_na) == 0:
+            return np.nan
+        return(np.mean(winsorize(x_na, perc, axis=axis), axis=axis))
+    else:
+        return np.mean(winsorize(x, perc, axis=axis), axis=axis)
 
 
 def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95, random_state=None):
@@ -426,17 +434,18 @@ def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95, random_st
     - n_samples (int, optional): The number of bootstrap samples to generate. 
     - confidence_interval (float, optional): The desired confidence level for the interval,
       between 0 and 1. Default is 0.95 (95% confidence interval).
-    - random_state (FIXME): What is this?
+    - random_state: Random seed, see plotnine
 
     Returns: A tuple containing two elements:
         1. The lower bound of the confidence interval for the windowed mean.
         2. The upper bound of the confidence interval for the windowed mean.
     """
-    return bootstrap_statistics(series, winmean,
+    b = bootstrap_statistics(series, winmean,
                                 n_samples=n_samples,
                                 confidence_interval=confidence_interval,
                                 random_state=random_state)
-
+    print(b)
+    return b
 
 def tic():
     # Records a time in TicToc, marks the beginning of a time interval
@@ -561,17 +570,17 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
 
     p = (ggplot()
      + geom_point(aes(x='smpl_time',y=y,color='type',shape='eyetracker'),data=etsamples.query(samples_query)) # samples
-     + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
-     + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
+    # + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
+    # + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
     )
          
     if etevents.query(event_query).shape[0]>0:
         pass
     if plotevents:
         p = p + geom_segment(aes(x="start_time",y=0,xend="end_time",yend=0,color='type'),alpha=0.5,size=2,data=etevents.query(event_query))
-    if eventtype == 'event':
-        p = (p   + annotate("line",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black')
-                 + annotate("point",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black'))
+    #if eventtype == 'event':
+      #  p = (p   + annotate("line",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black')
+      #           + annotate("point",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black'))
     if eventtype=='msg':
         if single_eventormsg.condition == 'GRID':
             p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)

@@ -79,7 +79,7 @@ def plot_accuracy(grid_df, option=None, agg_level=None, depvar = 'accuracy'):
                   #guides(color=guide_legend(ncol=8)) +
                   xlab("Eye Trackers") + 
                   ylab(depvar.capitalize()+" [$^\circ$]") +
-                  ggtitle('Mean Precision (Root Mean Square)') +
+                  ggtitle(f'Mean Precision ({depvar})') +
                   theme(plot_margin_top=0.05))        
         
     elif option == 'variance_within_block':
