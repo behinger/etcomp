@@ -118,10 +118,10 @@ def fitTrial(d,sm=None,etevents=None):
     # return all data, but especially the tau
     return(fit)
 
-def fitTrial_pandas(d,sm,smooth):
+def fitTrial_pandas(d,sm,etevents):
     try:
-        print("trying fitTrial")
-        fit = fitTrial(d,sm,smooth)
+        #print("trying fitTrial")
+        fit = fitTrial(d,sm,etevents)
     except Exception as err:
         logger.exception('Error smooth model fit single trial'+str(err))
         return(pd.Series({'taumean':np.nan,'taustd':np.nan,'summary':np.nan}))
@@ -136,24 +136,21 @@ def get_smooth_data(etsamples,etmsgs,select=''):
     epochs=  epochs.groupby(by="angle",group_keys=False).apply(rotateRow)
     return(epochs)
            
-def fit_bayesian_model(smooth):
-    # FIXME we need a good directory to keep this in and not hard path this
-    stan_file = "/home/anna/Documents/ETComparison/analysis/git_behinger_etcomp/code/changepoint.stan"
-    sm = cmdstanpy.CmdStanModel(stan_file=stan_file)
-    
+def fit_bayesian_model(etsamples,etmsgs,stan_file="./git_behinger_etcomp/code/changepoint.stan"):
+    sm = cmdstanpy.CmdStanModel(stan_file=stan_file)    
     smoothresult = pd.DataFrame()
-    for subject in smooth.subject.unique():
-        for et in smooth.eyetracker.unique():
+    for subject in etsamples.subject.unique():
+        for et in etsamples.eyetracker.unique():
             helper.tic()
             try:
                 select = "eyetracker=='%s'&subject=='%s'"%(et,subject)
 
-                # epochs = get_smooth_data(etsamples,etmsgs,select)
+                epochs = get_smooth_data(etsamples,etmsgs,select)
                 
-                tmp = smooth.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,smooth))
+                tmp = epochs.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,etsamples))
                 smoothresult = pd.concat([smoothresult,tmp.reset_index().assign(eyetracker=et,subject=subject)],ignore_index=True,sort=False)
             except Exception as err:
-                logger.critical("error smooth model fit in %s, %s"%(subject,et))
+                logger.critical("error smooth model fit in %s, %s - "%(subject,et)+str(err))
             helper.toc()
     return(smoothresult)
         
@@ -165,11 +162,11 @@ def estimate_init_latency(etsamples,etmsgs,etevents):
     
 def save_smooth(smoothresult,datapath):
     logger.info('saving...')
-    smoothresult.to_csv(datapath+'results/stan_smooth_results.csv')
+    smoothresult.to_csv(datapath+'/results/stan_smooth_results.csv')
     logger.info('... saving done')
     
 def load_smooth(datapath):
-    smoothresult = pd.read_csv(datapath+'results/stan_smooth_results.csv')
+    smoothresult = pd.read_csv(datapath+'/results/stan_smooth_results.csv')
     return(smoothresult)
     
     

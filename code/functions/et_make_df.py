@@ -41,7 +41,8 @@ def make_samples_df(etsamples, px2deg=True):
 
 def make_events_df(etevents):
     # why do we have an end_point column?
-    fields_to_keep = set(['blink_id', 'start_gx','start_gy','end_gx','end_gy','end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'mean_gx', 'mean_gy', 'rms','sd'])
+
+    fields_to_keep = set(['blink_id', 'start_gx','start_gy','end_gx','end_gy','end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'mean_gx', 'mean_gy', 'rms','sd'])#,'sd_raw', 'mean_gx_raw', 'rms_raw', 'mean_gy_raw'])
         
     fields_to_fillin = fields_to_keep - set(etevents.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin
@@ -129,7 +130,7 @@ def make_grid_df(merged_events):
     #           (see add_msg_to_event in et_helper)
     
     # only large grid condition
-    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','sd_raw','type', 'end_time', 'mean_gx','mean_gx_raw','duration', 'peak_velocity','start_time', 'rms', 'rms_raw','mean_gy', 'mean_gy_raw','block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration', 'peak_velocity','start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]#'sd_raw','mean_gx_raw','rms_raw','mean_gy_raw'
     # use the last exp_event fixation as element 50
     #stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
     #large_grid_events.loc[stopevents.index] = stopevents
