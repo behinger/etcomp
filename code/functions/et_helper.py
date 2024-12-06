@@ -581,10 +581,10 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
     #if eventtype == 'event':
       #  p = (p   + annotate("line",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black')
       #           + annotate("point",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black'))
-    if eventtype=='msg':
-        if single_eventormsg.condition == 'GRID':
-            p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)
-                   + geom_hline(yintercept=single_eventormsg.posx))
+#    if eventtype=='msg':
+#        if single_eventormsg.condition == 'GRID':
+#            p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)
+#                   + geom_hline(yintercept=single_eventormsg.posx))
  
     return(p)
 

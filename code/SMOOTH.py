@@ -145,9 +145,9 @@ def fit_bayesian_model(etsamples,etmsgs,stan_file="./git_behinger_etcomp/code/ch
             try:
                 select = "eyetracker=='%s'&subject=='%s'"%(et,subject)
 
-                epochs = get_smooth_data(etsamples,etmsgs,select)
+                epochs = get_smooth_data(etsamples.copy(),etmsgs.copy(),select)
                 
-                tmp = epochs.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,etsamples))
+                tmp = epochs.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,etsamples.copy()))
                 smoothresult = pd.concat([smoothresult,tmp.reset_index().assign(eyetracker=et,subject=subject)],ignore_index=True,sort=False)
             except Exception as err:
                 logger.critical("error smooth model fit in %s, %s - "%(subject,et)+str(err))
@@ -204,7 +204,7 @@ def plot_single_trial(etsamples,etmsgs,etevents,subject,eyetracker,trial,block,s
 
 def plot_modelresults(smoothresult,field="taumean",option=''):
     
-    smoothgroup = smoothresult.groupby(['eyetracker','subject'],as_index=False).agg(winmean)
+    smoothgroup = smoothresult[["eyetracker","subject",field]].groupby(['eyetracker','subject'],as_index=False).agg(winmean)
     
     if field == 'taumean':
         binwidth = 0.001
