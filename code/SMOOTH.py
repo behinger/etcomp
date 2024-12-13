@@ -200,7 +200,7 @@ def plot_single_trial(etsamples,etmsgs,etevents,subject,eyetracker,trial,block,s
     plt.plot(epochs.query(selectTrial+"&type=='saccade'").td,epochs.query(selectTrial+"&type=='saccade'").rotated,'go')
     plt.plot(winmean(fit.stan_variables()['tau']),0,'ro')
     
-    return fit
+    return plt,fit
 
 def plot_modelresults(smoothresult,field="taumean",option=''):
     
