@@ -325,7 +325,7 @@ def plot_scanpath(etsamples, etmsgs, subject, pic_id, pic_path,time_field="smpl_
 
    
 
-    plt.imshow(img, alpha=0.7, extent=[-(pic_size_horizontal), pic_size_horizontal, -(pic_size_vertical), pic_size_vertical])
+    plt.imshow(img, alpha=0.3, extent=[-(pic_size_horizontal), pic_size_horizontal, -(pic_size_vertical), pic_size_vertical])
 
     if show_legend:
         handles, labels = plt.gca().get_legend_handles_labels()
