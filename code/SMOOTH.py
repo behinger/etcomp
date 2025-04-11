@@ -130,8 +130,6 @@ def fitTrial_pandas(d,sm,etevents):
 
 def get_smooth_data(etsamples,etmsgs,select=''):
     
-    print(etsamples.query(select).shape)
-    print(etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'").shape)
     epochs = make_df.make_epochs(etsamples.query(select),etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'"),td=[-0,0.6])
     epochs=  epochs.groupby(by="angle",group_keys=False).apply(rotateRow)
     return(epochs)
