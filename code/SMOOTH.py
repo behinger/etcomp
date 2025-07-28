@@ -111,49 +111,44 @@ def fitTrial(d,sm=None,etevents=None):
     'etdata': d.rotated.values,
     'time':d.td.values,
     'tauprior':.185}
-    
+    #return datafit
     # fit changepoint regression model
-    fit = sm.sampling(data=datafit, iter=1500,warmup=300, chains=1)
+    fit = sm.sample(data=datafit, iter_sampling=1500,iter_warmup=300, chains=1)
     
     # return all data, but especially the tau
     return(fit)
 
-def fitTrial_pandas(d,sm,smooth):
+def fitTrial_pandas(d,sm,etevents):
     try:
-        print("trying fitTrial")
-        fit = fitTrial(d,sm,smooth)
+        #print("trying fitTrial")
+        fit = fitTrial(d,sm,etevents)
     except Exception as err:
         logger.exception('Error smooth model fit single trial'+str(err))
         return(pd.Series({'taumean':np.nan,'taustd':np.nan,'summary':np.nan}))
-    return(pd.Series({'taumean':winmean(fit.extract()['tau']),'taustd':np.std(fit.extract()['tau']),'summary':fit.summary(),'velomean':winmean(fit.extract()['slope'])}))
+    return(pd.Series({'taumean':winmean(fit.stan_variables()['tau']),'taustd':np.std(fit.stan_variables()['tau']),'summary':fit.summary(),'velomean':winmean(fit.stan_variables()['slope'])}))
 
 
 def get_smooth_data(etsamples,etmsgs,select=''):
     
-    print(etsamples.query(select).shape)
-    print(etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'").shape)
     epochs = make_df.make_epochs(etsamples.query(select),etmsgs.query(select+"&exp_event=='trialstart'&condition=='SMOOTH'"),td=[-0,0.6])
     epochs=  epochs.groupby(by="angle",group_keys=False).apply(rotateRow)
     return(epochs)
            
-def fit_bayesian_model(smooth):
-    # FIXME we need a good directory to keep this in and not hard path this
-    stan_file = "/home/anna/Documents/ETComparison/analysis/git_behinger_etcomp/code/changepoint.stan"
-    sm = cmdstanpy.CmdStanModel(stan_file=stan_file)
-    
+def fit_bayesian_model(etsamples,etmsgs,stan_file="./git_behinger_etcomp/code/changepoint.stan"):
+    sm = cmdstanpy.CmdStanModel(stan_file=stan_file)    
     smoothresult = pd.DataFrame()
-    for subject in smooth.subject.unique():
-        for et in smooth.eyetracker.unique():
+    for subject in etsamples.subject.unique():
+        for et in etsamples.eyetracker.unique():
             helper.tic()
             try:
                 select = "eyetracker=='%s'&subject=='%s'"%(et,subject)
 
-                # epochs = get_smooth_data(etsamples,etmsgs,select)
+                epochs = get_smooth_data(etsamples.copy(),etmsgs.copy(),select)
                 
-                tmp = smooth.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,smooth))
+                tmp = epochs.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,etsamples.copy()))
                 smoothresult = pd.concat([smoothresult,tmp.reset_index().assign(eyetracker=et,subject=subject)],ignore_index=True,sort=False)
             except Exception as err:
-                logger.critical("error smooth model fit in %s, %s"%(subject,et))
+                logger.critical("error smooth model fit in %s, %s - "%(subject,et)+str(err))
             helper.toc()
     return(smoothresult)
         
@@ -165,18 +160,18 @@ def estimate_init_latency(etsamples,etmsgs,etevents):
     
 def save_smooth(smoothresult,datapath):
     logger.info('saving...')
-    smoothresult.to_csv(datapath+'results/stan_smooth_results.csv')
+    smoothresult.to_csv(datapath+'/results/stan_smooth_results.csv')
     logger.info('... saving done')
     
 def load_smooth(datapath):
-    smoothresult = pd.read_csv(datapath+'results/stan_smooth_results.csv')
+    smoothresult = pd.read_csv(datapath+'/results/stan_smooth_results.csv')
     return(smoothresult)
     
     
     
 def plot_single_trial(etsamples,etmsgs,etevents,subject,eyetracker,trial,block,sm):
     select = "subject=='%s'&eyetracker=='%s'"%(subject,eyetracker)
-    selectTrial = 'trial==%i&block==%i'%(trial,block)
+    selectTrial = 'trial==%i&block=="%i"'%(trial,block)
     etmsgs2 = etmsgs.query(selectTrial)
     epochs = get_smooth_data(etsamples,etmsgs2,select)
     
@@ -184,16 +179,16 @@ def plot_single_trial(etsamples,etmsgs,etevents,subject,eyetracker,trial,block,s
 
     fit =out.iloc[0]
     time = epochs.query(selectTrial).td
-    def predict(offset,slope,time,tau,autocorr=150):
+    def predict(intercept,slope,time,tau,autocorr=150):
         w = 1. / (1. + np.exp(-(autocorr*(time-tau))))
-        act =  offset +  w *  (slope * (time-tau))#+np.random.normal(0,0.5,len(time))
+        act =  intercept +  w *  (slope * (time-tau))#+np.random.normal(0,0.5,len(time))
         return(act)
     def predict_stan(fit,time):
-        post =pd.DataFrame(fit.extract())
+        post =pd.DataFrame(fit.stan_variables())
         if 'autocorrfactor' in post.columns:
-            act = post.sample(n=25).apply(lambda row:predict(row.offset,row.slope,time,row.tau,row.autocorrfactor),axis=1)
+            act = post.sample(n=25).apply(lambda row:predict(row.intercept,row.slope,time,row.tau,row.autocorrfactor),axis=1)
         else:
-            act = post.sample(n=25).apply(lambda row:predict(row.offset,row.slope,time,row.tau),axis=1)
+            act = post.sample(n=25).apply(lambda row:predict(row.intercept,row.slope,time,row.tau),axis=1)
         return(act.values)
 
     act = predict_stan(fit,time)
@@ -201,13 +196,13 @@ def plot_single_trial(etsamples,etmsgs,etevents,subject,eyetracker,trial,block,s
     [plt.plot(time,act[i,:],'k',alpha=0.1) for i in range(act.shape[0])]
     plt.plot(time,epochs.query(selectTrial).rotated)
     plt.plot(epochs.query(selectTrial+"&type=='saccade'").td,epochs.query(selectTrial+"&type=='saccade'").rotated,'go')
-    plt.plot(winmean(fit.extract()['tau']),0,'ro')
+    plt.plot(winmean(fit.stan_variables()['tau']),0,'ro')
     
-    return fit
+    return plt,fit
 
 def plot_modelresults(smoothresult,field="taumean",option=''):
     
-    smoothgroup = smoothresult.groupby(['eyetracker','subject'],as_index=False).agg(winmean)
+    smoothgroup = smoothresult[["eyetracker","subject",field]].groupby(['eyetracker','subject'],as_index=False).agg(winmean)
     
     if field == 'taumean':
         binwidth = 0.001

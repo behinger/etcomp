@@ -260,7 +260,7 @@ def plot_fixation_durations(raw_freeview_df, option=None):
         raise ValueError('You must set options to a valid option. See documentation.')
 
 
-def plot_scanpath(etsamples, etmsgs, subject, pic_id, pic_path):
+def plot_scanpath(etsamples, etmsgs, subject, pic_id, pic_path,time_field="smpl_time",gx="gx",gy="gy",show_legend=True,show_lines=False,plot_show=True,plot_save=True):
     """
     Plot the scanpath of a subject onto a specified picture.
 
@@ -296,20 +296,20 @@ def plot_scanpath(etsamples, etmsgs, subject, pic_id, pic_path):
     for eyetracker in ['el', 'tpx']:
         et_start_time = float(all_msgs.query('(pic_id == @pic_id) & (eyetracker == @eyetracker)').msg_time.values)
         et_end_time = float(all_msgs.query('(pic_id == @pic_id) & (eyetracker == @eyetracker)').msg_time.values+6)
-        x_fix = all_samples.query('(smpl_time >= @et_start_time) & (smpl_time <= @et_end_time) & (type == "fixation") & (eyetracker == @eyetracker)').gx.values
-        y_fix = all_samples.query('(smpl_time >= @et_start_time) & (smpl_time <= @et_end_time) & (type == "fixation") & (eyetracker == @eyetracker)').gy.values
-        x_sac = all_samples.query('(smpl_time >= @et_start_time) & (smpl_time <= @et_end_time) & (type == "saccade") & (eyetracker == @eyetracker)').gx.values
-        y_sac = all_samples.query('(smpl_time >= @et_start_time) & (smpl_time <= @et_end_time) & (type == "saccade") & (eyetracker == @eyetracker)').gy.values
+        x_fix = all_samples.query(f'({time_field} >= @et_start_time) & ({time_field} <= @et_end_time) & (type == "fixation") & (eyetracker == @eyetracker)')[gx].values
+        y_fix = all_samples.query(f'({time_field} >= @et_start_time) & ({time_field} <= @et_end_time) & (type == "fixation") & (eyetracker == @eyetracker)')[gy].values
+        x_sac = all_samples.query(f'({time_field} >= @et_start_time) & ({time_field} <= @et_end_time) & (type == "saccade") & (eyetracker == @eyetracker)')[gx].values
+        y_sac = all_samples.query(f'({time_field} >= @et_start_time) & ({time_field} <= @et_end_time) & (type == "saccade") & (eyetracker == @eyetracker)')[gy].values
 
         assert (len(x_fix) == len(y_fix))
 
         file_list = os.listdir(pic_path)
         pic_ids_keys = [float(id) for id in range(1, 19)]
         file_names_values = file_list[0:18]
-        print(pic_ids_keys)
-        print(file_names_values)
+        #print(pic_ids_keys)
+        #print(file_names_values)
         map_id2file = dict(zip(pic_ids_keys, file_names_values))
-        print(pic_id,map_id2file.get(pic_id))
+        #print(pic_id,map_id2file.get(pic_id))
         img = imread(os.path.join(pic_path, map_id2file.get(pic_id)))
  
         if eyetracker == 'el':
@@ -319,15 +319,22 @@ def plot_scanpath(etsamples, etmsgs, subject, pic_id, pic_path):
 
         plt.scatter(x_sac, y_sac, alpha=0.5, s=10, c=colorlist[0], label=f'{eyetracker} saccade')
         plt.scatter(x_fix, y_fix, alpha=0.5, s=10, c=colorlist[1], label=f'{eyetracker} fixation')
+        if show_lines:
+            plt.plot(x_sac, y_sac, alpha=1, c=colorlist[0], label=f'{eyetracker} saccade')
+            plt.plot(x_fix, y_fix, alpha=1, c=colorlist[1], label=f'{eyetracker} fixation')
 
    
 
     plt.imshow(img, alpha=0.3, extent=[-(pic_size_horizontal), pic_size_horizontal, -(pic_size_vertical), pic_size_vertical])
 
-    handles, labels = plt.gca().get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
-    plt.legend(by_label.values(), by_label.keys(), loc='lower right')
+    if show_legend:
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys(), loc='lower right')
 
-    plt.savefig("freeview-scanpath", format='svg')
+    if plot_save:
+        plt.savefig("freeview-scanpath", format='svg')
     # plt.imshow(img_resize, alpha=0.3, extent=[-(pic_size_horizontal), pic_size_horizontal, -(pic_size_vertical), pic_size_vertical])
-    plt.show()
+    if plot_show:
+        plt.show()
+        
