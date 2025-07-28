@@ -3,7 +3,7 @@
 
 #import edfread # parses SR research EDF data files into pandas df
 import pyedfread
-import imp # for edfread reload
+#  import imp # for edfread reload # Can't find this import
 import logging
 import os
 import numpy as np

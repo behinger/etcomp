@@ -624,6 +624,45 @@ def debug_mode(debugging = False):
         logger.setLevel(logging.WARNING)
         logger.warning("Debugging is off. You will see fewer messages. To turn it on, set `debug_mode(True)`.")
 
+
+#%% everything related to VISUAL DEGREES
+
+def size_px2deg(px, mm_per_px=0.275,distance=610):
+    """
+    function to get the picture size of the freeviewing task
+    from pixels into visual angle
+    """
+          
+    deg = 2*np.arctan2(px/2*mm_per_px,distance)*180/np.pi
+
+    return deg
+
+
+def px2deg(px, orientation, mm_per_px=0.275,distance=610):
+    # VD
+    # "gx_px - gx_px-midpoint"
+    # subtract center of our BENQ
+
+    if orientation == 'horizontal':
+        center_x = 1920 / 2
+        px       = px - center_x
+    
+    elif orientation == 'vertical':
+        center_y = 1080 / 2
+        px       = px - center_y
+    else:
+        raise('unknown option')
+    deg = np.arctan2(px*mm_per_px,distance)*180/np.pi
+
+    return deg
+
+
+def load_processed_subject(datapath,sub):
+    etsamples = pd.read_parquet(datapath+'/results/sub-{:03d}_etsamples.parquet'.format(sub))
+    etmsgs = pd.read_csv(datapath+'/results/sub-{:03d}_etmsgs.csv'.format(sub))
+    etevents = pd.read_csv(datapath+'/results/sub-{:03d}_etevents.csv'.format(sub))
+    return etsamples,etmsgs,etevents
+
 ######################################################################
 #                                                                    #
 #  FUNCTIONS THAT MAY BE REDUNDANT                                   #
@@ -794,36 +833,7 @@ def set_to_full_names(df):
     return df
 
 
-#%% everything related to VISUAL DEGREES
 
-def size_px2deg(px, mm_per_px=0.275,distance=610):
-    """
-    function to get the picture size of the freeviewing task
-    from pixels into visual angle
-    """
-          
-    deg = 2*np.arctan2(px/2*mm_per_px,distance)*180/np.pi
-
-    return deg
-
-
-def px2deg(px, orientation, mm_per_px=0.275,distance=610):
-    # VD
-    # "gx_px - gx_px-midpoint"
-    # subtract center of our BENQ
-
-    if orientation == 'horizontal':
-        center_x = 1920 / 2
-        px       = px - center_x
-    
-    elif orientation == 'vertical':
-        center_y = 1080 / 2
-        px       = px - center_y
-    else:
-        raise('unknown option')
-    deg = np.arctan2(px*mm_per_px,distance)*180/np.pi
-
-    return deg
 
 
 def sph2cart(theta_sph,phi_sph,rho_sph=1):
@@ -833,11 +843,7 @@ def sph2cart(theta_sph,phi_sph,rho_sph=1):
 
     return xyz_sph
 
-def load_processed_subject(datapath,sub):
-    etsamples = pd.read_parquet(datapath+'/results/sub-{:03d}_etsamples.parquet'.format(sub))
-    etmsgs = pd.read_csv(datapath+'/results/sub-{:03d}_etmsgs.csv'.format(sub))
-    etevents = pd.read_csv(datapath+'/results/sub-{:03d}_etevents.csv'.format(sub))
-    return etsamples,etmsgs,etevents
+
 
 #%% LOAD & SAVE & FIND file
     
