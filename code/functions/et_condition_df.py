@@ -72,7 +72,9 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query("condition=='BLINK'&(exp_event=='stop'|exp_event=='start')"), timefield = 'start_time', direction='backward')
                 condition_df =  merged_events.query("type=='blink'&condition=='BLINK'&exp_event=='start'")
             
-            # FIXME I don't see 'READING'
+            elif condition == 'READING':
+                merged_events = helper.add_msg_to_event(etevents, etmsgs.query("condition=='READING'&(exp_event=='stop'|exp_event=='start')"), timefield = 'start_time', direction='backward')
+                condition_df =  merged_events.query("condition=='READING'&exp_event=='start'")
 
             elif condition == 'FREEVIEW':
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='backward')
@@ -99,7 +101,7 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
             condition_df.loc[:, 'eyetracker'] = et  # Behringer added this to keep it consistent
             condition_df.loc[:, 'subject'] = subject
             
-            # concatenate the df of one specific conditin and one specific subject to the complete_condition_df
+            # concatenate the df of one specific condition and one specific subject to the complete_condition_df
             complete_condition_df = pd.concat([complete_condition_df, condition_df])
  
     
