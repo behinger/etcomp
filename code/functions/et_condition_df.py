@@ -73,8 +73,8 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
                 condition_df =  merged_events.query("type=='blink'&condition=='BLINK'&exp_event=='start'")
             
             elif condition == 'READING':
-                merged_events = helper.add_msg_to_event(etevents, etmsgs.query("condition=='READING'&(exp_event=='stop'|exp_event=='start')"), timefield = 'start_time', direction='backward')
-                condition_df =  merged_events.query("condition=='READING'&exp_event=='start'")
+                merged_events = helper.add_msg_to_event(etevents, etmsgs.query("condition=='READING'&(exp_event=='stop'|exp_event=='block'|exp_event=='start')"), timefield = 'start_time', direction='backward')
+                condition_df =  merged_events.query("condition=='READING'&exp_event=='block'")
 
             elif condition == 'FREEVIEW':
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='backward')

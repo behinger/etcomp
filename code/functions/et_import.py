@@ -103,6 +103,7 @@ def load_wordbounds(directory='./data'):
     Returns:
         bounds (pd.DataFrame): A DataFrame containing word boundary data.
     """
+    l = []
     for root, _, files in os.walk(directory):
         for filename in files:
             if 'wordbounds' in filename and filename.endswith('.csv'):
@@ -113,8 +114,9 @@ def load_wordbounds(directory='./data'):
                 bounds['ID'] = root[-11:-4]
                 bounds['word'] = range(1, len(bounds) + 1)
                 bounds.sort_values(by=['ID', 'block', 'word'], inplace=True)
-
-    return bounds
+                l.append(bounds)
+    return pd.concat(l)
+    
 
 
 def import_tpx(subject, participant_info, datapath='/data/'):
