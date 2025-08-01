@@ -53,9 +53,13 @@ def el_accuracy(subject,datapath='/net/store/nbp/projects/etcomp/'):
 
 
     # get trialstart times
-    gridstart = elnotes.loc[elnotes["message"].str.find("Instruction for LARGEGG start")==0,'time']/1000
+    elnotes_ix = elnotes["message"].str.find("Instruction for LARGEGG start")==0
+    gridstart = elnotes.loc[elnotes_ix,'time']/1000
     elcaliberror = find_closest_gridstart(elcaliberror,gridstart)
-    
+
+    #elcaliberror['block'] = elnotes.loc[elnotes_ix,'message'].str[-1].reset_index(drop=True)
+    #elcaliberror['block_str'] = elnotes.loc[elnotes_ix,'message'].reset_index(drop=True)
+    elcaliberror['block'] = [1,2,3,4,5,6]
     return(elcaliberror)
 
 def pl_accuracy(subject):
