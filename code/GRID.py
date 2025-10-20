@@ -64,7 +64,7 @@ def plot_accuracy(grid_df, option=None, agg_level=None, depvar = 'accuracy'):
                   geom_point(color='lightblue') +
                   stat_summary(fun_data=winmean_cl_boot,color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
                   #guides(color=guide_legend(ncol=8)) +
-                  xlab("Eye Trackers") + 
+                  xlab("") + 
                   ylab(depvar.capitalize()+" [$^\circ$]") +
                   ggtitle('Winsorized Mean Accuracies') +
                   theme(plot_margin_top=0.05)
@@ -77,7 +77,7 @@ def plot_accuracy(grid_df, option=None, agg_level=None, depvar = 'accuracy'):
                   geom_point(color='lightblue') +
                   stat_summary(fun_data=winmean_cl_boot,color='black',size=0.8, position=position_nudge(x=0.05,y=0)) +
                   #guides(color=guide_legend(ncol=8)) +
-                  xlab("Eye Trackers") + 
+                  xlab("") + 
                   ylab(depvar.capitalize()+" [$^\circ$]") +
                   ggtitle(f'Mean Precision ({depvar})') +
                   theme(plot_margin_top=0.05))        
@@ -339,15 +339,19 @@ def display_fixations(grid_df, option='fixations', greyscale=False, input_subjec
         plist.append(p)
     return plist
 
-def display_fixation_centered(grid_df,input_subject=None,input_block=None):   
+def display_fixation_centered(grid_df,input_subject=None,input_block=None,subsample=None):   
     # plots for only one specific subject and specific block
     if input_subject is not None:
         grid_df = grid_df.query('subject == @input_subject')
     if input_block is not None:
         grid_df = grid_df.query('block == @input_block')
         # mean_fix vs grid point elements
+    if subsample is not None:
+        grid_df = grid_df.sample(subsample)
     return((ggplot(grid_df, aes(x='mean_gx-posx', y='mean_gy-posy', color='np.sqrt(posx**2+posy**2)'))
             #+ geom_point(alpha=0.01)
+            
+
             +stat_ellipse(level=0.90)
             +stat_ellipse(level=0.70)
             +stat_ellipse(level=0.50)

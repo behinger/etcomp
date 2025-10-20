@@ -56,6 +56,10 @@ def detect_microsaccades(etsamples,etevents,etmsgs,preproc_kwargs=dict(max_vel=1
                     continue
                 # Run the microsaccade detection
                 #try:
+
+                # for redetection we need to apply the raw data again
+                sel_etsamples["gx"] = sel_etsamples["gx_raw"]
+                sel_etsamples["gy"] = sel_etsamples["gy_raw"]
                 if eyetracker == "filtered_el" or eyetracker == "filtered_tpx":
                     preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=13*0.00476,savgol_polyord=3)
                 else:
