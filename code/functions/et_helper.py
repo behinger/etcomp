@@ -569,7 +569,7 @@ def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,
 
 
     p = (ggplot()
-     + geom_point(aes(x='smpl_time',y=y,color='type',shape='eyetracker'),data=etsamples.query(samples_query)) # samples
+     + geom_point(aes(x='smpl_time',y=y,color='type'),data=etsamples.query(samples_query),size=1) # samples
     # + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
     # + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
     )

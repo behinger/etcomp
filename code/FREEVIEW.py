@@ -337,4 +337,4 @@ def plot_scanpath(etsamples, etmsgs, subject, pic_id, pic_path,time_field="smpl_
     # plt.imshow(img_resize, alpha=0.3, extent=[-(pic_size_horizontal), pic_size_horizontal, -(pic_size_vertical), pic_size_vertical])
     if plot_show:
         plt.show()
-    return pl
+    return plt

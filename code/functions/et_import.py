@@ -331,7 +331,7 @@ def import_el(subject, participant_info, datapath='/data/'):
 
 #%% GENERAL DATA LOADING AND IMPORT
 
-def load_and_regress_preprocessed_data(participant_info, datapath='/data/', excludeID=None, cleaned=True):
+def load_and_regress_preprocessed_data(participant_info, datapath='/data/', excludeID=None, cleaned=True,prefix_list=None):
     """
     Loads eye-tracking data for multiple participants from preprocessed CSV files. This step also
     regresses the eyetrackers so that the timestamps for TrackPixx match those of EyeLink.
@@ -372,7 +372,8 @@ def load_and_regress_preprocessed_data(participant_info, datapath='/data/', excl
         
         logger.warning('Loading subject ID: %s ...', subject)
         file_list = glob.glob(os.path.join(preprocessed_folder_path, f"*_cleaned_samples.csv"))
-        prefix_list = [os.path.basename(file).split("_cleaned_samples.csv")[0] for file in file_list]
+        if prefix_list is  None:
+            prefix_list = [os.path.basename(file).split("_cleaned_samples.csv")[0] for file in file_list]
         for et in prefix_list:#['el', 'tpx']:
             try:
                 if cleaned:

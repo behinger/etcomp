@@ -128,7 +128,7 @@ def detect_events_cateyes(etsamples,etevents,preproc_kwargs=dict(max_vel=1500,di
         'type': classes[ix[0]],
         'start_time': etsamples.smpl_time.iloc[ix[0]],
         'end_time': etsamples.smpl_time.iloc[ix[-1]],
-        'duration': len(ix)/1000,
+        'duration': len(ix)/2000,
         'start_gx': etsamples.gx.iloc[ix[0]],
         'start_gy': etsamples.gy.iloc[ix[0]],
         'start_raw_gx': etsamples.gx_raw.iloc[ix[0]],
