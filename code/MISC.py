@@ -45,7 +45,7 @@ def percentile(x, n=25, percentile_func=percentile_):
     return percentile_func(x, n)
 
 
-def print_results(df, fields=['duration', 'accuracy', 'rms', 'sd'], round_to=2, agg_first_over_blocks=True, tex=False):
+def print_results(df, fields=['duration', 'accuracy', 'rms', 'sd'], round_to=2, agg_first_over_blocks=True, tex=False, agg_level=None):
     """
     Print results from a DataFrame with optional formatting for EyeLink and TrackPixx data.
 
@@ -76,16 +76,19 @@ def print_results(df, fields=['duration', 'accuracy', 'rms', 'sd'], round_to=2, 
         el = 'EyeLink'
         tpx = 'TrackPixx'
 
+    if agg_level is None:
+        agg_level=[agg_catcont(winmean),agg_catcont(winmean)]
+
     # Aggregate data
     if agg_first_over_blocks:
         # FIXME why does df have NaN values? Are blocks missing?
-        df_agg = df.groupby([et, 'subject', 'block'], as_index=False, observed=False).agg(agg_catcont(winmean)).groupby([et, 'subject'], as_index=False, observed=False).agg(agg_catcont(winmean))
+        df_agg = df.groupby([et, 'subject', 'block'], as_index=False, observed=False).agg(agg_level[0]).groupby([et, 'subject'], as_index=False, observed=False).agg(agg_level[1])
     else:
-        df_agg = df.groupby([et, 'subject'], as_index=False, observed=False).agg(agg_catcont(winmean))[[et, 'subject'] + fields]
+        df_agg = df.groupby([et, 'subject'], as_index=False, observed=False).agg(agg_level[0])[[et, 'subject'] + fields]
 
     # Calculate main statistics and differences
     # FIXME this should technically work with `agg_catcont` but it does not.
-    tmp_main = df_agg.groupby([et], as_index=False, observed=False).agg([agg_catcont(winmean), lambda x: x.iat[0] if ((x.dtype.name == "object") | (x.dtype.name == "category")) else percentile(x, n=25), lambda x: x.iat[0] if ((x.dtype.name == "object") | (x.dtype.name == "category")) else percentile(x, n=75)])
+    tmp_main = df_agg.groupby([et], as_index=False, observed=False).agg([agg_level[1], lambda x: x.iat[0] if ((x.dtype.name == "object") | (x.dtype.name == "category")) else percentile(x, n=25), lambda x: x.iat[0] if ((x.dtype.name == "object") | (x.dtype.name == "category")) else percentile(x, n=75)])
     
     tmp_el = df_agg.loc[df_agg[et] == el, fields]
     tmp_tpx = df_agg.loc[df_agg[et] == tpx, fields]
@@ -95,7 +98,7 @@ def print_results(df, fields=['duration', 'accuracy', 'rms', 'sd'], round_to=2, 
     
     roundto = str(round_to)
 
-    logger.warning('Showing data for the following fields (as individual rows): %s', fields)
+    #logger.warning('Showing data for the following fields (as individual rows): %s', fields)
 
     # Print results for each field
     for c,label in zip(tmp_diff_agg.columns.levels[0],fields):

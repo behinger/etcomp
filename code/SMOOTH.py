@@ -146,7 +146,11 @@ def fit_bayesian_model(etsamples,etmsgs,stan_file="./git_behinger_etcomp/code/ch
                 epochs = get_smooth_data(etsamples.copy(),etmsgs.copy(),select)
                 
                 tmp = epochs.groupby(["trial","block"]).apply(lambda row: fitTrial_pandas(row,sm,etsamples.copy()))
-                smoothresult = pd.concat([smoothresult,tmp.reset_index().assign(eyetracker=et,subject=subject)],ignore_index=True,sort=False)
+                tmp_df = tmp.reset_index()
+                tmp_df.columns = tmp_df.columns.astype(str).str.strip()
+                tmp_df = tmp_df.pivot(columns="level_2",values="0",index=["trial","block"]).reset_index()
+
+                smoothresult = pd.concat([smoothresult,tmp_df.assign(eyetracker=et,subject=subject)],ignore_index=True,sort=False)
             except Exception as err:
                 logger.critical("error smooth model fit in %s, %s - "%(subject,et)+str(err))
             helper.toc()
