@@ -9,27 +9,22 @@ GET nice DATAFRAMES
 
 
 """
- 
-import pandas as pd
+import functions.et_helper as  et_helper
+import logging
 import numpy as np
 from numpy import pi
-from scipy.spatial import distance
-
-import functions.et_helper as  helper
-
-import logging
-
+import pandas as pd
 
 #%% MAKE SAMPLES
 
-def make_samples_df(etsamples,px2deg=True):
+def make_samples_df(etsamples, px2deg=True):
    
-    fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel'])
+    fields_to_keep = set(['smpl_time', 'gx', 'gy', 'confidence', 'pa',  'type','gx_vel','gy_vel', 'vel','accel','blink'])
     
     fields_to_fillin = fields_to_keep - set(etsamples.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin
     
-    etsamples_reduced = etsamples.loc[:,fields_to_copy]
+    etsamples_reduced = etsamples.loc[:,list(fields_to_copy)]
     
     for fieldname in fields_to_fillin:
         etsamples_reduced.loc[:,fieldname] = np.nan
@@ -37,8 +32,8 @@ def make_samples_df(etsamples,px2deg=True):
     if px2deg:
         # convert pixels into visual degrees
         # VD
-        etsamples_reduced.gx = helper.px2deg(etsamples_reduced.gx, 'horizontal')
-        etsamples_reduced.gy = helper.px2deg(etsamples_reduced.gy, 'vertical')
+        etsamples_reduced.gx = et_helper.px2deg(etsamples_reduced.gx, 'horizontal')
+        etsamples_reduced.gy = et_helper.px2deg(etsamples_reduced.gy, 'vertical')
 
     return(etsamples_reduced)
 
@@ -46,12 +41,13 @@ def make_samples_df(etsamples,px2deg=True):
 
 def make_events_df(etevents):
     # why do we have an end_point column?
-    fields_to_keep = set(['blink_id', 'start_gx','start_gy','end_gx','end_gy','end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'mean_gx', 'mean_gy', 'rms','sd'])
+
+    fields_to_keep = set(['blink_id', 'start_gx','start_gy','end_gx','end_gy','end_time', 'start_time', 'type', 'amplitude', 'duration', 'end_point', 'peak_velocity', 'mean_gx', 'mean_gy', 'rms','sd','sd_raw','rms_raw'])#,'sd_raw', 'mean_gx_raw', 'rms_raw', 'mean_gy_raw'])
         
     fields_to_fillin = fields_to_keep - set(etevents.columns)
     fields_to_copy =  fields_to_keep - fields_to_fillin
     
-    etevents_reduced = etevents.loc[:,fields_to_copy]
+    etevents_reduced = etevents.loc[:,list(fields_to_copy)]
     
     for fieldname in fields_to_fillin:
         etevents_reduced.loc[:,fieldname] = np.nan
@@ -61,14 +57,13 @@ def make_events_df(etevents):
 #%% MAKE EPOCHS
 
 def make_epochs(et,msgs,td=[-2,2],aggfunction=None):
-    import functions.et_helper as et_helper
+    
 
     # Input:    et(DataFrame)      input data of the eyetracker (has column smpl_time)
     #           msgs(DataFrame)    already parsed input messages    e.g. 'GRID element 5 pos-x 123 ...' defining experimental events (has column msg_time)
     # Output:   df for each notification,
     #           find all samples that are in the range of +-td (default timediff 2 s)
     
-    # get a logger
     logger = logging.getLogger(__name__)
     
     epoched_data = pd.DataFrame()
@@ -85,21 +80,17 @@ def make_epochs(et,msgs,td=[-2,2],aggfunction=None):
         msg = msgs.iloc[idx]
         if np.sum(ix) == 0:
             logger.warning('warning, no sample found for msg %i'%(idx))
-            #logger.warning(msg)
             continue
         
         tmp= et.iloc[ix]
         tmp = tmp.assign(td=tmp.smpl_time-msg['msg_time'])
         
-        #msg_tmp = pd.concat([msg.to_frame()]*tmp.shape[0],axis=1).T # <-- this step is slow
-        #print(msg)
         msg_tmp = pd.DataFrame([msg],index=range(tmp.shape[0]),columns=msg.index)
-        #print(msg_tmp)
         msg_tmp.index = tmp.index
         tmp = pd.concat([tmp,msg_tmp],axis=1)
         if aggfunction is not None:
             tmp = aggfunction(tmp)
-        epoched_data = epoched_data.append(tmp)
+        epoched_data = pd.concat([epoched_data, tmp])
     epoched_data = epoched_data.loc[:,~epoched_data.columns.duplicated()]
     return(epoched_data)
  
@@ -123,8 +114,8 @@ def calc_3d_angle_points(x_0, y_0, x_1, y_1):
     # calculate the spherical angle between 2 points
     # We add pi/2 so that (0°,0°,1), and (0°,90°,1) have a distance of 90° instead of 0. (we take the "y" axis as the "0°,0°")
     #
-    vec1 = helper.sph2cart(x_0/360*2*pi + pi/2, y_0/360*2*pi + pi/2)
-    vec2 = helper.sph2cart(x_1/360*2*pi + pi/2, y_1/360*2*pi + pi/2)
+    vec1 = et_helper.sph2cart(x_0/360*2*pi + pi/2, y_0/360*2*pi + pi/2)
+    vec2 = et_helper.sph2cart(x_1/360*2*pi + pi/2, y_1/360*2*pi + pi/2)
     
     # pupillabs : precision = np.sqrt(np.mean(np.rad2deg(np.arccos(succesive_distances.clip(-1., 1.))) ** 2))
     cosdistance = np.dot(vec1,vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
@@ -134,18 +125,18 @@ def calc_3d_angle_points(x_0, y_0, x_1, y_1):
     return angle
 
 
-def make_large_grid_df(merged_events):
+def make_grid_df(merged_events):
     # Input:    merged_events have info from msgs df AND event df
     #           (see add_msg_to_event in et_helper)
     
     # only large grid condition
-    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration', 'peak_velocity','start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy','sd_raw','rms_raw']]#'sd_raw','mean_gx_raw','rms_raw','mean_gy_raw'
     # use the last exp_event fixation as element 50
-    stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
-    large_grid_events.loc[stopevents.index] = stopevents
-    
+    #stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
+    #large_grid_events.loc[stopevents.index] = stopevents
+    large_grid_events = large_grid_events.query("element!=50")
     # only last fixation before new element
-    large_grid_df = helper.only_last_fix(large_grid_events, next_stim = ['block', 'element'])
+    large_grid_df = et_helper.only_last_fix(large_grid_events, next_stim = ['grid_size','block', 'element'])
     
     # Accuracy
     # use absolute value of difference in angle (horizontal)
@@ -162,10 +153,10 @@ def make_large_grid_df(merged_events):
 
 def make_condition(merged_events,condition=None):
     
-    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy']]
+    large_grid_events = merged_events.query('condition == "GRID"').loc[:,['sd','type', 'end_time', 'mean_gx','duration','peak_velocity', 'start_time', 'rms', 'mean_gy', 'block', 'condition', 'element', 'exp_event', 'grid_size', 'msg_time', 'posx', 'posy','rms_raw','sd_raw']]
     # use the last exp_event fixation as element 50
-    stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
-    large_grid_events.loc[stopevents.index] = stopevents
+    #stopevents = large_grid_events.query('exp_event=="stop"').assign(element=50.,grid_size=49.,posx=0,posy=0,exp_event='element')
+    #large_grid_events.loc[stopevents.index] = stopevents
     
     
     if condition == "LARGE_GRID":
@@ -190,7 +181,7 @@ def make_condition(merged_events,condition=None):
     
         
     #print(out_df)        
-    out_df = helper.only_last_fix(out_df, next_stim = ['condition','block', 'element'])
+    out_df = et_helper.only_last_fix(out_df, next_stim = ['condition','block', 'element'])
     
     # use absolute value of difference in angle (horizontal)
     out_df['hori_accuracy'] = out_df.apply(calc_horizontal_accuracy, axis=1)
@@ -227,7 +218,7 @@ def make_all_elements_grid_df(merged_events):
    
     
     # only last fixation before new element
-    all_elements_df = helper.only_last_fix(all_elements_df, next_stim = ['condition', 'block', 'element'])
+    all_elements_df = et_helper.only_last_fix(all_elements_df, next_stim = ['condition', 'block', 'element'])
 
     
     # Accuracy
@@ -251,14 +242,14 @@ def make_freeview_df(merged_freeview_events):
     
     
     # select only relevant columns
-    all_freeview_events = merged_freeview_events.loc[:,['msg_time', 'condition', 'exp_event', 'block', 'trial', 'pic_id', 'type', 'start_time', 'end_time','duration', 'mean_gx','sd', 'mean_gy', 'rms']]
+    all_freeview_events = merged_freeview_events.loc[:,['msg_time', 'condition', 'exp_event', 'amplitude','block', 'trial', 'pic_id', 'type', 'start_time', 'end_time','duration', 'peak_velocity','mean_gx','sd', 'mean_gy', 'rms']]
     
-    # select only fixations while picture was presented
-    freeview_fixations_df = all_freeview_events.query("type == 'fixation' & exp_event == 'trial'")
+    # select only events while picture was presented
+    freeview_df = all_freeview_events.query("exp_event == 'trial'")
     
     # count how many fixations per trail   in seperate dataframe
-    fix_count_df = freeview_fixations_df.groupby(['pic_id']).size().reset_index(name='fix_counts')
+    fix_count_df = freeview_df.query("type == 'fixation'").groupby(['pic_id']).size().reset_index(name='fix_counts')
     
     
-    return freeview_fixations_df, fix_count_df
+    return freeview_df, fix_count_df
 

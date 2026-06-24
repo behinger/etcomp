@@ -24,12 +24,15 @@ def plot_duration(beep,option=''):
     if option == '':
         pl = pl+\
         geom_jitter(width=0.2,height=0,alpha=0.8, color='lightblue')+\
-        stat_summary(fun_data=winmean_cl_boot,data=beep.groupby(["subject","et"],as_index=False).agg({"duration":winmean}))+ggtitle('Median Blink Duration per block, subjectwise mean + subjectwise 95%CI')
+        labs(x = "Eye Trackers", y = "Log10(Blink duration [ms])") +\
+        stat_summary(fun_data=winmean_cl_boot,data=beep.groupby(["subject","et"],as_index=False).agg({"duration":winmean}))+ggtitle('Median Blink Duration per Block')#, subjectwise mean + subjectwise 95%CI') 
     
     if option == 'facet_subjects':
-        pl = ggplot(beep,aes(x="block",y="duration",fill="et",color="et"))+geom_point(position=position_dodge(width=0.2))+facet_wrap("~subject")
+        pl = ggplot(beep,aes(x="block",y="duration",fill="et",color="et"))
+        +geom_point(position=position_dodge(width=0.2))
+        +facet_wrap("~subject")
         
-    pl = pl+expand_limits(y=0)
+    pl = pl+expand_limits(y=0) + scale_y_log10() + theme(plot_margin_top=0.05)
 
     
     MISC.print_results(beep, fields = ['duration'], agg_first_over_blocks=True, round_to=3)
@@ -47,14 +50,15 @@ def plot_count(beep,option=''):
     if option == '':
             pl = ggplot(beep,aes(x="et",y="n_blinks"))+\
         geom_jitter(width=0.2,height=0,alpha=0.8, color='lightblue')+\
-                stat_summary(fun_data=winmean_cl_boot,data=beep.groupby(["subject","et"],as_index=False).agg({"n_blinks":winmean}))+ggtitle('Mean number of blinks per block, subjectwise mean + subjectwise 95%CI')
+        labs(x = "Eye Trackers", y = "Numer of blinks") +\
+                stat_summary(fun_data=winmean_cl_boot,data=beep.groupby(["subject","et"],as_index=False).agg({"n_blinks":winmean}))+ggtitle('Mean Number of Blinks per Block') #, subjectwise mean + subjectwise 95%CI')
     
     if option == 'facet_subjects':
             pl = ggplot(beep,aes(x="block",y="n_blinks",color="et"))+\
                 geom_jitter(position=position_dodge(width=0.2))+\
                 facet_wrap("~subject")
     
-    pl = pl+expand_limits(y=0)+scale_y_continuous(breaks=[1,3,5,7,9])
+    pl = pl+expand_limits(y=0)+scale_y_continuous(breaks=[1,3,5,7,9,11,13,15,17,19,21,23]) + theme(plot_margin_top=0.05)
     
     # print stat results
     MISC.print_results(beep, fields = ['n_blinks'], agg_first_over_blocks=False, round_to=1)

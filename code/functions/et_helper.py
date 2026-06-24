@@ -1,21 +1,673 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import math
-import os
-import numpy as np
-from numpy import pi,cos,sin
-
-import pandas as pd
-
-import logging
-
 from plotnine import *
-
-
-from scipy.stats.mstats import winsorize
 from plotnine.stats.stat_summary import bootstrap_statistics
+from scipy.stats.mstats import winsorize
+import logging
+import math
+import numpy as np
+import os
+import pandas as pd
+import re
+import scipy
+import sys
 
+
+def add_events_to_samples(etsamples, etevents):
+    """
+    Adds event types from an events DataFrame to a samples DataFrame. For each unique event type
+    in 'etevents', this function calls the 'append_eventtype_to_sample' function.
+    Additionally, it adds a blink index to the samples DataFrame.
+
+    Parameters:
+        etsamples (pd.DataFrame): A DataFrame containing eyetracking samples.
+        etevents (pd.DataFrame): A DataFrame containing eyetracking events.
+
+    Returns:
+        etsamples (pd.DataFrame): A modified samples DataFrame with event types added to samples 
+        and a 'blink_id' column added.
+    """
+    logger = logging.getLogger(__name__)
+
+    logger.info(etevents.type.unique())
+    for evt in etevents.type.unique():
+        etsamples = append_eventtype_to_sample(etsamples, etevents, eventtype=evt)
+
+        if evt == 'blink':
+            # counts up the blink_id
+            # Pure Magic
+            etsamples.loc[:,'blink_id'] = (1*(etsamples['type']=='blink')) * ((1*(etsamples['type']=='blink')).diff()==1).cumsum()
+
+    return(etsamples)
+
+
+def append_eventtype_to_sample(etsamples, etevents, eventtype, timemargin=None):
+    """
+    Append the specified event type to samples in the etsamples DataFrame.
+    based on the event timings provided in the etevents DataFrame.
+
+    Parameters:
+        etsamples (pd.DataFrame): DataFrame containing eye-tracking samples.
+        etevents (pd.DataFrame): DataFrame containing eye-tracking events.
+        eventtype (str): Type of event to append to samples.
+        timemargin (list, optional): Time margin to consider around events (default None).
+
+    Returns:
+        etsamples (pd.DataFrame): Modified DataFrame with event type appended.
+    """
+
+    # get a logger
+    logger = logging.getLogger(__name__)
+
+    logger.debug('Appending eventtype: %s to samples', eventtype)
+
+    if timemargin is None:
+        if eventtype == 'blink':
+            logger.info('Taking Default value for timemargin (blink = -0.1s/0.1s)')
+            timemargin = [-.1, .1]
+        else:
+            logger.info('Taking Default value for timemargin (fix/saccade = 0s)')
+            timemargin = [0, 0]
+
+    # get index of the rows that have that eventtype
+    ix_event = etevents['type'] == eventtype
+
+    # get list of start and end indeces in the etsamples df
+    eventstart = etevents.loc[ix_event, 'start_time'] + float(timemargin[0])
+    eventend = etevents.loc[ix_event, 'end_time'] + float(timemargin[1])
+
+    flat_ranges = eventtime_to_sampletime(etsamples, eventstart, eventend)
+
+    # all etsamples with ix in ranges, will have the eventtype in the column type
+    if len(flat_ranges) > 0:
+        # Convert 'type' column to object type (string) if not already
+        if etsamples['type'].dtype != 'object':
+            etsamples['type'] = etsamples['type'].astype('object')
+        etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
+
+    return etsamples
+
+
+def check_directory(directory):
+    """
+    Check whether a directory exists.
+
+    Parameters:
+        directory (str): The directory to check for existence.
+
+    Raises:
+        FileNotFoundError: If the directory does not exist.
+
+    Returns:
+        None
+    """
+    if not os.path.isdir(directory):
+        raise FileNotFoundError(f"The directory '{directory}' does not exist.")
+
+
+def drop_eye(subject, participant_info, samples, events=None):
+    """
+    Filters data for the dominant eye from a dataframe (e.g. a sample report) based on a participant reference dataframe.
+    
+    Parameters:
+        samples (pd.DataFrame): The samples DataFrame from which COLUMNS will be removed.
+        events (pd.DataFrame): An optional events DataFrame from which ROWS will be removed.
+        subject (str): A string containing the subject ID.
+        participant_info (pd.DataFrame): The DataFrame containing the dominant eye information ('Rechts' for right, 'Links' for left).
+    Returns:
+        samples (pd.DataFrame): The modified DataFrame where non-dominant eye columns are removed and the remaining gaze-related columns are renamed.
+
+    """
+    logger = logging.getLogger(__name__)
+
+    eye = participant_info.loc[participant_info['ID'] == subject, 'DominantEye'].iloc[0]
+    if eye == 'Rechts':
+        logger.warning('Selecting the right eye.')
+        # Samples right
+        drop_columns = samples.filter(like='_left', axis=1)
+        samples = samples.drop(columns = drop_columns)
+        samples.rename(columns={'gx_right': 'gx', 
+                                  'gy_right': 'gy',
+                                  'gxvel_right': 'gxvel',
+                                  'gyvel_right': 'gyvel',
+                                  'pa_right': 'pa',
+                                  'px_right': 'px',
+                                  'py_right': 'py',
+                                  'hx_right': 'hx',
+                                  'hy_right': 'hy',
+                                  'hxvel_right': 'hxvel',
+                                  'hyvel_right': 'hyvel',
+                                  'rxvel_right': 'rxvel',
+                                  'ryvel_right': 'ryvel'}, 
+                         inplace=True)
+        if 'b_right' not in samples.columns:
+            logger.warning("DataFrame does not have the 'b_right' column. This is only a problem if you are processing TrackPixx data.")
+        else:
+            samples.rename(columns={'b_right': 'blink'}, inplace=True)
+
+        # Events right
+        if events is not None:
+            events = events.loc[events['eye'] == 1]
+
+    elif eye == 'Links':
+        # Samples left
+        logger.warning('Selecting the left eye.')
+        drop_columns = samples.filter(like='_right', axis=1)
+        samples = samples.drop(columns = drop_columns)
+        samples.rename(columns={'gx_left': 'gx', 
+                                  'gy_left': 'gy',
+                                  'gxvel_left': 'gxvel',
+                                  'gyvel_left': 'gyvel',
+                                  'pa_left': 'pa',
+                                  'px_left': 'px',
+                                  'py_left': 'py',
+                                  'hx_left': 'hx',
+                                  'hy_left': 'hy',
+                                  'hxvel_left': 'hxvel',
+                                  'hyvel_left': 'hyvel',
+                                  'rxvel_left': 'rxvel',
+                                  'ryvel_left': 'ryvel'}, 
+                         inplace=True)
+        if 'b_left' not in samples.columns:
+            logger.warning("DataFrame does not have the 'b_left' column. This is only a problem if you are processing TrackPixx data.")
+        else:
+            samples.rename(columns={'b_left': 'blink'}, inplace=True)
+
+        # Events left
+        if events is not None:
+            events = events.loc[events['eye'] == 0]
+    
+    else:
+        logger.error("Unknown eye '%s' for subject ID: %s", eye, subject)
+        
+    return samples, events
+
+
+def eventtime_to_sampletime(etsamples, eventstart, eventend):
+    """
+    Converts event time indices to corresponding sample time indices in a samples DataFrame.
+
+    Parameters:
+        etsamples (pd.DataFrame): A samples DataFrame
+        eventstart (pd.Series): A series containing start times of events.
+        eventend (pd.Series): A series containing end times of events.
+
+    Returns:
+        flat_ranges(np.array): An array containing sample time indices corresponding to the event time indices.
+    """
+    # due to timemargin strange effects can occur and we need to clip
+    mintime = etsamples.smpl_time.iloc[0]
+    maxtime = etsamples.smpl_time.iloc[-1]
+    eventstart.loc[eventstart < mintime] = mintime
+    eventstart.loc[eventstart > maxtime] = maxtime
+    eventend.loc[eventend < mintime] = mintime
+    eventend.loc[eventend > maxtime] = maxtime
+    
+    if len(eventstart)!=len(eventend):
+        raise error
+        
+    startix = np.searchsorted(etsamples.smpl_time, eventstart)
+    endix = np.searchsorted(etsamples.smpl_time, eventend)
+
+    # make a list of ranges to have all indices in between the startix and endix
+    ranges = [list(range(s, e)) for s, e in zip(startix, endix)]
+    flat_ranges = [item for sublist in ranges for item in sublist]
+      
+    flat_ranges = np.intersect1d(flat_ranges, range(etsamples.shape[0]))
+    return(flat_ranges)
+
+
+def findFile(path, ftype):
+    """
+    Finds files of a specific type in a directory. Used primarily for finding Eyelink EDF files.
+
+    Parameters:
+        path (str): Directory path to search for files.
+        ftype (str): File type to search for.
+
+    Returns:
+        list: List of file names with the specified file type.
+    """ 
+    out = [edf for edf in os.listdir(path) if edf.endswith(ftype)]
+    return(out)
+
+
+def make_lines(df, column_name='top_left_y'):
+    """
+    This function adds line information for the reading task. 
+    The text read in this task was split into lines of up to 11 lines per display.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame to be processed.
+        column_name (str): The name of the column containing values to be used for grouping.
+    Returns:
+        new_df (pd.DataFrame): A DataFrame with a new 'group' column containing group numbers.
+    """
+    lines = {
+        1: (100, 105),
+        2: (187, 192),
+        3: (274, 286),
+        4: (361, 366),
+        5: (448, 453),
+        6: (535, 540),
+        7: (622, 627),
+        8: (707, 714),
+        9: (796, 801),
+        10: (883, 888),
+        11: (970, 975)
+    }
+    new_df = df.copy()
+    new_df['line'] = None
+    for group_num, value_range in lines.items():
+        new_df.loc[new_df[column_name].between(value_range[0], value_range[1]), 'line'] = group_num
+    return new_df
+
+
+def regress_eyetracker(etsamples, etevents, etmsgs, subject):
+    """
+    Regresses EyeLink (el) and TrackPixx (tpx) timestamps to align them based on subject and eye tracker type.
+
+    Parameters:
+        etsamples (pd.DataFrame): DataFrame containing eyetracker samples.
+        etevents (pd.DataFrame): DataFrame containing eyetracker events.
+        etmsgs (pd.DataFrame): DataFrame containing eyetracker messages.
+        subject (str): Subject identifier.
+
+    Returns:
+        tuple: A tuple containing updated versions of etsamples, etmsgs, and etevents DataFrames.
+    """
+    logger = logging.getLogger(__name__)
+    
+    # Remove NaNs
+    etmsgs_regress = etmsgs[etmsgs.exp_event.notnull()]
+
+    # Select the right eyetracker and subject
+    etmsgs_regress_el = etmsgs_regress.query("subject==@subject&eyetracker=='el'&condition!='Connect'")
+    y = etmsgs_regress_el.msg_time.values
+
+  
+    for et in etmsgs_regress.eyetracker.unique():
+        if et =="el":
+            # already regressed against itself
+            continue
+        etmsgs_regress_target = etmsgs_regress.query("subject==@subject&eyetracker==@et&condition!='Connect'")
+
+        ix_m = (etmsgs.eyetracker==et)    & (etmsgs.subject==subject)
+        ix_e = (etevents.eyetracker==et)  & (etevents.subject==subject)
+        ix_s = (etsamples.eyetracker==et) & (etsamples.subject==subject)
+
+
+        x = etmsgs_regress_target.msg_time.values
+
+        assert len(x)==len(y),f'Error: The number of messages in EyeLink does not match the number of messages in {et}.'
+
+        slope, intercept, low, high = scipy.stats.theilslopes(y, x)
+        logger.warning('Regressing subject ID %s. Slope: %.10f, intercept: %.10f', subject, slope, intercept)
+
+        # Transform TrackPixx timestamps
+        etmsgs.loc[ix_m, 'msg_time']     = etmsgs.loc[ix_m, 'msg_time'].values     *slope + intercept
+        etsamples.loc[ix_s, 'smpl_time'] = etsamples.loc[ix_s, 'smpl_time'].values *slope + intercept
+        etevents.loc[ix_e, 'start_time'] = etevents.loc[ix_e, 'start_time'].values *slope + intercept
+        etevents.loc[ix_e, 'end_time']   = etevents.loc[ix_e, 'end_time'].values   *slope + intercept
+    # we do not recalculate durations & velocity because the local change is so small (~0.1ms / 1s)
+    # TODO do we keep this or do we change it?
+    return(etsamples, etevents, etmsgs)
+
+
+def regress_all_subjects(etsamples, etevents, etmsgs):
+    """
+    FIXME this is now probably obsolete.
+    Process eyetracker data for multiple subjects.
+
+    Parameters:
+        etsamples (pd.DataFrame): DataFrame containing eyetracker samples.
+        etevents (pd.DataFrame): DataFrame containing eyetracker events.
+        etmsgs (pd.DataFrame): DataFrame containing eyetracker messages.
+
+    Returns: A tuple containing modified etsamples, etevents, and etmsgs for all subjects.
+    """
+    regressed_etsamples = pd.DataFrame()
+    regressed_etevents = pd.DataFrame()
+    regressed_etmsgs = pd.DataFrame()
+    subjects = etsamples['subject'].unique()
+    
+    for subject in subjects:
+        logger = logging.getLogger(__name__)
+        logger.info('Regressing timestamps for subject: %s', subject)
+        etsamples, etevents, etmsgs = regress_eyetracker(etsamples, etevents, etmsgs, subject)
+        
+        regressed_etsamples = pd.concat([regressed_etsamples, etsamples], ignore_index=True)
+        regressed_etevents = pd.concat([regressed_etevents, etevents], ignore_index=True)
+        regressed_etmsgs = pd.concat([regressed_etmsgs, etmsgs], ignore_index=True)
+    
+    return regressed_etsamples, regressed_etevents, regressed_etmsgs
+
+
+def save_file(data, et, datapath, outputprefix=''):
+    """
+    This function saves data from the a list of pandas DataFrames into separate CSV files with an optional output prefix. 
+    It constructs filenames based on the provided event timestamp (et) and subject identifier (subject). 
+    The CSV files are stored in the specified datapath directory. If the directory doesn't exist, it creates it.
+
+    Parameters:
+        data (list of pd.DataFrame): A list containing pandas DataFrames to be saved as CSV files.
+        et (str): Eyetracker identifier used as part of the filename.
+        datapath (str): Path to the directory where files will be saved.
+        outputprefix (str, optional): Prefix to be added to the filenames (default is none).
+    
+    Returns: None
+    """
+    # Define a filepath for the preprocessed folder. Create a new folder if there is none.
+    preprocessed_directory = os.path.join(os.path.dirname(datapath), 'preprocessed')
+
+    if not os.path.exists(preprocessed_directory):
+        os.makedirs(preprocessed_directory)
+
+    # Save data as CSV
+    prefix = outputprefix+et
+    filename_samples = str(prefix) + '_samples.csv'
+    filename_cleaned_samples = str(prefix) + '_cleaned_samples.csv'
+    filename_msgs = str(prefix)  + '_msgs.csv'
+    filename_events = str(prefix)  + '_events.csv'
+    ## make separate csv file for every df 
+    data[0].to_csv(os.path.join(preprocessed_directory, filename_samples), index=False)
+    data[1].to_csv(os.path.join(preprocessed_directory, filename_cleaned_samples), index=False)
+    data[2].to_csv(os.path.join(preprocessed_directory, filename_msgs), index=False)
+    data[3].to_csv(os.path.join(preprocessed_directory, filename_events), index=False)
+
+
+def diameter_to_area(data, x_col='LeftPupilDiameter', y_col='RightPupilDiameter'):
+    """
+    Calculates the area of the pupil based on the pupil diameter. The latter is the output from TrackPixx.
+    If the dataframe does not have x_col and y_col, then nothing happens.
+    """
+    logger = logging.getLogger(__name__)
+
+    if x_col not in data.columns or y_col not in data.columns:
+        logger.warning(f"Columns '{x_col}' and/or '{y_col}' do not exist in the DataFrame.")
+        return data
+
+    calculate_area = lambda d: np.pi * (d / 2) ** 2
+    data['pa_left'] = data[x_col].apply(calculate_area)
+    data['pa_right'] = data[y_col].apply(calculate_area)
+
+    return data
+
+
+def winmean(x, perc = 0.2, axis=0,drop_nan=False):
+    """
+    Calculates the 20% Winsorized mean along the specified axis.
+
+    Note: drop_nan is only compatible with one dimension arrays!!
+
+    Parameters:
+        x (array): Input data.
+        perc (float, optional): The proportion of data to be Winsorized from each end of the distribution.
+        axis (int, optional): Axis along which to compute the Winsorized mean. Default is 0.
+
+    Returns:
+        numpy.ndarray: Winsorized mean of the input array along the specified axis.
+    """
+    if drop_nan == True:
+        x_na = x[~np.isnan(x)]
+        if len(x_na) == 0:
+            return np.nan
+        return(np.mean(winsorize(x_na, perc, axis=axis), axis=axis))
+    else:
+        return np.mean(winsorize(x, perc, axis=axis), axis=axis)
+
+
+def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95, random_state=None):
+    """
+    Compute a bootstrapped confidence interval for the windowed mean of a time series. 
+    This function calculates a confidence interval for the windowed mean of a given time series
+    using the bootstrap resampling method.
+    This function internally calls the `bootstrap_statistics` function with the appropriate
+    parameters, where the `winmean` function computes the windowed mean.
+    The windowed mean is computed for overlapping windows across the time series.
+    Increasing the number of bootstrap samples (`n_samples`) generally leads to more accurate
+    confidence intervals, but it also increases computation time.
+
+    Args:
+    - series (pd.Series or array-like): The input time series data.
+    - n_samples (int, optional): The number of bootstrap samples to generate. 
+    - confidence_interval (float, optional): The desired confidence level for the interval,
+      between 0 and 1. Default is 0.95 (95% confidence interval).
+    - random_state: Random seed, see plotnine
+
+    Returns: A tuple containing two elements:
+        1. The lower bound of the confidence interval for the windowed mean.
+        2. The upper bound of the confidence interval for the windowed mean.
+    """
+    b = bootstrap_statistics(series, winmean,
+                                n_samples=n_samples,
+                                confidence_interval=confidence_interval,
+                                random_state=random_state)
+    print(b)
+    return b
+
+def tic():
+    # Records a time in TicToc, marks the beginning of a time interval
+    toc(False)
+
+
+def add_msg_to_event(etevents, etmsgs, timefield='start_time', direction='backward'):
+    """
+    Combines event DataFrame with message DataFrame.
+
+    Parameters:
+        etevents (pd.DataFrame): DataFrame containing events.
+        etmsgs (pd.DataFrame): DataFrame containing messages.
+        timefield (str, optional): Field representing time in event DataFrame (default is 'start_time').
+        direction (str, optional): Direction of merging based on timefield (default is 'backward', other options: 'forward', or 'nearest').
+
+    Returns:
+        merged_etevents (pd.DataFrame): Merged DataFrame with events and messages.
+    """
+    etevents = etevents.sort_values(timefield)
+    etmsgs   = etmsgs.sort_values('msg_time')
+    merged_etevents = pd.merge_asof(etevents, etmsgs, left_on=timefield, right_on='msg_time', direction=direction)
+    
+    return merged_etevents
+
+
+def select_data_by_task(task,et_msgs_tmp,et_raw_data_tmp,et_events_tmp):
+    
+    # Create copies such that the original data frames are not changed by the function
+    et_msgs = et_msgs_tmp.copy()
+    et_raw_data = et_raw_data_tmp.copy()
+    et_events = et_events_tmp.copy()
+
+    # Select start and end points for the GRID condition for all blocks
+    et_grid = et_msgs.query("condition == '{}' & (exp_event=='start' | exp_event=='stop')".format(task))
+    
+    # Introduce a block column in the raw data and event data frames
+    # Note that 0 will be replaced with the actual block number later
+    et_raw_data['block'] = 0
+    et_events['block'] = 0
+
+    # Iterate over all experimental blocks
+    for block in et_grid.block.unique():
+        for sub in et_grid.subject.unique():
+            # Extract the respective start and end point of the GRID condition for this particular block
+            et_start = et_grid.query("block == @block & subject == @sub").msg_time.iloc[0]
+            et_end  = et_grid.query("block == @block& subject == @sub").msg_time.iloc[1]
+
+            # Find the indices of the rows of the raw data df which are within the time window defined above
+            # i.e. which are part of the GRID condition
+            ix = np.logical_and(et_raw_data.smpl_time>=et_start, et_raw_data.smpl_time<=et_end)
+            # For those rows, replace 0 with the actual block number
+            et_raw_data.loc[ix,"block"] = block
+            
+            # Repeat the same steps for the events df
+            ix = np.logical_and(et_events.start_time>=et_start,et_events.end_time<=et_end)
+            et_events.loc[ix,"block"] = block
+
+    # return a subset of the data frames for which we added a block number i.e. which are part of the GRID condition
+    return et_raw_data.query("block != 0"), et_events.query("block !=0")
+
+
+def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True,y = 'gx'):
+    """
+    Plots the eye-tracking samples, messages, and events around a single event or message.
+
+    Parameters:
+        etsamples (pd.DataFrame): A DataFrame containing the eye-tracking samples.
+        etmsgs (pd.DataFrame): A DataFrame containing the eye-tracking messages.
+        etevents (pd.DataFrame): A DataFrame containing the eye-tracking events.
+        single_eventormsg (pd.Series): A Series representing a single event or message.
+        plusminus (tuple, optional): A tuple of two integers representing the time range (in seconds) around the event or message to plot. Default is (-1, 1).
+        bothET (bool, optional): If True, plots data from both eye-trackers. If False, plots data only from the eye-tracker specified in the `single_eventormsg` Series. Default is True.
+        plotevents (bool, optional): If True, plots the eye-tracking events. If False, does not plot the events. Default is True.
+
+    Returns:
+        ggplot: A ggplot object representing the plot.
+
+    Raises:
+    AssertionError: If `single_eventormsg` is not a pandas.Series.
+
+    Notes:
+    - The function first determines whether the `single_eventormsg` is an event or a message based on the available attributes.
+    - It then constructs a query to filter the eye-tracking samples, messages, and events based on the time range and (optionally) the subject and eye-tracker.
+    - For the eye-tracking messages, it creates a "label" column by formatting the "exp_event" column as a string.
+    - The function then creates a ggplot object with the following layers:
+        - Scatter plot of the eye-tracking samples, colored and shaped by type and eye-tracker.
+        - Text labels for the eye-tracking messages, positioned using `position_jitter()`.
+        - Vertical lines for the eye-tracking messages.
+        - (Optional) Segments for the eye-tracking events.
+        - (Conditional) Annotations for the event or message, depending on its type.
+    """
+        
+    assert(type(single_eventormsg)==pd.Series)
+
+    try:
+        t0 = single_eventormsg.start_time
+        eventtype = 'event'
+    except:
+        t0 = single_eventormsg.msg_time
+        eventtype = 'msg'
+    
+    tstart = t0 + plusminus[0]
+    tend = t0 + plusminus[1]
+    query = '1==1'
+    if ("subject" in etsamples.columns) & ("subject" in single_eventormsg.index):
+        query = query+"& subject == @single_eventormsg.subject"
+    if not bothET:
+        query = query+"& eyetracker==@single_eventormsg.eyetracker"
+    samples_query   = "smpl_time>=@tstart & smpl_time   <=@tend & "+query
+    msg_query       = "msg_time >=@tstart & msg_time    <=@tend & "+query
+    event_query     = "end_time >=@tstart & start_time  <=@tend & "+query
+    etmsgs = etmsgs.query(msg_query)
+    longstring = etmsgs.to_string(columns=['exp_event'],na_rep='',float_format='%.1f',index=False,header=False,col_space=0)
+    longstring = re.sub(' +',' ',longstring)
+    splitstring = longstring.split(sep="\n")
+    if len(splitstring) == etmsgs.shape[0]-1:
+        # last element was a Nan blank and got removed
+        splitstring.append(' ')   
+    etmsgs.loc[:,'label'] = splitstring
+
+
+    p = (ggplot()
+     + geom_point(aes(x='smpl_time',y=y,color='type'),data=etsamples.query(samples_query),size=1) # samples
+    # + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
+    # + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
+    )
+         
+    if etevents.query(event_query).shape[0]>0:
+        pass
+    if plotevents:
+        p = p + geom_segment(aes(x="start_time",y=0,xend="end_time",yend=0,color='type'),alpha=0.5,size=2,data=etevents.query(event_query))
+    #if eventtype == 'event':
+      #  p = (p   + annotate("line",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black')
+      #           + annotate("point",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black'))
+#    if eventtype=='msg':
+#        if single_eventormsg.condition == 'GRID':
+#            p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)
+#                   + geom_hline(yintercept=single_eventormsg.posx))
+ 
+    return(p)
+
+agg_catcont = lambda aggfun: lambda x: x.iat[0] if ((x.dtype.name=="object") | (x.dtype.name=="category")) else aggfun(x) 
+
+
+def difference_function(x):
+    """
+    Calculates the difference between the last two elements of a 1D NumPy array.
+    """
+    if x.shape[0] == 1:
+        return np.nan
+    else:
+        return np.diff(x)[-1]
+    
+
+def debug_mode(debugging = False):
+    """
+    A function for setting the logger to a debugging mode or regular warning level.
+    """
+    logger = logging.getLogger()
+    if debugging is True:
+        [h.close() for h in logger.handlers]
+        [logger.removeHandler(h) for h in logger.handlers]
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        logging_cons = logging.StreamHandler(sys.stdout)
+        logging_cons.setLevel(logging.DEBUG)
+        formatter = logging.Formatter("%(asctime)s - %(name)-65s - %(levelname)-8s - %(message)s", "%Y-%m-%d %H:%M:%S")
+        logging_cons.setFormatter(formatter)
+        logger.addHandler(logging_cons)
+        logger.warning("Debugging is on. You will see more messages. To turn it off, set `debug_mode(False)`.")
+    else:
+        [h.close() for h in logger.handlers]
+        [logger.removeHandler(h) for h in logger.handlers]
+        logger = logging.getLogger()
+        logger.setLevel(logging.WARNING)
+        logger.warning("Debugging is off. You will see fewer messages. To turn it on, set `debug_mode(True)`.")
+
+
+#%% everything related to VISUAL DEGREES
+
+def size_px2deg(px, mm_per_px=0.275,distance=610):
+    """
+    function to get the picture size of the freeviewing task
+    from pixels into visual angle
+    """
+          
+    deg = 2*np.arctan2(px/2*mm_per_px,distance)*180/np.pi
+
+    return deg
+
+
+def px2deg(px, orientation, mm_per_px=0.275,distance=610):
+    # VD
+    # "gx_px - gx_px-midpoint"
+    # subtract center of our BENQ
+
+    if orientation == 'horizontal':
+        center_x = 1920 / 2
+        px       = px - center_x
+    
+    elif orientation == 'vertical':
+        center_y = 1080 / 2
+        px       = px - center_y
+    else:
+        raise('unknown option')
+    deg = np.arctan2(px*mm_per_px,distance)*180/np.pi
+
+    return deg
+
+
+def load_processed_subject(datapath,sub):
+    etsamples = pd.read_parquet(datapath+'/results/sub-{:03d}_etsamples.parquet'.format(sub))
+    etmsgs = pd.read_csv(datapath+'/results/sub-{:03d}_etmsgs.csv'.format(sub))
+    etevents = pd.read_csv(datapath+'/results/sub-{:03d}_etevents.csv'.format(sub))
+    return etsamples,etmsgs,etevents
+
+######################################################################
+#                                                                    #
+#  FUNCTIONS THAT MAY BE REDUNDANT                                   #
+#                                                                    #
+######################################################################
 
 #%% put PUPIL LABS data into PANDAS DF
 
@@ -64,92 +716,6 @@ def convert_diam_to_pa(axes1, axes2):
     return math.pi * float(axes1) * float(axes2) * 0.25
 
 
-#%% adding information to dfs
-
-def add_msg_to_event(etevents,etmsgs,timefield = 'start_time', direction='backward'):
-    # combine the event df with the msg df          
-    etevents = etevents.sort_values('start_time')
-    etmsgs   = etmsgs.sort_values('msg_time')
-    # make a merge on the msg time and the start time of the events
-    merged_etevents = pd.merge_asof(etevents,etmsgs,left_on='start_time',right_on='msg_time',direction=direction)
-    
-    return merged_etevents
-    
-
-                
-def add_events_to_samples(etsamples, etevents):
-    # Calls append_eventtype_to_sample for each event
-    # Also adds blink_id
-    logger = logging.getLogger(__name__)
-
-    logger.info(etevents.type.unique())
-    for evt in etevents.type.unique():
-        etsamples = append_eventtype_to_sample(etsamples,etevents,eventtype=evt)
-        
-        # add blink id
-        if evt == 'blink':
-            # counts up the blink_id
-            # Pure Magic
-            etsamples.loc[:,'blink_id'] = (1*(etsamples['type']=='blink')) * ((1*(etsamples['type']=='blink')).diff()==1).cumsum()
-    
-    return(etsamples)
-        
-        
-    
-def append_eventtype_to_sample(etsamples,etevents,eventtype,timemargin=None):
-    # get a logger
-    logger = logging.getLogger(__name__)
-     
-    logger.debug('Appending eventtype: %s to samples',eventtype)
-    if timemargin is None:
-        
-        if eventtype== 'blink':
-            logger.info('Taking Default value for timemargin (blink = -0.1s/0.1s)')
-            timemargin = [-.1,.1]
-        else:
-            logger.info('Taking Default value for timemargin (fix/saccade = 0s)')
-            timemargin = [0,0]
-        
-               
-    # get index of the rows that have that eventtype
-    ix_event = etevents['type']==eventtype
-    
-    # get list of start and end indeces in the etsamples df
-    eventstart = etevents.loc[ix_event,'start_time']+float(timemargin[0])
-    eventend = etevents.loc[ix_event,'end_time']+float(timemargin[1])
-    
-    flat_ranges = eventtime_to_sampletime(etsamples,eventstart,eventend)
-    # all etsamples with ix in ranges , will the eventype in the column type
-    if len(flat_ranges) > 0:
-        etsamples.loc[etsamples.index[flat_ranges], 'type'] = eventtype
-        
-
-    return etsamples
-
-def eventtime_to_sampletime(etsamples,eventstart,eventend):
-    # due to timemargin strange effects can occur and we need to clip
-    mintime = etsamples.smpl_time.iloc[0]
-    maxtime = etsamples.smpl_time.iloc[-1]
-    eventstart.loc[eventstart < mintime] = mintime
-    eventstart.loc[eventstart > maxtime] = maxtime
-    eventend.loc[eventend  < mintime] = mintime
-    eventend.loc[eventend  > maxtime] = maxtime
-    
-    if len(eventstart)!=len(eventend):
-        raise error
-        
-    startix = np.searchsorted(etsamples.smpl_time,eventstart)
-    endix = np.searchsorted(etsamples.smpl_time,eventend)
-    
-    
-    #print('%i events of %s found'%(len(startix),eventtype))
-    # make a list of ranges to have all indices in between the startix and endix
-    ranges = [list(range(s,e)) for s,e in zip(startix,endix)]
-    flat_ranges = [item for sublist in ranges for item in sublist]
-    
-    
-    flat_ranges = np.intersect1d(flat_ranges,range(etsamples.shape[0]))
-    return(flat_ranges)
 #%% last fixation (e.g. for large GRID)
 
 def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element']):
@@ -164,8 +730,6 @@ def only_last_fix(merged_etevents, next_stim = ['condition','block', 'element'])
     large_grid_df.reset_index(level= next_stim, inplace=True)
 
     return large_grid_df
-
-
 
 
 #%% function to make groupby easier
@@ -206,9 +770,6 @@ def group_to_level_and_take_mean(raw_condition_df, lowestlevel):
     return grouped_df
 
 
- 
-
-
 #%% set dtypes of dataframe and make the labes ready to get plotted
     
 def set_dtypes(df):
@@ -216,6 +777,7 @@ def set_dtypes(df):
     Set the dtype of the categories, so that plotting is easier and more pretty.
     E.g. set column 'et' from object to categorical
     """        
+    logger = logging.getLogger(__name__)
 
     # make all object variables categorical
     df[df.select_dtypes(['object']).columns] = df.select_dtypes(['object']).apply(lambda x: x.astype('category'))
@@ -227,6 +789,9 @@ def set_dtypes(df):
     for column in categorial_var:
         
         if column in df:
+            logger.debug("processing column"+column)
+            if df[column].dtype.name == 'category':
+                continue
             # fill none values to not have problems with integers
             df[column] = df[column].fillna(-1)
             
@@ -248,61 +813,35 @@ def set_dtypes(df):
 
 def set_to_full_names(df):
     """
-    rename columns and values to their full name
-    e.g. et --> Eye-Tracker
+    This function renames columns and values in a DataFrame to their full names.
+
+    Parameters:
+        df (pd.DataFrame): Input DataFrame with columns to be renamed.
+    Returns:
+        df (pd.DataFrame): DataFrame with columns and values updated to their full names.
     """
-    # TODO maybe more renaming?
-    
-    # maybe dont do this but rather use xaxis relabeling
-    # rename columnnames
-    # df = df.rename(index=str, columns={"et": "Eye-Tracker", "pic_id": "picture id", "fix_count": "number of fixations"})
-    
-    #rename values
-    df.loc[:,'et'] = df['et'].map({'el': 'EyeLink', 'pl': 'Pupil Labs'})
-    
+
+    mapping = {'el': 'EyeLink', 'tpx': 'TrackPixx', 'pl': 'Pupil Labs'}
+
+    # Check if 'et' column is categorical and update categories directly
+    if pd.api.types.is_categorical_dtype(df['et']):
+        df['et'] = df['et'].cat.rename_categories(mapping)
+    else:
+        # Replace abbreviations with full names for the 'et' column
+        df['et'] = df['et'].replace(mapping)
+
     return df
 
 
-#%% everything related to VISUAL DEGREES
-
-def size_px2deg(px, mm_per_px=0.276,distance=600):
-    """
-    function to get the picture size of the freeviewing task
-    from pixels into visual angle
-    """
-          
-    deg = 2*np.arctan2(px/2*mm_per_px,distance)*180/np.pi
-
-    return deg
-
-
-def px2deg(px, orientation, mm_per_px=0.276,distance=600):
-    # VD
-    # "gx_px - gx_px-midpoint"
-    # subtract center of our BENQ
-
-    if orientation == 'horizontal':
-        center_x = 1920 / 2
-        px       = px - center_x
-    
-    elif orientation == 'vertical':
-        center_y = 1080 / 2
-        px       = px - center_y
-    else:
-        raise('unknown option')
-    deg = np.arctan2(px*mm_per_px,distance)*180/np.pi
-
-    return deg
 
 
 
 def sph2cart(theta_sph,phi_sph,rho_sph=1):
-    xyz_sph = np.asarray([rho_sph * sin(theta_sph) * cos(phi_sph), 
-           rho_sph * sin(theta_sph) * sin(phi_sph), 
-           rho_sph * cos(theta_sph)])
+    xyz_sph = np.asarray([rho_sph * np.sin(theta_sph) * np.cos(phi_sph), 
+           rho_sph * np.sin(theta_sph) * np.sin(phi_sph), 
+           rho_sph * np.cos(theta_sph)])
 
     return xyz_sph
-
 
 
 
@@ -332,39 +871,6 @@ def load_file(et,subject,datapath='/net/store/nbp/projects/etcomp/',outputprefix
     return etsamples,etmsgs,etevents
 
 
-
-def save_file(data,et,subject,datapath,outputprefix=''):
-    
-    # filepath for preprocessed folder
-    preprocessed_path = os.path.join(datapath, subject, 'preprocessed')
-    
-    # create new folder if there is none
-    if not os.path.exists(preprocessed_path):
-        os.makedirs(preprocessed_path)
-    
-    et = outputprefix+et
-    # dump data in csv
-    filename_samples = str(et) + '_samples.csv'
-    filename_cleaned_samples = str(et) + '_cleaned_samples.csv'
-    filename_msgs = str(et)  + '_msgs.csv'
-    filename_events = str(et)  + '_events.csv'
-    
-    # make separate csv file for every df 
-    data[0].to_csv(os.path.join(preprocessed_path, filename_samples), index=False)
-    data[1].to_csv(os.path.join(preprocessed_path, filename_cleaned_samples), index=False)
-    data[2].to_csv(os.path.join(preprocessed_path, filename_msgs), index=False)
-    data[3].to_csv(os.path.join(preprocessed_path, filename_events), index=False)
-    
-
-
-
-def findFile(path,ftype):
-    # finds file for el edf
-    out = [edf for edf in os.listdir(path) if edf.endswith(ftype)]
-    return(out)
-    
-    
-    
 def get_subjectnames(datapath='/net/store/nbp/projects/etcomp/'):
     return os.listdir(datapath)
    
@@ -390,76 +896,6 @@ def toc(tempBool=True):
     if tempBool:
         print( "Elapsed time: %f seconds.\n" %tempTimeInterval )
 
-def tic():
-    # Records a time in TicToc, marks the beginning of a time interval
-    toc(False)
-    
-    
-    
-    
-def plot_around_event(etsamples,etmsgs,etevents,single_eventormsg,plusminus=(-1,1),bothET=True,plotevents=True):
-    import re
-    assert(type(single_eventormsg)==pd.Series)
-    try:
-        t0 = single_eventormsg.start_time
-        eventtype = 'event'
-    except:
-        t0 = single_eventormsg.msg_time
-        eventtype = 'msg'
-    
-    tstart = t0 + plusminus[0]
-    tend = t0 + plusminus[1]
-    query = '1==1'
-    if ("subject" in etsamples.columns) & ("subject" in single_eventormsg.index):
-        query = query+"& subject == @single_eventormsg.subject"
-    if not bothET:
-        query = query+"& eyetracker==@single_eventormsg.eyetracker"
-    samples_query   = "smpl_time>=@tstart & smpl_time   <=@tend & "+query
-    msg_query       = "msg_time >=@tstart & msg_time    <=@tend & "+query
-    event_query     = "end_time >=@tstart & start_time  <=@tend & "+query
-    etmsgs = etmsgs.query(msg_query)
-    longstring = etmsgs.to_string(columns=['exp_event'],na_rep='',float_format='%.1f',index=False,header=False,col_space=0)
-    longstring = re.sub(' +',' ',longstring)
-    splitstring = longstring.split(sep="\n")
-    if len(splitstring) == etmsgs.shape[0]-1:
-        # last element was a Nan blank and got removed
-        splitstring.append(' ')   
-    etmsgs.loc[:,'label'] = splitstring
-
-    p = (ggplot()
-     + geom_point(aes(x='smpl_time',y='gx',color='type',shape='eyetracker'),data=etsamples.query(samples_query)) # samples
-     + geom_text(aes(x='msg_time',y=2,label="label"),color='black',position=position_jitter(width=0),data=etmsgs)# label msg/trigger
-     + geom_vline(aes(xintercept='msg_time'),color='black',data=etmsgs) # triggers/msgs
-    )
-         
-    if etevents.query(event_query).shape[0]>0:
-        pass
-    if plotevents:
-        p = p + geom_segment(aes(x="start_time",y=0,xend="end_time",yend=0,color='type'),alpha=0.5,size=2,data=etevents.query(event_query))
-    if eventtype == 'event':
-        p = (p   + annotate("line",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black')
-                 + annotate("point",x=[single_eventormsg.start_time,single_eventormsg.end_time],y=0,color='black'))
-    if eventtype=='msg':
-        if single_eventormsg.condition == 'GRID':
-            p = (p + annotate("text",x=single_eventormsg.end_time,y=single_eventormsg.posx+5,label=single_eventormsg.accuracy)
-                   + geom_hline(yintercept=single_eventormsg.posx))
-    return(p)
-    
- 
- 
-
-
-# define 20% winsorized means 
-
-def winmean(x,perc = 0.2,axis=0):
-    return(np.mean(winsorize(x,perc,axis=axis),axis=axis))
-
-def winmean_cl_boot(series, n_samples=10000, confidence_interval=0.95,
-                 random_state=None):
-    return bootstrap_statistics(series, winmean,
-                                n_samples=n_samples,
-                                confidence_interval=confidence_interval,
-                                random_state=random_state)
 
 def mad(arr):
     """ Median Absolute Deviation: a "Robust" version of standard deviation.

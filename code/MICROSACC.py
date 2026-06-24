@@ -15,24 +15,29 @@ logger = logging.getLogger(__name__)
 
 import MISC
 
-def detect_microsaccades(etsamples,etevents,etmsgs,engbert_lambda=5):
+def detect_microsaccades(etsamples,etevents,etmsgs,preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=13*0.00476,savgol_polyord=3)):
     all_microsaccades = pd.DataFrame()
     
     for subject in etmsgs.subject.unique():
         for eyetracker in etmsgs.eyetracker.unique():
             for block in etmsgs.block.dropna().unique():
-                if block < 1:
+                #print(block)
+                #print(type(block))
+                block = block
+                if block == "block" or int(block) < 1 or int(block)>10:
                     continue
-                print('block:%s,subject%s,eyetracker%s'%(block,subject,eyetracker))
+                print('block:%s,subject:%s,eyetracker:%s'%(block,subject,eyetracker))
                 query = 'subject==@subject&eyetracker==@eyetracker'
                 logger.info(query.format())
 
                 # select the start / end triggers of the microsaccade blocks
 
                 sel_etmsgs = etmsgs.query(query+ "&block==@block&condition=='MICROSACC'&exp_event=='start'")
-                starttime = etmsgs.query(query+"&block==@block&condition=='MICROSACC'&exp_event=='start'").msg_time.values
-                endtime = etmsgs.query(query+"&block==@block&condition=='MICROSACC'&exp_event=='stop'").msg_time.values
-
+                starttime = etmsgs.query(query+"&block==@block&condition=='MICROSACC'&exp_event=='start'").msg_time.values[0]
+                endtime = etmsgs.query(query+"&block==@block&condition=='MICROSACC'&exp_event=='stop'").msg_time.values[0]
+                #print(starttime)
+                #print(endtime)
+                #print(query)
                 # find which samples belong into that timeframe
                 sel_etsamples = etsamples.query(query)
                 #is_microsaccade = helper.eventtime_to_sampletime(sel_etsamples,starttime,endtime)
@@ -44,16 +49,26 @@ def detect_microsaccades(etsamples,etevents,etmsgs,engbert_lambda=5):
 
                 #sel_etsamples = sel_etsamples.query("microsaccade==1")
                 sel_etsamples = sel_etsamples.query("smpl_time>@starttime&smpl_time<@endtime")
-                engbert_lambda  = engbert_lambda
+                sel_etevents = etevents.query(query+"&start_time>@starttime&end_time<@endtime&type=='blink'")
+                
                 if sel_etsamples.shape[0]<1:
                     logger.warning('No samples found')
                     continue
                 # Run the microsaccade detection
-                try:
-                    sel_etsamples,sel_etevents = detect_events.make_saccades(sel_etsamples,etevents=None,et=eyetracker,engbert_lambda = engbert_lambda)
-                except AttributeError:
-                    logger.warning('no microsaccades found')
-                    continue
+                #try:
+
+                # for redetection we need to apply the raw data again
+                sel_etsamples["gx"] = sel_etsamples["gx_raw"]
+                sel_etsamples["gy"] = sel_etsamples["gy_raw"]
+                if eyetracker == "filtered_el" or eyetracker == "filtered_tpx":
+                    preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=13*0.00476,savgol_polyord=3)
+                else:
+                    preproc_kwargs=dict(max_vel=1500,dilate_nan=0.05,min_blink_duration=0,savgol_length=1*0.00476,savgol_polyord=1)
+                sel_etsamples,sel_etevents = detect_events.make_remodnav_events(sel_etsamples,sel_etevents,eyetracker,preproc_kwargs=preproc_kwargs)
+                
+                #except AttributeError:
+                #    logger.warning('no microsaccades found')
+                #    continue
                 # fill in some details
                 sel_etevents = sel_etevents.assign(subject=subject)
                 sel_etevents = sel_etevents.assign(eyetracker=eyetracker)
@@ -61,7 +76,8 @@ def detect_microsaccades(etsamples,etevents,etmsgs,engbert_lambda=5):
 
                 # remove all saccades larger than amplitude of 2
                 logger.info("Removed %i saccades larger than amplitude 2°"%(np.sum(sel_etevents.amplitude>2)))
-                sel_etevents = sel_etevents.query("amplitude<2")
+                sel_etevents = sel_etevents.query("amplitude<2 & type=='Saccade'")
+                
 
                 # Match which saccades belong to which blocks
 

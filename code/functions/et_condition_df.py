@@ -6,7 +6,7 @@ Created on Tue Jun 19 16:46:11 2018
 @author: kgross
 """
 
-import functions.add_path
+
 import os
 
 import pandas as pd
@@ -52,46 +52,37 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
             else:
                 etsamples,etmsgs,etevents = (d.query("eyetracker=='"+et+"'&subject=='"+subject+"'").drop(["eyetracker","subject"],axis=1) for d in data) 
                     
-            if condition in ['LARGE_GRID','LARGE_and_SMALL_GRID','SMOOTHPURSUIT','MICROSACC','SHAKE','TILT']:
+            if condition in ['GRID','SMOOTH','MICROSACC']:
                 
-                # adding the messages to the event df (backward merge)   
-                if condition in ['TILT','SHAKE']:
-                    etmsgs.loc[:,'element'] = etmsgs.groupby(['block','condition','exp_event']).cumcount()
-
+                # # adding the messages to the event df (backward merge)   
+                # if condition in ['TILT','SHAKE']:
+                #     etmsgs.loc[:,'element'] = etmsgs.groupby(['block','condition','exp_event']).cumcount()
+                logger.debug("grid started")
                 merged_events = helper.add_msg_to_event(etevents, etmsgs, timefield = 'start_time', direction='backward')
-                 
-                if condition == 'LARGE_GRID':
-                    # make df for grid condition that only contains ONE fixation per element
+
+                if condition == 'GRID':
+                    # make df for the grid condition that only contains ONE fixation per element
                     # (the last fixation before the new element  (used a groupby.last() to achieve that))
-                    condition_df = make_df.make_large_grid_df(merged_events)          
-                
-                elif condition == 'LARGE_and_SMALL_GRID':                   
-                    # make df for all grids that only contains ONE fixation per element
-                    # (last fixation before the new element is shown)
-                    condition_df = make_df.make_all_elements_grid_df(merged_events)                  
-                    
-                elif condition in ['SHAKE']:
-                    condition_df = make_df.make_condition(merged_events,condition=condition)                  
-                elif condition == 'TILT':
-                    condition_df = merged_events.query('condition=="TILT"')
+                    condition_df = make_df.make_grid_df(merged_events)          
+
                 else:
                     condition_df = merged_events
-
 
             elif condition == 'BLINK':
                 merged_events = helper.add_msg_to_event(etevents, etmsgs.query("condition=='BLINK'&(exp_event=='stop'|exp_event=='start')"), timefield = 'start_time', direction='backward')
                 condition_df =  merged_events.query("type=='blink'&condition=='BLINK'&exp_event=='start'")
-                
+            
+            elif condition == 'READING':
+                merged_events = helper.add_msg_to_event(etevents, etmsgs.query("condition=='READING'&(exp_event=='stop'|exp_event=='block'|exp_event=='start')"), timefield = 'start_time', direction='backward')
+                condition_df =  merged_events.query("condition=='READING'&exp_event=='block'")
+
             elif condition == 'FREEVIEW':
-                # due to experimental trigger bug: FORWARD merge to add msgs to the events
-                merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='forward')
-                
+                merged_events = helper.add_msg_to_event(etevents, etmsgs.query('condition=="FREEVIEW"'), timefield = 'start_time', direction='backward')
                 # freeview df
                 condition_df, fix_count_df = make_df.make_freeview_df(merged_events)          
-                
                 # add a column for eyetracker and subject
-                fix_count_df.loc[:,'et'] = et
-                fix_count_df.loc[:,'subject'] = subject
+                fix_count_df['et'] = et
+                fix_count_df['subject'] = subject
 
                 # concatenate to the complete fix_count_df                
                 complete_fix_count_df = pd.concat([complete_fix_count_df,fix_count_df])     
@@ -105,11 +96,12 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
             if condition_df.empty:
                 logger.critical('empty subject:%s,et:%s'%(subject,et))
                 continue
-            condition_df.loc[:,'et'] = et
-            condition_df.loc[:,'eyetracker'] = et # behinger added this to keep same as etsamples/etmsgs/etevents. 'et' is later renamed
-            condition_df.loc[:,'subject'] = subject
+            # Update columns with subject and eye-tracker information directly on the original DataFrame
+            condition_df.loc[:, 'et'] = et
+            condition_df.loc[:, 'eyetracker'] = et  # Behringer added this to keep it consistent
+            condition_df.loc[:, 'subject'] = subject
             
-            # concatenate the df of one specific conditin and one specific subject to the complete_condition_df
+            # concatenate the df of one specific condition and one specific subject to the complete_condition_df
             complete_condition_df = pd.concat([complete_condition_df, condition_df])
  
     
@@ -118,6 +110,8 @@ def get_condition_df(subjectnames=None, ets=None, data=None, condition=None, **k
     complete_condition_df = helper.set_dtypes(complete_condition_df)
     
     # renaming for pretty plotting
+    logger.debug(complete_condition_df.columns)
+    
     complete_condition_df = helper.set_to_full_names(complete_condition_df)
 
     

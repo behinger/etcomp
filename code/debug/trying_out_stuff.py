@@ -494,7 +494,7 @@ axarr[1, 1].plot(elevents.loc[ix_fix_events, 'mean_gx'], elevents.loc[ix_fix_eve
 
 # playing around with el blink dection
 
-import functions.add_path
+
 import numpy as np
 import pandas as pd
 import math
@@ -649,7 +649,7 @@ Created on Tue May 29 11:51:36 2018
 
 @author:  kgross
 """
-import functions.add_path
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

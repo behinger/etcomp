@@ -6,7 +6,7 @@ Created on Mon Jun 11 15:49:12 2018
 @author: behinger
 """
 
-import functions.add_path
+
 import numpy as np
 import pandas as pd
 import os 

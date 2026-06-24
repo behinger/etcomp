@@ -1,6 +1,0 @@
-Centered Fixation
-
-In the next condition you will be shown a fixation target. Please fixate it and remain fixated until it disappears after approximately 20s. \n
-
-Before the condition starts you will be shown a green target. Please fixate it and press SPACE in order to start with the trial. \n \n
-Press SPACE to continue.
