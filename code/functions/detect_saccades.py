@@ -13,7 +13,7 @@ Created on Tue May 15 22:15:22 2018
 """
 
 import numpy as np
-from scipy.interpolate import PchipInterpolator
+from scipy.interpolate import BPoly, PchipInterpolator
 import pandas as pd
 import numpy.linalg as LA
 from functions.et_helper import append_eventtype_to_sample
@@ -319,11 +319,37 @@ def interpolate_gaze(etsamples, fs=None):
     fromT = etsamples.smpl_time.iloc[0]    # find the first sample
     toT   = etsamples.smpl_time.iloc[-1]   # find the last sample
     # we find the new index
-    timeIX = np.linspace(np.floor(fromT),np.ceil(toT),np.ceil(toT-fromT)*fs+1)
-    
-    def interp(x,y):
-        f = PchipInterpolator(x,y,extrapolate = False)    
-        return(f(timeIX))
+    sample_count = int(np.ceil(toT - fromT) * fs + 1)
+    timeIX = np.linspace(np.floor(fromT), np.ceil(toT), sample_count)
+
+    def interp(x, y):
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+        finite = np.isfinite(y)
+        if finite.all():
+            return PchipInterpolator(x, y, extrapolate=False)(timeIX)
+
+        values = np.where(finite, y, 0.0)
+        interpolator = PchipInterpolator(x, values, extrapolate=False)
+        valid_intervals = finite[:-1] & finite[1:]
+        if not valid_intervals.any():
+            return np.full_like(timeIX, np.nan)
+
+        # SciPy 1.2 used zero slopes where a derivative touches a missing sample.
+        slopes = interpolator.derivative()(x)
+        complete = finite[:-2] & finite[1:-1] & finite[2:]
+        slopes[~np.r_[complete[0], complete, complete[-1]]] = 0.0
+
+        # Keep the original knots and the NaN intervals between valid observations.
+        width = np.diff(x) / 3.0
+        coefficients = np.array([
+            values[:-1],
+            values[:-1] + width * slopes[:-1],
+            values[1:] - width * slopes[1:],
+            values[1:],
+        ])
+        coefficients[:, ~valid_intervals] = np.nan
+        return BPoly(coefficients, x, extrapolate=False)(timeIX)
     
     
     #GazeInt for GazeInterpolated
